@@ -43,6 +43,31 @@ public final class Prefs {
         sp.edit().putString("model", value == null ? "" : value.trim()).apply();
     }
 
+    public String voiceName() {
+        return sp.getString("voice", "");
+    }
+
+    public void setVoiceName(String value) {
+        sp.edit().putString("voice", value == null ? "" : value).apply();
+    }
+
+    /** Tonhöhe: 1.0 = normal, kleiner = tiefer. Standard leicht tiefer für den Jarvis-Klang. */
+    public float pitch() {
+        return sp.getFloat("pitch", 0.9f);
+    }
+
+    public void setPitch(float value) {
+        sp.edit().putFloat("pitch", value).apply();
+    }
+
+    public float rate() {
+        return sp.getFloat("rate", 1.0f);
+    }
+
+    public void setRate(float value) {
+        sp.edit().putFloat("rate", value).apply();
+    }
+
     public boolean tftMode() {
         return sp.getBoolean("tft_mode", false);
     }

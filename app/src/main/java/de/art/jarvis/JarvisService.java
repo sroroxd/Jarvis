@@ -29,7 +29,6 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
-import android.speech.tts.Voice;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,7 +42,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 /**
  * Das Herz von Jarvis: schwebendes „J“ über allen Apps, Zuhören, Bildschirm sehen,
@@ -104,11 +102,11 @@ public class JarvisService extends Service {
         wm = getSystemService(WindowManager.class);
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Jarvis", NotificationManager.IMPORTANCE_LOW));
-        tts = new TextToSpeech(this, status -> {
+        tts = Voices.create(this, status -> {
             if (status != TextToSpeech.SUCCESS) return;
             int result = tts.setLanguage(Locale.GERMANY);
             ttsReady = result >= TextToSpeech.LANG_AVAILABLE;
-            pickBestGermanVoice();
+            Voices.apply(tts, prefs);
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) { }
                 @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
@@ -536,6 +534,7 @@ public class JarvisService extends Service {
         int max = TextToSpeech.getMaxSpeechInputLength() - 1;
         if (clean.length() > max) clean = clean.substring(0, max);
         setState(State.SPEAKING);
+        Voices.apply(tts, prefs); // Änderungen aus den Einstellungen sofort übernehmen
         tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "jarvis-" + System.nanoTime());
     }
 
@@ -543,23 +542,6 @@ public class JarvisService extends Service {
         if (state == State.SPEAKING) setState(State.IDLE);
         main.removeCallbacks(hidePanel);
         main.postDelayed(hidePanel, 12000);
-    }
-
-    private void pickBestGermanVoice() {
-        try {
-            Set<Voice> voices = tts.getVoices();
-            if (voices == null) return;
-            Voice best = null;
-            for (Voice v : voices) {
-                if (!"de".equals(v.getLocale().getLanguage())) continue;
-                Set<String> features = v.getFeatures();
-                if (features != null && features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)) continue;
-                if (best == null || v.getQuality() > best.getQuality()) best = v;
-            }
-            if (best != null) tts.setVoice(best);
-        } catch (Exception ignored) {
-            // Standardstimme bleibt aktiv.
-        }
     }
 
     // ---------------------------------------------------------------- Hilfen

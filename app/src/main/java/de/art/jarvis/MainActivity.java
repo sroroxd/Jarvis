@@ -14,10 +14,16 @@ import android.provider.Settings;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -36,6 +42,14 @@ public class MainActivity extends Activity {
     private Switch tftSwitch;
     private TextView status;
     private boolean askedNotifications;
+    private Spinner voiceSpinner;
+    private SeekBar pitchBar;
+    private SeekBar rateBar;
+    private TextView pitchLabel;
+    private TextView rateLabel;
+    private TextToSpeech previewTts;
+    private boolean previewReady;
+    private List<Voice> voices;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +99,9 @@ public class MainActivity extends Activity {
         root.addView(text("Hinweis: Live-Tipps während einer Partie verstoßen gegen Riots Regeln – Nutzung auf eigenes Risiko.", 12, 0xFF90A4AE));
 
         root.addView(space(20));
+        buildVoiceSection(root);
+
+        root.addView(space(20));
         Button start = button("Jarvis starten");
         start.setOnClickListener(v -> {
             save();
@@ -120,6 +137,95 @@ public class MainActivity extends Activity {
         setContentView(scroll);
 
         if (JarvisService.isRunning()) setStatus("Jarvis läuft.");
+    }
+
+    private void buildVoiceSection(LinearLayout root) {
+        root.addView(text("Stimme", 16, Color.WHITE));
+        root.addView(text("Wähle eine Stimme und hör sie dir an. ★ = hohe Qualität.", 12, 0xFF90A4AE));
+        voiceSpinner = new Spinner(this);
+        root.addView(voiceSpinner);
+
+        pitchLabel = text("", 14, Color.WHITE);
+        root.addView(pitchLabel);
+        pitchBar = new SeekBar(this);
+        pitchBar.setMax(100); // 0,50 … 1,50
+        pitchBar.setProgress(Math.round(prefs.pitch() * 100) - 50);
+        root.addView(pitchBar);
+
+        rateLabel = text("", 14, Color.WHITE);
+        root.addView(rateLabel);
+        rateBar = new SeekBar(this);
+        rateBar.setMax(100); // 0,60 … 1,60
+        rateBar.setProgress(Math.round(prefs.rate() * 100) - 60);
+        root.addView(rateBar);
+        updateVoiceLabels();
+
+        SeekBar.OnSeekBarChangeListener l = new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) { updateVoiceLabels(); }
+            @Override public void onStartTrackingTouch(SeekBar s) { }
+            @Override public void onStopTrackingTouch(SeekBar s) { saveVoice(); }
+        };
+        pitchBar.setOnSeekBarChangeListener(l);
+        rateBar.setOnSeekBarChangeListener(l);
+
+        Button preview = button("Probe hören");
+        preview.setOnClickListener(v -> {
+            saveVoice();
+            if (previewTts == null || !previewReady) {
+                setStatus("Sprachausgabe lädt noch …");
+                return;
+            }
+            Voices.apply(previewTts, prefs);
+            previewTts.speak("Guten Abend, Sir. Alle Systeme sind einsatzbereit.",
+                    TextToSpeech.QUEUE_FLUSH, null, "preview");
+        });
+        root.addView(preview);
+
+        previewTts = Voices.create(this, status -> {
+            if (status != TextToSpeech.SUCCESS) {
+                setStatus("Keine Sprachausgabe gefunden.");
+                return;
+            }
+            previewReady = true;
+            previewTts.setLanguage(java.util.Locale.GERMANY);
+            voices = Voices.german(previewTts);
+            List<String> labels = new ArrayList<>();
+            int selected = 0;
+            for (int i = 0; i < voices.size(); i++) {
+                labels.add(Voices.label(voices.get(i), i));
+                if (voices.get(i).getName().equals(prefs.voiceName())) selected = i;
+            }
+            if (labels.isEmpty()) labels.add("Standardstimme");
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, labels);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            voiceSpinner.setAdapter(adapter);
+            voiceSpinner.setSelection(selected);
+            voiceSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
+                    saveVoice();
+                }
+                @Override public void onNothingSelected(AdapterView<?> parent) { }
+            });
+        });
+    }
+
+    private void updateVoiceLabels() {
+        pitchLabel.setText(String.format(java.util.Locale.GERMANY, "Tonhöhe: %.2f (kleiner = tiefer)", (pitchBar.getProgress() + 50) / 100f));
+        rateLabel.setText(String.format(java.util.Locale.GERMANY, "Tempo: %.2f", (rateBar.getProgress() + 60) / 100f));
+    }
+
+    private void saveVoice() {
+        prefs.setPitch((pitchBar.getProgress() + 50) / 100f);
+        prefs.setRate((rateBar.getProgress() + 60) / 100f);
+        int pos = voiceSpinner.getSelectedItemPosition();
+        if (voices != null && pos >= 0 && pos < voices.size()) prefs.setVoiceName(voices.get(pos).getName());
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (previewTts != null) previewTts.shutdown();
+        super.onDestroy();
     }
 
     private void save() {
