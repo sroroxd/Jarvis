@@ -28,7 +28,13 @@ jobs:
           gradle-version: '8.9'
 
       - name: APK bauen
-        run: gradle --no-daemon assembleRelease --stacktrace
+        run: |
+          set -o pipefail
+          if ! gradle --no-daemon assembleRelease 2>&1 | tee build.log; then
+            msg=$(grep -E "error:|warning: \[|What went wrong|> " build.log | head -40 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=Build fehlgeschlagen::$msg"
+            exit 1
+          fi
 
       - name: APK umbenennen
         run: cp app/build/outputs/apk/release/app-release.apk Jarvis.apk
