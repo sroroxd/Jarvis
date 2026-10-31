@@ -21,12 +21,35 @@ import java.util.concurrent.Executors;
  */
 final class GeminiClient {
     private static final String BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
+    /** Sparsameres Modell mit höherem Gratis-Kontingent – Ausweiche bei Limit. */
+    private static final String FALLBACK_MODEL = "gemini-flash-lite-latest";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
     void send(String apiKey, String model, String system, JSONArray messages, ClaudeClient.Callback callback) {
         executor.execute(() -> {
+            Result r = request(apiKey, model, system, messages);
+            if (r.code == 429 && !FALLBACK_MODEL.equals(model)) {
+                Result fallback = request(apiKey, FALLBACK_MODEL, system, messages);
+                // Nur übernehmen, wenn die Ausweiche geantwortet hat oder ebenfalls am Limit ist.
+                if (fallback.error == null || fallback.code == 429) r = fallback;
+            }
+            final Result result = r;
+            if (result.error != null) main.post(() -> callback.onError(result.error));
+            else main.post(() -> callback.onResult(result.text));
+        });
+    }
+
+    private static final class Result {
+        int code;
+        String text;
+        String error;
+    }
+
+    private Result request(String apiKey, String model, String system, JSONArray messages) {
+        Result result = new Result();
+        {
             HttpURLConnection conn = null;
             try {
                 JSONObject body = new JSONObject();
@@ -49,12 +72,12 @@ final class GeminiClient {
                 }
 
                 int code = conn.getResponseCode();
+                result.code = code;
                 boolean ok = code >= 200 && code < 300;
                 String response = readAll(ok ? conn.getInputStream() : conn.getErrorStream());
                 if (!ok) {
-                    final String message = describeError(code, response);
-                    main.post(() -> callback.onError(message));
-                    return;
+                    result.error = describeError(code, response);
+                    return result;
                 }
 
                 StringBuilder sb = new StringBuilder();
@@ -69,15 +92,14 @@ final class GeminiClient {
                         }
                     }
                 }
-                final String text = sb.toString().trim();
-                main.post(() -> callback.onResult(text));
+                result.text = sb.toString().trim();
             } catch (Exception e) {
-                final String message = "Ich erreiche den Server gerade nicht. " + (e.getMessage() == null ? "" : e.getMessage());
-                main.post(() -> callback.onError(message));
+                result.error = "Ich erreiche den Server gerade nicht. " + (e.getMessage() == null ? "" : e.getMessage());
             } finally {
                 if (conn != null) conn.disconnect();
             }
-        });
+        }
+        return result;
     }
 
     /** Übersetzt {role, content} (Text oder Blöcke mit Bild) in Geminis {role, parts}. */
@@ -120,7 +142,13 @@ final class GeminiClient {
         if (code == 400 && detail.toLowerCase().contains("api key")) return "Der Gemini-Schlüssel wird abgelehnt. Bitte prüfe ihn in der Jarvis-App.";
         if (code == 403) return "Gemini verweigert den Zugriff. Prüfe den Schlüssel in Google AI Studio.";
         if (code == 404) return "Das eingestellte Gemini-Modell gibt es nicht. Lass das Modellfeld in der App leer.";
-        if (code == 429) return "Das kostenlose Gemini-Kontingent ist gerade ausgeschöpft. Versuch es in einer Minute noch einmal.";
+        if (code == 429) {
+            String all = response == null ? "" : response.toLowerCase();
+            if (all.contains("perday") || all.contains("per_day") || all.contains("per day")) {
+                return "Das kostenlose Gemini-Tageslimit ist erreicht, Sir. Ab morgen geht es wieder – oder du nimmst einen Claude-Schlüssel.";
+            }
+            return "Das kostenlose Gemini-Minutenlimit ist erreicht. Gib mir eine Minute, dann geht es weiter.";
+        }
         if (code >= 500) return "Die Gemini-Server sind gerade überlastet. Versuch es gleich noch einmal.";
         return "Gemini-Fehler " + code + (detail.isEmpty() ? "." : ": " + detail);
     }
