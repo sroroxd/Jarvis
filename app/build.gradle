@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+def runNumber = Integer.parseInt(System.getenv('GITHUB_RUN_NUMBER') ?: '1')
+
+android {
+    namespace 'de.art.jarvis'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'de.art.jarvis'
+        minSdk 30
+        targetSdk 35
+        versionCode runNumber
+        versionName "1.0.${runNumber}"
+    }
+
+    // Fester Schlüssel, damit jede neue APK sich über die alte installieren lässt.
+    signingConfigs {
+        jarvis {
+            storeFile file('jarvis.keystore')
+            storePassword 'jarvis-sideload'
+            keyAlias 'jarvis'
+            keyPassword 'jarvis-sideload'
+            storeType 'pkcs12'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.jarvis
+        }
+        release {
+            signingConfig signingConfigs.jarvis
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
