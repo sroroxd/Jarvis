@@ -28,28 +28,16 @@ public final class Prefs {
     }
 
     public void setApiKey(String value) {
-        sp.edit().putString("api_key", cleanKey(value)).apply();
+        sp.edit().putString("api_key", Text.cleanKey(value)).apply();
     }
 
-    /** Entfernt Leerzeichen, Zeilenumbrüche und unsichtbare Zeichen, die beim Kopieren mitkommen. */
-    static String cleanKey(String value) {
-        if (value == null) return "";
-        return value.replaceAll("[\\s\\u00A0\\u200B-\\u200D\\u2060\\uFEFF]", "");
-    }
-
-    /** Gekürzte Anzeige, z. B. „sk-ant-api…x7Qa (108 Zeichen)“ – zum Abgleich mit der Konsole. */
     public String apiKeyPreview() {
-        String k = apiKey();
-        if (k.isEmpty()) return "Kein Schlüssel gespeichert.";
-        String head = k.substring(0, Math.min(10, k.length()));
-        String tail = k.length() > 14 ? k.substring(k.length() - 4) : "";
-        String kind = isGemini() ? "Gemini" : k.startsWith("sk-ant-") ? "Claude" : "unbekanntes Format";
-        return "Gespeichert: " + head + "…" + tail + " (" + k.length() + " Zeichen, " + kind + ")";
+        return Text.keyPreview(apiKey());
     }
 
     /** Google-Schlüssel beginnen mit „AIza“, Anthropic-Schlüssel mit „sk-ant-“. */
     public boolean isGemini() {
-        return apiKey().startsWith("AIza");
+        return Text.isGeminiKey(apiKey());
     }
 
     /** Eingetragenes Modell oder leer. */
@@ -57,9 +45,8 @@ public final class Prefs {
         return sp.getString("model", "").trim();
     }
 
-    /** Nur echte Modellnamen zählen („claude-…“ oder „gemini-…“) – Tippfehler wie „2“ werden ignoriert. */
     public static boolean isValidModel(String m) {
-        return m != null && m.matches("(?i)(claude|gemini)-[a-z0-9.\\-]+");
+        return Text.isValidModel(m);
     }
 
     public void setModel(String value) {

@@ -24,7 +24,7 @@ final class GeminiClient {
     /** Sparsameres Modell mit höherem Gratis-Kontingent – Ausweiche bei Limit. */
     private static final String FALLBACK_MODEL = "gemini-flash-lite-latest";
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
     void send(String apiKey, String model, String system, JSONArray messages, ClaudeClient.Callback callback) {
@@ -56,9 +56,8 @@ final class GeminiClient {
                 body.put("systemInstruction", new JSONObject()
                         .put("parts", new JSONArray().put(new JSONObject().put("text", system))));
                 body.put("contents", toContents(messages));
-                body.put("generationConfig", new JSONObject()
-                        .put("maxOutputTokens", 1024)
-                        .put("temperature", 0.3));
+                // Kein „temperature“: Google empfiehlt für aktuelle Gemini-Modelle den Standardwert.
+                body.put("generationConfig", new JSONObject().put("maxOutputTokens", 1024));
                 byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
 
                 conn = (HttpURLConnection) new URL(BASE + model + ":generateContent").openConnection();
@@ -141,7 +140,7 @@ final class GeminiClient {
         } catch (Exception ignored) {
             // Kein JSON – dann bleibt nur der Statuscode.
         }
-        if (code == 400 && detail.toLowerCase().contains("api key")) return "Der Gemini-Schlüssel wird abgelehnt. Bitte prüfe ihn in der Jarvis-App.";
+        if (code == 400 && detail.toLowerCase(java.util.Locale.ROOT).contains("api key")) return "Der Gemini-Schlüssel wird abgelehnt. Bitte prüfe ihn in der Jarvis-App.";
         if (code == 403) return "Gemini verweigert den Zugriff. Prüfe den Schlüssel in Google AI Studio.";
         if (code == 404) return "Das eingestellte Gemini-Modell gibt es nicht. Lass das Modellfeld in der App leer.";
         if (code == 429) {

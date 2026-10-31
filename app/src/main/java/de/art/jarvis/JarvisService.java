@@ -41,7 +41,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Das Herz von Jarvis: schwebendes „J“ über allen Apps, Zuhören, Bildschirm sehen,
@@ -602,10 +601,11 @@ public class JarvisService extends Service {
 
     private void handleUtterance(String text) {
         // „Merk dir …“ / „Vergiss …“ erledigt die App selbst – zuverlässig und ohne Kosten.
-        String local = Memory.handleCommand(text, prefs);
+        Memory.Outcome local = Memory.command(text, prefs.memory());
         if (local != null) {
+            prefs.setMemory(local.memory);
             setState(State.IDLE);
-            speak(local);
+            speak(local.reply);
             return;
         }
         String key = prefs.apiKey();
@@ -658,7 +658,9 @@ public class JarvisService extends Service {
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
-                answer = cleanForSpeech(Memory.applyTags(answer, prefs));
+                Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
+                prefs.setMemory(tagged.memory);
+                answer = Text.cleanForSpeech(tagged.reply);
                 if (answer.isEmpty()) answer = "Erledigt, Sir.";
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", answer);
@@ -694,7 +696,7 @@ public class JarvisService extends Service {
     }
 
     private void speak(String text) {
-        String clean = cleanForSpeech(text);
+        String clean = Text.cleanForSpeech(text);
         showPanel(clean);
         // Wurde in den Einstellungen eine andere Engine gewählt? Dann neu starten und danach sprechen.
         String engineNow = Voices.resolveEngine(this, prefs);
@@ -721,17 +723,6 @@ public class JarvisService extends Service {
         setState(State.SPEAKING);
         Voices.apply(tts, prefs, ttsEngine); // Änderungen aus den Einstellungen sofort übernehmen
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis-" + System.nanoTime());
-    }
-
-    /** Entfernt alles, was beim Vorlesen stört: Markdown, Aufzählungszeichen, Nummerierungen, Emojis. */
-    static String cleanForSpeech(String s) {
-        if (s == null) return "";
-        String t = s.replaceAll("(?m)^\\s*(?:[-*•–]|\\d+[.)])\\s+", "");
-        t = t.replaceAll("[*#_`>~|]", "");
-        t = t.replaceAll("[\\x{1F000}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{2B00}-\\x{2BFF}\\x{FE0F}\\x{200D}]", "");
-        t = t.replaceAll("([^.!?:;,\\s])\\s*\\n+\\s*", "$1. ");
-        t = t.replaceAll("\\s*\\n+\\s*", " ");
-        return t.replaceAll(" {2,}", " ").trim();
     }
 
     private void onSpeechFinished() {

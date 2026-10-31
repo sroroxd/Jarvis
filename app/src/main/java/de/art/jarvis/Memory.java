@@ -10,11 +10,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Dauerhaftes Gedächtnis.
- * „Merk dir …“ und „Vergiss …“ werden direkt in der App erledigt (ohne KI-Aufruf, also zuverlässig und kostenlos).
+ * Dauerhaftes Gedächtnis – arbeitet nur mit Text (ein Fakt pro Zeile „- …“) und ist dadurch testbar.
+ * „Merk dir …“ und „Vergiss …“ werden direkt in der App erledigt (ohne KI-Aufruf: zuverlässig und kostenlos).
  * Zusätzlich darf die KI mit [MERKEN: …] von sich aus Vorlieben ablegen.
  */
 final class Memory {
+    /** Antworttext plus neuer Gedächtnisinhalt. */
+    static final class Outcome {
+        final String reply;
+        final String memory;
+
+        Outcome(String reply, String memory) {
+            this.reply = reply;
+            this.memory = memory;
+        }
+    }
+
     private static final Pattern REMEMBER_TAG = Pattern.compile("\\[\\s*MERKEN\\s*:\\s*(.+?)\\s*\\]", Pattern.CASE_INSENSITIVE);
     private static final Pattern FORGET_TAG = Pattern.compile("\\[\\s*VERGESSEN\\s*:\\s*(.+?)\\s*\\]", Pattern.CASE_INSENSITIVE);
 
@@ -31,56 +42,48 @@ final class Memory {
             "und", "oder", "aber", "mit", "von", "für", "auf", "bei", "ich", "mich", "mir", "mein", "meine",
             "immer", "nicht", "bitte", "jarvis", "wieder", "habe", "hast", "soll", "sollst", "wenn", "auch"));
 
-    private static final int MAX_FACTS = 60;
+    static final int MAX_FACTS = 60;
 
     private Memory() {}
 
-    /** Ergebnis eines lokal erkannten Befehls: Antworttext, oder null wenn kein Befehl. */
-    static String handleCommand(String utterance, Prefs prefs) {
-        String text = utterance.trim();
+    /** Erkennt „Merk dir …“ / „Vergiss …“. Gibt null zurück, wenn es kein solcher Befehl ist. */
+    static Outcome command(String utterance, String memory) {
+        String text = utterance == null ? "" : utterance.trim();
         Matcher m = REMEMBER_CMD.matcher(text);
         if (m.matches()) {
             String fact = tidy(m.group(1));
-            if (fact.isEmpty()) return "Was soll ich mir merken, Sir?";
-            List<String> facts = load(prefs);
+            if (fact.isEmpty()) return new Outcome("Was soll ich mir merken, Sir?", memory);
+            List<String> facts = load(memory);
             if (!facts.contains(fact)) facts.add(fact);
-            save(prefs, facts);
-            return "Gemerkt, Sir.";
+            return new Outcome("Gemerkt, Sir.", save(facts));
         }
         m = FORGET_CMD.matcher(text);
         if (m.matches()) {
             String what = tidy(m.group(1));
             // „Vergiss nicht, …“ ist eine normale Bitte, kein Löschbefehl.
             if (what.toLowerCase(Locale.GERMANY).startsWith("nicht")) return null;
-            if (keywords(what).isEmpty()) return "Was genau soll ich vergessen, Sir?";
-            List<String> facts = load(prefs);
+            if (keywords(what).isEmpty()) return new Outcome("Was genau soll ich vergessen, Sir?", memory);
+            List<String> facts = load(memory);
             String removed = removeBestMatch(facts, what);
-            if (removed == null) return "Dazu habe ich nichts gespeichert.";
-            save(prefs, facts);
-            return "Vergessen: " + removed;
+            if (removed == null) return new Outcome("Dazu habe ich nichts gespeichert.", memory);
+            return new Outcome("Vergessen: " + removed, save(facts));
         }
         return null;
     }
 
-    /** Verarbeitet [MERKEN:]/[VERGESSEN:]-Zeilen der KI und entfernt sie aus dem Text. */
-    static String applyTags(String answer, Prefs prefs) {
-        List<String> facts = load(prefs);
-        boolean changed = false;
-        Matcher f = FORGET_TAG.matcher(answer);
-        while (f.find()) {
-            if (removeBestMatch(facts, f.group(1)) != null) changed = true;
-        }
-        Matcher r = REMEMBER_TAG.matcher(answer);
+    /** Verarbeitet [MERKEN:]/[VERGESSEN:]-Zeilen der KI und entfernt sie aus dem Antworttext. */
+    static Outcome tags(String answer, String memory) {
+        String a = answer == null ? "" : answer;
+        List<String> facts = load(memory);
+        Matcher f = FORGET_TAG.matcher(a);
+        while (f.find()) removeBestMatch(facts, f.group(1));
+        Matcher r = REMEMBER_TAG.matcher(a);
         while (r.find()) {
             String fact = tidy(r.group(1));
-            if (!fact.isEmpty() && !facts.contains(fact)) {
-                facts.add(fact);
-                changed = true;
-            }
+            if (!fact.isEmpty() && !facts.contains(fact)) facts.add(fact);
         }
-        if (changed) save(prefs, facts);
-        String cleaned = FORGET_TAG.matcher(REMEMBER_TAG.matcher(answer).replaceAll("")).replaceAll("");
-        return cleaned.replaceAll("\n{3,}", "\n\n").trim();
+        String cleaned = FORGET_TAG.matcher(REMEMBER_TAG.matcher(a).replaceAll("")).replaceAll("");
+        return new Outcome(cleaned.replaceAll("\n{3,}", "\n\n").trim(), save(facts));
     }
 
     /** Entfernt den Fakt mit den meisten gemeinsamen Stichwörtern; gibt ihn zurück oder null. */
@@ -122,19 +125,20 @@ final class Memory {
         return Character.toUpperCase(t.charAt(0)) + t.substring(1);
     }
 
-    private static List<String> load(Prefs prefs) {
+    static List<String> load(String memory) {
         List<String> facts = new ArrayList<>();
-        for (String line : prefs.memory().split("\n")) {
+        if (memory == null) return facts;
+        for (String line : memory.split("\n")) {
             String t = line.replaceFirst("^[-•]\\s*", "").trim();
             if (!t.isEmpty()) facts.add(t);
         }
         return facts;
     }
 
-    private static void save(Prefs prefs, List<String> facts) {
+    static String save(List<String> facts) {
         while (facts.size() > MAX_FACTS) facts.remove(0);
         StringBuilder sb = new StringBuilder();
         for (String fact : facts) sb.append("- ").append(fact).append('\n');
-        prefs.setMemory(sb.toString());
+        return sb.toString().trim();
     }
 }

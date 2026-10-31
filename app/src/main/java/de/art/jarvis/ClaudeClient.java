@@ -24,7 +24,8 @@ final class ClaudeClient {
 
     private static final String ENDPOINT = "https://api.anthropic.com/v1/messages";
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** Ein gemeinsamer Hintergrund-Thread für alle Anfragen (vorher: pro Client ein neuer, der nie endete). */
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
     void send(String apiKey, String model, String system, JSONArray messages, Callback callback) {
@@ -34,7 +35,7 @@ final class ClaudeClient {
                 JSONObject body = new JSONObject();
                 body.put("model", model);
                 body.put("max_tokens", 400);
-                body.put("temperature", 0.3); // nüchtern statt kreativ: weniger Erfundenes
+                // Kein „temperature“: Die aktuellen Claude-Modelle lehnen den Parameter ab (Fehler 400).
                 body.put("system", system);
                 body.put("messages", messages);
                 byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -83,22 +84,18 @@ final class ClaudeClient {
     }
 
     private static String describeError(int code, String response) {
+        String type = "";
         String detail = "";
         try {
             JSONObject err = new JSONObject(response).optJSONObject("error");
-            if (err != null) detail = err.optString("message", "");
+            if (err != null) {
+                type = err.optString("type", "");
+                detail = err.optString("message", "");
+            }
         } catch (Exception ignored) {
             // Kein JSON – dann bleibt nur der Statuscode.
         }
-        String lower = detail.toLowerCase();
-        if (code == 401) return "Der API-Schlüssel wird abgelehnt" + (detail.isEmpty() ? "." : " (" + detail + ").")
-                + " Bitte in der Jarvis-App mit „Schlüssel testen“ prüfen.";
-        if (code == 403) return "Der Schlüssel hat keine Berechtigung" + (detail.isEmpty() ? "." : ": " + detail);
-        if (lower.contains("credit") || lower.contains("balance")) return "Das API-Guthaben ist aufgebraucht. Bitte in der Anthropic-Konsole aufladen.";
-        if (code == 404 || lower.contains("model")) return "Das eingestellte Modell ist nicht verfügbar. Fehler " + code + ": " + detail;
-        if (code == 429) return "Zu viele Anfragen in kurzer Zeit. Versuch es gleich noch einmal.";
-        if (code == 529 || code >= 500) return "Die Claude-Server sind gerade überlastet. Versuch es gleich noch einmal.";
-        return "Fehler " + code + (detail.isEmpty() ? "." : ": " + detail);
+        return Text.claudeError(code, type, detail);
     }
 
     private static String readAll(InputStream in) throws java.io.IOException {
