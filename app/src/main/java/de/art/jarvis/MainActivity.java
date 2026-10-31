@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
     private Switch tftSwitch;
     private TextView status;
     private boolean askedNotifications;
+    private EditText memoryField;
     private Spinner voiceSpinner;
     private SeekBar pitchBar;
     private SeekBar rateBar;
@@ -97,6 +98,17 @@ public class MainActivity extends Activity {
         tftSwitch.setChecked(prefs.tftMode());
         root.addView(tftSwitch);
         root.addView(text("Hinweis: Live-Tipps während einer Partie verstoßen gegen Riots Regeln – Nutzung auf eigenes Risiko.", 12, 0xFF90A4AE));
+
+        root.addView(space(20));
+        root.addView(text("Gedächtnis", 16, Color.WHITE));
+        root.addView(text("Was Jarvis sich dauerhaft merkt. Sag ihm „Merk dir …“ – oder bearbeite es hier direkt.", 12, 0xFF90A4AE));
+        memoryField = new EditText(this);
+        memoryField.setHint("Noch nichts gemerkt");
+        memoryField.setMinLines(3);
+        memoryField.setTextSize(14);
+        memoryField.setTextColor(Color.WHITE);
+        memoryField.setHintTextColor(0xFF607D8B);
+        root.addView(memoryField);
 
         root.addView(space(20));
         buildVoiceSection(root);
@@ -232,6 +244,14 @@ public class MainActivity extends Activity {
         prefs.setApiKey(keyField.getText().toString());
         prefs.setModel(modelField.getText().toString());
         prefs.setTftMode(tftSwitch.isChecked());
+        if (memoryField != null) prefs.setMemory(memoryField.getText().toString());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Jarvis kann sich im Hintergrund Neues gemerkt haben.
+        if (memoryField != null) memoryField.setText(prefs.memory());
     }
 
     @Override

@@ -71,6 +71,15 @@ public final class Prefs {
         sp.edit().putFloat("rate", value).apply();
     }
 
+    /** Dauerhaftes Gedächtnis: ein Fakt pro Zeile. */
+    public String memory() {
+        return sp.getString("memory", "").trim();
+    }
+
+    public void setMemory(String value) {
+        sp.edit().putString("memory", value == null ? "" : value.trim()).apply();
+    }
+
     public boolean tftMode() {
         return sp.getBoolean("tft_mode", false);
     }

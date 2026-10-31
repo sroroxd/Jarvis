@@ -8,7 +8,7 @@ import java.util.Locale;
 final class Persona {
     private Persona() {}
 
-    static String system(boolean tftMode, boolean hasScreenshot) {
+    static String system(boolean tftMode, boolean hasScreenshot, String memory) {
         String now = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(new Date());
         StringBuilder sb = new StringBuilder();
         sb.append("Du bist JARVIS, der persönliche KI-Assistent von Art – nach dem Vorbild von Tony Starks JARVIS: ")
@@ -23,6 +23,15 @@ final class Persona {
         if (hasScreenshot) {
             sp(sb, "Angehängt ist ein Bildschirmfoto von Arts Handy im Moment der Frage. Nutze es, wenn die Frage sich darauf bezieht "
                     + "(„was siehst du“, „was steht da“, „was soll ich hier machen“). Erwähne das Bild nicht, wenn es für die Frage keine Rolle spielt.");
+        }
+
+        sp(sb, "DAUERHAFTES GEDÄCHTNIS: Du kannst dir Dinge über Gespräche und Neustarts hinweg merken. "
+                + "Wenn Art dich bittet, dir etwas zu merken, oder eine dauerhafte Vorliebe oder Regel nennt (z. B. „antworte kürzer“, „ich spiele am liebsten …“), "
+                + "dann schreibe am Ende deiner Antwort eine eigene Zeile: [MERKEN: kurzer Fakt in der dritten Person]. "
+                + "Soll etwas vergessen werden, schreibe: [VERGESSEN: Stichwort]. Diese Zeilen werden nicht vorgelesen; bestätige im Text nur kurz. "
+                + "Merke dir nichts ungefragt, was nur für den Moment gilt.");
+        if (memory != null && !memory.isEmpty()) {
+            sp(sb, "Das hast du dir bisher über Art gemerkt – halte dich daran:\n" + memory);
         }
 
         sp(sb, "Grenzen dieser Version: Du kannst noch keine Apps bedienen, keine Nachrichten lesen oder senden und keine Erinnerungen oder Wecker stellen. "

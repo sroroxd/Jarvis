@@ -92,6 +92,8 @@ public class JarvisService extends Service {
     private WindowManager.LayoutParams panelLp;
     private long lastInteraction;
     private boolean heardSomething;
+    private boolean panelExpanded;
+    private static final int COMPACT_LINES = 3;
 
     @Override
     public void onCreate() {
@@ -190,11 +192,11 @@ public class JarvisService extends Service {
 
     private void showOverlay() {
         if (!Settings.canDrawOverlays(this)) return;
-        int size = dp(56);
+        int size = dp(44);
         bubble = new TextView(this);
         bubble.setText("J");
         bubble.setTextColor(Color.WHITE);
-        bubble.setTextSize(22);
+        bubble.setTextSize(18);
         bubble.setTypeface(Typeface.DEFAULT_BOLD);
         bubble.setGravity(Gravity.CENTER);
         bubble.setBackground(circle(COLOR_IDLE));
@@ -211,16 +213,27 @@ public class JarvisService extends Service {
 
         panel = new TextView(this);
         panel.setTextColor(Color.WHITE);
-        panel.setTextSize(15);
-        panel.setMaxWidth(dp(300));
-        panel.setPadding(dp(14), dp(10), dp(14), dp(10));
+        panel.setTextSize(12);
+        panel.setMaxWidth(dp(240));
+        panel.setMaxLines(COMPACT_LINES);
+        panel.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        panel.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(0xE60B1D2A);
-        bg.setCornerRadius(dp(14));
+        bg.setColor(0xCC0B1D2A);
+        bg.setCornerRadius(dp(10));
         bg.setStroke(dp(1), COLOR_IDLE);
         panel.setBackground(bg);
         panel.setVisibility(View.GONE);
+        // Antippen: gekürzten Text ganz zeigen; nochmal antippen: schließen (und Sprechen stoppen).
         panel.setOnClickListener(v -> {
+            if (!panelExpanded && panel.getLayout() != null
+                    && panel.getLayout().getEllipsisCount(panel.getLineCount() - 1) > 0) {
+                panelExpanded = true;
+                panel.setMaxLines(Integer.MAX_VALUE);
+                panel.setMaxWidth(dp(320));
+                main.removeCallbacks(hidePanel);
+                return;
+            }
             if (state == State.SPEAKING && tts != null) tts.stop();
             if (state == State.SPEAKING) setState(State.IDLE);
             hidePanel();
@@ -276,13 +289,13 @@ public class JarvisService extends Service {
 
     private void positionPanel() {
         int screenWidth = wm.getCurrentWindowMetrics().getBounds().width();
-        boolean bubbleOnRight = bubbleLp.x + dp(28) > screenWidth / 2;
+        boolean bubbleOnRight = bubbleLp.x + dp(22) > screenWidth / 2;
         if (bubbleOnRight) {
             panelLp.gravity = Gravity.TOP | Gravity.END;
             panelLp.x = screenWidth - bubbleLp.x + dp(8);
         } else {
             panelLp.gravity = Gravity.TOP | Gravity.START;
-            panelLp.x = bubbleLp.x + dp(64);
+            panelLp.x = bubbleLp.x + dp(52);
         }
         panelLp.y = bubbleLp.y;
         wm.updateViewLayout(panel, panelLp);
@@ -291,6 +304,11 @@ public class JarvisService extends Service {
     private void showPanel(String text) {
         if (panel == null) return;
         main.removeCallbacks(hidePanel);
+        if (panelExpanded) {
+            panelExpanded = false;
+            panel.setMaxLines(COMPACT_LINES);
+            panel.setMaxWidth(dp(240));
+        }
         panel.setText(text);
         panel.setVisibility(View.VISIBLE);
         positionPanel();
@@ -485,11 +503,12 @@ public class JarvisService extends Service {
             return;
         }
 
-        String system = Persona.system(prefs.tftMode(), image != null);
+        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory());
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
-                if (answer.isEmpty()) answer = "Darauf habe ich gerade keine Antwort, Sir.";
+                answer = Memory.apply(answer, prefs);
+                if (answer.isEmpty()) answer = "Erledigt, Sir.";
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", answer);
                 speak(answer);
@@ -541,7 +560,7 @@ public class JarvisService extends Service {
     private void onSpeechFinished() {
         if (state == State.SPEAKING) setState(State.IDLE);
         main.removeCallbacks(hidePanel);
-        main.postDelayed(hidePanel, 12000);
+        if (!panelExpanded) main.postDelayed(hidePanel, 5000);
     }
 
     // ---------------------------------------------------------------- Hilfen
