@@ -119,6 +119,15 @@ public final class Prefs {
         sp.edit().putString("memory", value == null ? "" : value.trim()).apply();
     }
 
+    /** Ort der automatischen Sicherungsdatei (vom Nutzer gewählt); leer = keine Sicherung. */
+    public String backupUri() {
+        return sp.getString("backup_uri", "");
+    }
+
+    public void setBackupUri(String value) {
+        sp.edit().putString("backup_uri", value == null ? "" : value).apply();
+    }
+
     public boolean tftMode() {
         return sp.getBoolean("tft_mode", false);
     }

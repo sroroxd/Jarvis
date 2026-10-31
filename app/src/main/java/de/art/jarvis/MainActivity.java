@@ -35,6 +35,8 @@ public class MainActivity extends Activity {
     private static final int REQ_PERMISSIONS = 1;
     private static final int REQ_OVERLAY = 2;
     private static final int REQ_PROJECTION = 3;
+    private static final int REQ_BACKUP_CREATE = 4;
+    private static final int REQ_BACKUP_OPEN = 5;
 
     private Prefs prefs;
     private EditText keyField;
@@ -44,6 +46,7 @@ public class MainActivity extends Activity {
     private TextView status;
     private boolean askedNotifications;
     private EditText memoryField;
+    private TextView backupInfo;
     private Spinner voiceSpinner;
     private Spinner engineSpinner;
     private List<Voices.Engine> engines;
@@ -120,6 +123,33 @@ public class MainActivity extends Activity {
         memoryField.setTextColor(Color.WHITE);
         memoryField.setHintTextColor(0xFF607D8B);
         root.addView(memoryField);
+
+        root.addView(space(20));
+        root.addView(text("Sicherung", 16, Color.WHITE));
+        root.addView(text("Speichert Gedächtnis und Einstellungen in eine Datei auf deinem Handy (z. B. „Downloads“). "
+                + "Sie wird nach jeder Änderung automatisch aktualisiert und übersteht auch eine Deinstallation. "
+                + "Der API-Schlüssel wird aus Sicherheitsgründen nicht mitgespeichert.", 12, 0xFF90A4AE));
+        backupInfo = text("", 13, 0xFF7FE7FF);
+        root.addView(backupInfo);
+        updateBackupInfo();
+        Button backupCreate = button("Sicherung einrichten");
+        backupCreate.setOnClickListener(v -> {
+            save();
+            Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType("application/json")
+                    .putExtra(Intent.EXTRA_TITLE, Backup.FILE_NAME);
+            startActivityForResult(i, REQ_BACKUP_CREATE);
+        });
+        root.addView(backupCreate);
+        Button backupOpen = button("Sicherung wiederherstellen");
+        backupOpen.setOnClickListener(v -> {
+            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType("*/*");
+            startActivityForResult(i, REQ_BACKUP_OPEN);
+        });
+        root.addView(backupOpen);
 
         root.addView(space(20));
         buildVoiceSection(root);
@@ -352,6 +382,42 @@ public class MainActivity extends Activity {
         prefs.setModel(model);
         prefs.setTftMode(tftSwitch.isChecked());
         if (memoryField != null) prefs.setMemory(memoryField.getText().toString());
+        Backup.autoSave(this, prefs);
+    }
+
+    private void updateBackupInfo() {
+        if (backupInfo == null) return;
+        backupInfo.setText(prefs.backupUri().isEmpty()
+                ? "Noch keine Sicherung eingerichtet."
+                : "✓ Automatische Sicherung aktiv.");
+    }
+
+    /** Merkt sich die Datei dauerhaft als Sicherungsziel (Zugriff bleibt auch nach Neustarts erhalten). */
+    private void useAsBackupTarget(Uri uri) {
+        try {
+            getContentResolver().takePersistableUriPermission(uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            prefs.setBackupUri(uri.toString());
+        } catch (Exception e) {
+            prefs.setBackupUri("");
+        }
+        updateBackupInfo();
+    }
+
+    /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
+    private void refreshFromPrefs() {
+        memoryField.setText(prefs.memory());
+        modelField.setText(prefs.rawModel());
+        tftSwitch.setChecked(prefs.tftMode());
+        rateBar.setProgress(Math.round(prefs.rate() * 100) - 50);
+        pitchBar.setProgress(Math.round(prefs.pitch() * 100) - 50);
+        pauseBar.setProgress(Math.round(prefs.pauseMs() / 100f) - 5);
+        updateVoiceLabels();
+        String active = Voices.resolveEngine(this, prefs);
+        loadPreviewEngine(active); // zuerst laden, damit die Auswahl unten nichts zurücksetzt
+        for (int i = 0; i < engines.size(); i++) {
+            if (engines.get(i).pkg.equals(active)) engineSpinner.setSelection(i);
+        }
     }
 
     @Override
@@ -414,6 +480,24 @@ public class MainActivity extends Activity {
         if (requestCode == REQ_OVERLAY) {
             if (Settings.canDrawOverlays(this)) proceed();
             else setStatus("Ohne „Über anderen Apps anzeigen“ kann das J nicht erscheinen.");
+        } else if (requestCode == REQ_BACKUP_CREATE) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                useAsBackupTarget(data.getData());
+                boolean ok = Backup.write(this, prefs, data.getData());
+                setStatus(ok ? "✓ Sicherung eingerichtet. Sie aktualisiert sich ab jetzt automatisch."
+                        : "✗ Die Sicherungsdatei ließ sich nicht schreiben.");
+            }
+        } else if (requestCode == REQ_BACKUP_OPEN) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                try {
+                    int count = Backup.apply(prefs, Backup.read(this, data.getData()));
+                    useAsBackupTarget(data.getData()); // künftig in dieselbe Datei sichern
+                    refreshFromPrefs();
+                    setStatus("✓ Sicherung wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen.");
+                } catch (Exception e) {
+                    setStatus("✗ Das ist keine gültige Jarvis-Sicherung.");
+                }
+            }
         } else if (requestCode == REQ_PROJECTION) {
             if (resultCode == RESULT_OK && data != null) {
                 Intent svc = new Intent(this, JarvisService.class)

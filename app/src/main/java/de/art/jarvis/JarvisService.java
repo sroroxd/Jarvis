@@ -604,6 +604,7 @@ public class JarvisService extends Service {
         Memory.Outcome local = Memory.command(text, prefs.memory());
         if (local != null) {
             prefs.setMemory(local.memory);
+            Backup.autoSave(this, prefs);
             setState(State.IDLE);
             speak(local.reply);
             return;
@@ -660,6 +661,7 @@ public class JarvisService extends Service {
             public void onResult(String answer) {
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
                 prefs.setMemory(tagged.memory);
+                Backup.autoSave(JarvisService.this, prefs);
                 answer = Text.cleanForSpeech(tagged.reply);
                 if (answer.isEmpty()) answer = "Erledigt, Sir.";
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
