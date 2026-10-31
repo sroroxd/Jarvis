@@ -5,7 +5,9 @@ import android.content.SharedPreferences;
 
 /** Einstellungen: API-Schlüssel, Modell, TFT-Modus. Liegen nur privat auf dem Handy. */
 public final class Prefs {
-    public static final String DEFAULT_MODEL = "claude-sonnet-5-5";
+    /** Alltag: Haiku 5.5 – sehr günstig. TFT: Sonnet 5.5 – stärker bei Bildern und Strategie. */
+    public static final String DEFAULT_MODEL = "claude-haiku-5-5";
+    public static final String TFT_MODEL = "claude-sonnet-5-5";
     public static final String DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
 
     private final SharedPreferences sp;
@@ -36,7 +38,8 @@ public final class Prefs {
     public String model() {
         String m = rawModel();
         if (!m.isEmpty()) return m;
-        return isGemini() ? DEFAULT_GEMINI_MODEL : DEFAULT_MODEL;
+        if (isGemini()) return DEFAULT_GEMINI_MODEL;
+        return tftMode() ? TFT_MODEL : DEFAULT_MODEL;
     }
 
     public void setModel(String value) {
