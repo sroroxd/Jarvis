@@ -343,7 +343,13 @@ public class MainActivity extends Activity {
     private void save() {
         prefs.setApiKey(keyField.getText().toString());
         if (keyInfo != null) keyInfo.setText(prefs.apiKeyPreview());
-        prefs.setModel(modelField.getText().toString());
+        String model = modelField.getText().toString().trim();
+        if (!model.isEmpty() && !Prefs.isValidModel(model)) {
+            modelField.setText("");
+            model = "";
+            setStatus("„Modell“ enthielt keinen gültigen Namen und wurde geleert – Jarvis wählt automatisch.");
+        }
+        prefs.setModel(model);
         prefs.setTftMode(tftSwitch.isChecked());
         if (memoryField != null) prefs.setMemory(memoryField.getText().toString());
     }

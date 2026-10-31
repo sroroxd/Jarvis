@@ -57,6 +57,11 @@ public final class Prefs {
         return sp.getString("model", "").trim();
     }
 
+    /** Nur echte Modellnamen zählen („claude-…“ oder „gemini-…“) – Tippfehler wie „2“ werden ignoriert. */
+    public static boolean isValidModel(String m) {
+        return m != null && m.matches("(?i)(claude|gemini)-[a-z0-9.\\-]+");
+    }
+
     public void setModel(String value) {
         sp.edit().putString("model", value == null ? "" : value.trim()).apply();
     }
@@ -64,7 +69,7 @@ public final class Prefs {
     /** Eingetragenes Modell oder der passende Standard für den Anbieter. */
     public String model() {
         String m = rawModel();
-        if (!m.isEmpty()) return m;
+        if (isValidModel(m)) return m;
         if (isGemini()) return DEFAULT_GEMINI_MODEL;
         return tftMode() ? TFT_MODEL : DEFAULT_MODEL;
     }
