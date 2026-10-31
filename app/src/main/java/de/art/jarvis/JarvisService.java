@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
@@ -92,6 +93,7 @@ public class JarvisService extends Service {
     private WindowManager.LayoutParams bubbleLp;
     private WindowManager.LayoutParams panelLp;
     private long lastInteraction;
+    private boolean heardSomething;
 
     @Override
     public void onCreate() {
@@ -123,7 +125,12 @@ public class JarvisService extends Service {
             return START_NOT_STICKY;
         }
         if (ACTION_START.equals(action)) {
-            startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+            // Mikrofon-Typ ist nötig, damit Android Jarvis auch über anderen Apps zuhören lässt.
+            int types = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                types |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            }
+            startForeground(NOTIFICATION_ID, buildNotification(), types);
             running = true;
             if (projection == null) {
                 int code = intent.getIntExtra(EXTRA_CODE, 0);
@@ -350,10 +357,10 @@ public class JarvisService extends Service {
             return;
         }
         destroyRecognizer();
-        recognizer = SpeechRecognizer.createSpeechRecognizer(this);
+        recognizer = createRecognizer();
         recognizer.setRecognitionListener(new RecognitionListener() {
-            @Override public void onReadyForSpeech(Bundle params) { }
-            @Override public void onBeginningOfSpeech() { }
+            @Override public void onReadyForSpeech(Bundle params) { showPanel("Ich höre, Sir … sprich jetzt."); }
+            @Override public void onBeginningOfSpeech() { heardSomething = true; }
             @Override public void onRmsChanged(float rmsdB) { }
             @Override public void onBufferReceived(byte[] buffer) { }
             @Override public void onEndOfSpeech() { }
@@ -383,7 +390,9 @@ public class JarvisService extends Service {
                 main.post(JarvisService.this::destroyRecognizer);
                 setState(State.IDLE);
                 if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                    showPanel("Ich habe nichts verstanden.");
+                    showPanel(heardSomething
+                            ? "Ich habe dich gehört, aber nichts verstanden (Code " + error + ")."
+                            : "Ich habe gar nichts gehört (Code " + error + "). Ist das Mikrofon frei?");
                 } else {
                     showPanel("Spracherkennung meldet Fehler " + error + ". Tipp einfach nochmal auf mich.");
                 }
@@ -395,9 +404,22 @@ public class JarvisService extends Service {
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "de-DE");
         i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+        heardSomething = false;
         setState(State.LISTENING);
-        showPanel("Ich höre, Sir …");
+        showPanel("Einen Augenblick …");
         recognizer.startListening(i);
+    }
+
+    /** Bevorzugt Googles Spracherkennung – die von Samsung lehnt Anfragen anderer Apps oft ab. */
+    private SpeechRecognizer createRecognizer() {
+        ComponentName google = new ComponentName("com.google.android.googlequicksearchbox",
+                "com.google.android.voicesearch.serviceapi.GoogleRecognitionService");
+        try {
+            getPackageManager().getServiceInfo(google, 0);
+            return SpeechRecognizer.createSpeechRecognizer(this, google);
+        } catch (PackageManager.NameNotFoundException e) {
+            return SpeechRecognizer.createSpeechRecognizer(this);
+        }
     }
 
     private static String firstResult(Bundle b) {
