@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 /** Einstellungen: API-Schlüssel, Modell, TFT-Modus. Liegen nur privat auf dem Handy. */
 public final class Prefs {
     public static final String DEFAULT_MODEL = "claude-sonnet-5-5";
+    public static final String DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
 
     private final SharedPreferences sp;
 
@@ -21,9 +22,21 @@ public final class Prefs {
         sp.edit().putString("api_key", value == null ? "" : value.trim()).apply();
     }
 
+    /** Google-Schlüssel beginnen mit „AIza“, Anthropic-Schlüssel mit „sk-ant-“. */
+    public boolean isGemini() {
+        return apiKey().startsWith("AIza");
+    }
+
+    /** Eingetragenes Modell oder leer. */
+    public String rawModel() {
+        return sp.getString("model", "").trim();
+    }
+
+    /** Eingetragenes Modell oder der passende Standard für den Anbieter. */
     public String model() {
-        String m = sp.getString("model", "").trim();
-        return m.isEmpty() ? DEFAULT_MODEL : m;
+        String m = rawModel();
+        if (!m.isEmpty()) return m;
+        return isGemini() ? DEFAULT_GEMINI_MODEL : DEFAULT_MODEL;
     }
 
     public void setModel(String value) {

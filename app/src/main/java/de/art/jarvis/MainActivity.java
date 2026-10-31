@@ -57,9 +57,9 @@ public class MainActivity extends Activity {
         root.addView(subtitle);
 
         root.addView(space(24));
-        root.addView(text("Anthropic-API-Schlüssel", 14, Color.WHITE));
+        root.addView(text("API-Schlüssel (Gemini: AIza…, Claude: sk-ant-…)", 14, Color.WHITE));
         keyField = new EditText(this);
-        keyField.setHint("sk-ant-…");
+        keyField.setHint("Schlüssel einfügen");
         keyField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         keyField.setText(prefs.apiKey());
         keyField.setTextColor(Color.WHITE);
@@ -69,10 +69,9 @@ public class MainActivity extends Activity {
         root.addView(space(8));
         root.addView(text("Modell (leer lassen = Standard)", 14, Color.WHITE));
         modelField = new EditText(this);
-        modelField.setHint(Prefs.DEFAULT_MODEL);
+        modelField.setHint("automatisch");
         modelField.setSingleLine(true);
-        String storedModel = prefs.model();
-        modelField.setText(Prefs.DEFAULT_MODEL.equals(storedModel) ? "" : storedModel);
+        modelField.setText(prefs.rawModel());
         modelField.setTextColor(Color.WHITE);
         modelField.setHintTextColor(0xFF607D8B);
         root.addView(modelField);

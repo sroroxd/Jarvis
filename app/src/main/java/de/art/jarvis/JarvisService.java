@@ -80,6 +80,7 @@ public class JarvisService extends Service {
     private State state = State.IDLE;
     private Prefs prefs;
     private ClaudeClient claude;
+    private GeminiClient gemini;
     private WindowManager wm;
     private MediaProjection projection;
     private ScreenGrabber grabber;
@@ -97,6 +98,7 @@ public class JarvisService extends Service {
         super.onCreate();
         prefs = new Prefs(this);
         claude = new ClaudeClient();
+        gemini = new GeminiClient();
         wm = getSystemService(WindowManager.class);
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Jarvis", NotificationManager.IMPORTANCE_LOW));
@@ -464,7 +466,7 @@ public class JarvisService extends Service {
         }
 
         String system = Persona.system(prefs.tftMode(), image != null);
-        claude.send(key, prefs.model(), system, messages, new ClaudeClient.Callback() {
+        ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
                 if (answer.isEmpty()) answer = "Darauf habe ich gerade keine Antwort, Sir.";
@@ -478,7 +480,9 @@ public class JarvisService extends Service {
                 setState(State.IDLE);
                 say(message);
             }
-        });
+        };
+        if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
+        else claude.send(key, prefs.model(), system, messages, callback);
     }
 
     private void remember(String role, String text) {

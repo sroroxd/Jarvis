@@ -11,7 +11,9 @@ Jede Änderung am Code baut automatisch eine neue APK. Sie lässt sich direkt ü
 ## Einrichten
 
 1. APK auf dem Handy öffnen und installieren („Aus dieser Quelle erlauben“ bestätigen).
-2. Jarvis öffnen, Anthropic-API-Schlüssel eintragen (console.anthropic.com → API Keys).
+2. Jarvis öffnen und einen API-Schlüssel eintragen – Jarvis erkennt den Anbieter automatisch:
+   - **Gemini (kostenlos):** aistudio.google.com → Get API key (beginnt mit `AIza`)
+   - **Claude:** console.anthropic.com → API Keys (beginnt mit `sk-ant-`)
 3. **Jarvis starten** → Mikrofon, Mitteilungen und „Über anderen Apps anzeigen“ erlauben.
 4. Bei der Bildschirmfreigabe **Gesamter Bildschirm** wählen.
 5. Optional: Seitentaste → Zweimal drücken → App öffnen → **Jarvis sprechen**.
