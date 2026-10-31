@@ -91,7 +91,9 @@ final class ClaudeClient {
             // Kein JSON – dann bleibt nur der Statuscode.
         }
         String lower = detail.toLowerCase();
-        if (code == 401) return "Der API-Schlüssel wird abgelehnt. Bitte prüfe ihn in der Jarvis-App.";
+        if (code == 401) return "Der API-Schlüssel wird abgelehnt" + (detail.isEmpty() ? "." : " (" + detail + ").")
+                + " Bitte in der Jarvis-App mit „Schlüssel testen“ prüfen.";
+        if (code == 403) return "Der Schlüssel hat keine Berechtigung" + (detail.isEmpty() ? "." : ": " + detail);
         if (lower.contains("credit") || lower.contains("balance")) return "Das API-Guthaben ist aufgebraucht. Bitte in der Anthropic-Konsole aufladen.";
         if (code == 404 || lower.contains("model")) return "Das eingestellte Modell ist nicht verfügbar. Fehler " + code + ": " + detail;
         if (code == 429) return "Zu viele Anfragen in kurzer Zeit. Versuch es gleich noch einmal.";

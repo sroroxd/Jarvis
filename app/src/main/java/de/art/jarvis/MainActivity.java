@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
 
     private Prefs prefs;
     private EditText keyField;
+    private TextView keyInfo;
     private EditText modelField;
     private Switch tftSwitch;
     private TextView status;
@@ -85,6 +86,11 @@ public class MainActivity extends Activity {
         keyField.setTextColor(Color.WHITE);
         keyField.setHintTextColor(0xFF607D8B);
         root.addView(keyField);
+        keyInfo = text(prefs.apiKeyPreview(), 12, 0xFF90A4AE);
+        root.addView(keyInfo);
+        Button testKey = button("Schlüssel testen");
+        testKey.setOnClickListener(v -> testKey());
+        root.addView(testKey);
 
         root.addView(space(8));
         root.addView(text("Modell (leer lassen = Standard)", 14, Color.WHITE));
@@ -305,8 +311,38 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
+    private void testKey() {
+        save();
+        if (prefs.apiKey().isEmpty()) {
+            setStatus("Bitte zuerst einen Schlüssel einfügen.");
+            return;
+        }
+        setStatus("Teste Schlüssel …");
+        org.json.JSONArray messages = new org.json.JSONArray();
+        try {
+            messages.put(new org.json.JSONObject().put("role", "user").put("content", "Antworte nur mit: OK"));
+        } catch (org.json.JSONException ignored) {
+            return;
+        }
+        ClaudeClient.Callback cb = new ClaudeClient.Callback() {
+            @Override
+            public void onResult(String text) {
+                setStatus("✓ Schlüssel funktioniert (Modell " + prefs.model() + ").");
+            }
+
+            @Override
+            public void onError(String message) {
+                setStatus("✗ " + message);
+            }
+        };
+        if (prefs.isGemini()) new GeminiClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+        else new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+    }
+
     private void save() {
         prefs.setApiKey(keyField.getText().toString());
+        if (keyInfo != null) keyInfo.setText(prefs.apiKeyPreview());
         prefs.setModel(modelField.getText().toString());
         prefs.setTftMode(tftSwitch.isChecked());
         if (memoryField != null) prefs.setMemory(memoryField.getText().toString());
