@@ -41,6 +41,10 @@ public final class Prefs {
         return sp.getString("model", "").trim();
     }
 
+    public void setModel(String value) {
+        sp.edit().putString("model", value == null ? "" : value.trim()).apply();
+    }
+
     /** Eingetragenes Modell oder der passende Standard für den Anbieter. */
     public String model() {
         String m = rawModel();
