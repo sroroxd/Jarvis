@@ -44,6 +44,11 @@ public class MainActivity extends Activity {
     private boolean askedNotifications;
     private EditText memoryField;
     private Spinner voiceSpinner;
+    private Spinner engineSpinner;
+    private List<Voices.Engine> engines;
+    private String previewEngine;
+    private SeekBar pauseBar;
+    private TextView pauseLabel;
     private SeekBar pitchBar;
     private SeekBar rateBar;
     private TextView pitchLabel;
@@ -135,10 +140,11 @@ public class MainActivity extends Activity {
         root.addView(space(24));
         root.addView(text("So nutzt du Jarvis", 16, Color.WHITE));
         root.addView(text(
-                "• Tippe auf das schwebende J und sprich. Jarvis sieht dabei deinen Bildschirm.\n"
+                "• Tippe auf das schwebende J und sprich. Du kannst Pausen machen – Jarvis schickt erst ab, wenn du fertig bist. Sofort abschicken: nochmal aufs J tippen.\n"
                         + "• Farbe des J: blau = bereit, rot = hört zu, orange = denkt, grün = spricht.\n"
                         + "• Während Jarvis spricht: aufs J tippen = unterbrechen und neu fragen.\n"
                         + "• J lange drücken = neues Gespräch. J lässt sich frei verschieben.\n"
+                        + "• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n"
                         + "• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n"
                         + "• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen.",
                 14, 0xFFB0C4D0));
@@ -153,9 +159,46 @@ public class MainActivity extends Activity {
 
     private void buildVoiceSection(LinearLayout root) {
         root.addView(text("Stimme", 16, Color.WHITE));
-        root.addView(text("Wähle eine Stimme und hör sie dir an. ★ = hohe Qualität.", 12, 0xFF90A4AE));
+        root.addView(text("Standard: Alan (britisches Englisch) aus SherpaTTS, Tempo 0,9. "
+                + "Engine und Stimme wählen, dann „Probe hören“.", 12, 0xFF90A4AE));
+
+        root.addView(text("Sprachausgabe-Engine", 14, Color.WHITE));
+        engineSpinner = new Spinner(this);
+        root.addView(engineSpinner);
+        engines = Voices.engines(this);
+        List<String> engineLabels = new ArrayList<>();
+        String activeEngine = Voices.resolveEngine(this, prefs);
+        int engineIndex = 0;
+        for (int i = 0; i < engines.size(); i++) {
+            engineLabels.add(engines.get(i).label);
+            if (engines.get(i).pkg.equals(activeEngine)) engineIndex = i;
+        }
+        if (engineLabels.isEmpty()) engineLabels.add("Systemstandard");
+        engineSpinner.setAdapter(adapter(engineLabels));
+        engineSpinner.setSelection(engineIndex);
+        engineSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
+                if (position >= engines.size()) return;
+                String pkg = engines.get(position).pkg;
+                if (pkg.equals(previewEngine)) return; // keine Änderung (z. B. beim ersten Anzeigen)
+                prefs.setEngine(pkg);
+                prefs.setVoiceName(""); // neue Engine → wieder automatisch wählen
+                loadPreviewEngine(pkg);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) { }
+        });
+
+        root.addView(text("Stimme", 14, Color.WHITE));
         voiceSpinner = new Spinner(this);
         root.addView(voiceSpinner);
+
+        rateLabel = text("", 14, Color.WHITE);
+        root.addView(rateLabel);
+        rateBar = new SeekBar(this);
+        rateBar.setMax(100); // 0,50 … 1,50
+        rateBar.setProgress(Math.round(prefs.rate() * 100) - 50);
+        root.addView(rateBar);
 
         pitchLabel = text("", 14, Color.WHITE);
         root.addView(pitchLabel);
@@ -164,12 +207,12 @@ public class MainActivity extends Activity {
         pitchBar.setProgress(Math.round(prefs.pitch() * 100) - 50);
         root.addView(pitchBar);
 
-        rateLabel = text("", 14, Color.WHITE);
-        root.addView(rateLabel);
-        rateBar = new SeekBar(this);
-        rateBar.setMax(100); // 0,60 … 1,60
-        rateBar.setProgress(Math.round(prefs.rate() * 100) - 60);
-        root.addView(rateBar);
+        pauseLabel = text("", 14, Color.WHITE);
+        root.addView(pauseLabel);
+        pauseBar = new SeekBar(this);
+        pauseBar.setMax(30); // 0,5 … 3,5 Sekunden
+        pauseBar.setProgress(Math.round(prefs.pauseMs() / 100f) - 5);
+        root.addView(pauseBar);
         updateVoiceLabels();
 
         SeekBar.OnSeekBarChangeListener l = new SeekBar.OnSeekBarChangeListener() {
@@ -177,8 +220,9 @@ public class MainActivity extends Activity {
             @Override public void onStartTrackingTouch(SeekBar s) { }
             @Override public void onStopTrackingTouch(SeekBar s) { saveVoice(); }
         };
-        pitchBar.setOnSeekBarChangeListener(l);
         rateBar.setOnSeekBarChangeListener(l);
+        pitchBar.setOnSeekBarChangeListener(l);
+        pauseBar.setOnSeekBarChangeListener(l);
 
         Button preview = button("Probe hören");
         preview.setOnClickListener(v -> {
@@ -187,30 +231,39 @@ public class MainActivity extends Activity {
                 setStatus("Sprachausgabe lädt noch …");
                 return;
             }
-            Voices.apply(previewTts, prefs);
+            Voices.apply(previewTts, prefs, previewEngine);
             previewTts.speak("Guten Abend, Sir. Alle Systeme sind einsatzbereit.",
                     TextToSpeech.QUEUE_FLUSH, null, "preview");
         });
         root.addView(preview);
 
-        previewTts = Voices.create(this, status -> {
+        loadPreviewEngine(activeEngine);
+    }
+
+    /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */
+    private void loadPreviewEngine(String engine) {
+        if (previewTts != null) previewTts.shutdown();
+        previewReady = false;
+        previewEngine = engine;
+        voiceSpinner.setAdapter(adapter(java.util.Collections.singletonList("Stimmen werden geladen …")));
+        final TextToSpeech[] holder = new TextToSpeech[1];
+        holder[0] = Voices.create(this, engine, status -> {
+            if (holder[0] != previewTts) return;
             if (status != TextToSpeech.SUCCESS) {
-                setStatus("Keine Sprachausgabe gefunden.");
+                setStatus("Diese Sprachausgabe startet nicht. Bitte eine andere Engine wählen.");
                 return;
             }
             previewReady = true;
-            previewTts.setLanguage(java.util.Locale.GERMANY);
-            voices = Voices.german(previewTts);
+            voices = Voices.list(previewTts);
+            Voice chosen = Voices.choose(previewTts, prefs, engine);
             List<String> labels = new ArrayList<>();
             int selected = 0;
             for (int i = 0; i < voices.size(); i++) {
-                labels.add(Voices.label(voices.get(i), i));
-                if (voices.get(i).getName().equals(prefs.voiceName())) selected = i;
+                labels.add(Voices.label(voices.get(i)));
+                if (chosen != null && voices.get(i).getName().equals(chosen.getName())) selected = i;
             }
-            if (labels.isEmpty()) labels.add("Standardstimme");
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, labels);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            voiceSpinner.setAdapter(adapter);
+            if (labels.isEmpty()) labels.add("Standardstimme der Engine");
+            voiceSpinner.setAdapter(adapter(labels));
             voiceSpinner.setSelection(selected);
             voiceSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
@@ -220,18 +273,30 @@ public class MainActivity extends Activity {
                 @Override public void onNothingSelected(AdapterView<?> parent) { }
             });
         });
+        previewTts = holder[0];
+    }
+
+    private ArrayAdapter<String> adapter(List<String> labels) {
+        ArrayAdapter<String> a = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, labels);
+        a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        return a;
     }
 
     private void updateVoiceLabels() {
+        rateLabel.setText(String.format(java.util.Locale.GERMANY, "Tempo: %.2f", (rateBar.getProgress() + 50) / 100f));
         pitchLabel.setText(String.format(java.util.Locale.GERMANY, "Tonhöhe: %.2f (kleiner = tiefer)", (pitchBar.getProgress() + 50) / 100f));
-        rateLabel.setText(String.format(java.util.Locale.GERMANY, "Tempo: %.2f", (rateBar.getProgress() + 60) / 100f));
+        pauseLabel.setText(String.format(java.util.Locale.GERMANY,
+                "Sprechpause bis zum Absenden: %.1f s (länger = mehr Zeit zum Ausreden)", (pauseBar.getProgress() + 5) / 10f));
     }
 
     private void saveVoice() {
+        prefs.setRate((rateBar.getProgress() + 50) / 100f);
         prefs.setPitch((pitchBar.getProgress() + 50) / 100f);
-        prefs.setRate((rateBar.getProgress() + 60) / 100f);
+        prefs.setPauseMs((pauseBar.getProgress() + 5) * 100);
         int pos = voiceSpinner.getSelectedItemPosition();
-        if (voices != null && pos >= 0 && pos < voices.size()) prefs.setVoiceName(voices.get(pos).getName());
+        if (previewReady && voices != null && pos >= 0 && pos < voices.size()) {
+            prefs.setVoiceName(voices.get(pos).getName());
+        }
     }
 
     @Override

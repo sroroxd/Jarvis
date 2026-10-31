@@ -56,7 +56,9 @@ final class GeminiClient {
                 body.put("systemInstruction", new JSONObject()
                         .put("parts", new JSONArray().put(new JSONObject().put("text", system))));
                 body.put("contents", toContents(messages));
-                body.put("generationConfig", new JSONObject().put("maxOutputTokens", 1024));
+                body.put("generationConfig", new JSONObject()
+                        .put("maxOutputTokens", 1024)
+                        .put("temperature", 0.3));
                 byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
 
                 conn = (HttpURLConnection) new URL(BASE + model + ":generateContent").openConnection();

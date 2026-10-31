@@ -3,12 +3,19 @@ package de.art.jarvis;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-/** Einstellungen: API-Schlüssel, Modell, TFT-Modus. Liegen nur privat auf dem Handy. */
+/** Einstellungen. Liegen nur privat auf dem Handy und überstehen Neustarts. */
 public final class Prefs {
     /** Alltag: Haiku 5.5 – sehr günstig. TFT: Sonnet 5.5 – stärker bei Bildern und Strategie. */
     public static final String DEFAULT_MODEL = "claude-haiku-5-5";
     public static final String TFT_MODEL = "claude-sonnet-5-5";
     public static final String DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
+
+    /** Standardstimme: Alan (britisches Englisch, Piper „medium“) aus SherpaTTS, Tempo 0,9. */
+    public static final String DEFAULT_VOICE_HINT = "alan";
+    public static final float DEFAULT_RATE = 0.9f;
+    public static final float DEFAULT_PITCH = 1.0f;
+    /** Wartezeit nach einer Sprechpause, bevor Jarvis die Frage abschickt. */
+    public static final int DEFAULT_PAUSE_MS = 1800;
 
     private final SharedPreferences sp;
 
@@ -42,36 +49,56 @@ public final class Prefs {
         return tftMode() ? TFT_MODEL : DEFAULT_MODEL;
     }
 
-    public void setModel(String value) {
-        sp.edit().putString("model", value == null ? "" : value.trim()).apply();
+    // ------------------------------------------------------------ Stimme
+    // Neue Schlüssel („…_v2“), damit die neuen Standards auch bei bestehender Installation greifen.
+
+    /** Paketname der Sprachausgabe-Engine; leer = automatisch (SherpaTTS bevorzugt). */
+    public String engine() {
+        return sp.getString("engine_v2", "");
     }
 
+    public void setEngine(String value) {
+        sp.edit().putString("engine_v2", value == null ? "" : value).apply();
+    }
+
+    /** Name der gewählten Stimme; leer = automatisch (Alan bevorzugt). */
     public String voiceName() {
-        return sp.getString("voice", "");
+        return sp.getString("voice_v2", "");
     }
 
     public void setVoiceName(String value) {
-        sp.edit().putString("voice", value == null ? "" : value).apply();
+        sp.edit().putString("voice_v2", value == null ? "" : value).apply();
     }
 
-    /** Tonhöhe: 1.0 = normal, kleiner = tiefer. Standard leicht tiefer für den Jarvis-Klang. */
     public float pitch() {
-        return sp.getFloat("pitch", 0.9f);
+        return sp.getFloat("pitch_v2", DEFAULT_PITCH);
     }
 
     public void setPitch(float value) {
-        sp.edit().putFloat("pitch", value).apply();
+        sp.edit().putFloat("pitch_v2", value).apply();
     }
 
     public float rate() {
-        return sp.getFloat("rate", 1.0f);
+        return sp.getFloat("rate_v2", DEFAULT_RATE);
     }
 
     public void setRate(float value) {
-        sp.edit().putFloat("rate", value).apply();
+        sp.edit().putFloat("rate_v2", value).apply();
     }
 
-    /** Dauerhaftes Gedächtnis: ein Fakt pro Zeile. */
+    // ------------------------------------------------------------ Zuhören
+
+    public int pauseMs() {
+        return sp.getInt("pause_ms", DEFAULT_PAUSE_MS);
+    }
+
+    public void setPauseMs(int value) {
+        sp.edit().putInt("pause_ms", value).apply();
+    }
+
+    // ------------------------------------------------------------ Gedächtnis
+
+    /** Dauerhaftes Gedächtnis: ein Fakt pro Zeile („- …“). */
     public String memory() {
         return sp.getString("memory", "").trim();
     }

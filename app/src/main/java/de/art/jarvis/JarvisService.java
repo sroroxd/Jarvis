@@ -93,6 +93,22 @@ public class JarvisService extends Service {
     private long lastInteraction;
     private boolean heardSomething;
     private boolean panelExpanded;
+    private String ttsEngine;
+    private String pendingSpeech;
+    private final StringBuilder utterance = new StringBuilder();
+    private boolean finishRequested;
+    /** Nach der Sprechpause ist niemand mehr zu hören → abschicken. */
+    private final Runnable pauseElapsed = () -> {
+        if (state != State.LISTENING) return;
+        if (recognizer != null) {
+            try {
+                recognizer.cancel();
+            } catch (Exception ignored) {
+                // egal
+            }
+        }
+        finishListening();
+    };
     private static final int COMPACT_LINES = 3;
 
     @Override
@@ -104,17 +120,42 @@ public class JarvisService extends Service {
         wm = getSystemService(WindowManager.class);
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Jarvis", NotificationManager.IMPORTANCE_LOW));
-        tts = Voices.create(this, status -> {
-            if (status != TextToSpeech.SUCCESS) return;
-            int result = tts.setLanguage(Locale.GERMANY);
-            ttsReady = result >= TextToSpeech.LANG_AVAILABLE;
-            Voices.apply(tts, prefs);
+        initTts(Voices.resolveEngine(this, prefs));
+    }
+
+    /** Startet die Sprachausgabe mit der gewählten Engine (z. B. SherpaTTS für „Alan“). */
+    private void initTts(String engine) {
+        if (tts != null) {
+            try {
+                tts.stop();
+                tts.shutdown();
+            } catch (Exception ignored) {
+                // alte Instanz bereits weg
+            }
+        }
+        ttsReady = false;
+        ttsEngine = engine;
+        final TextToSpeech[] holder = new TextToSpeech[1];
+        holder[0] = Voices.create(this, engine, status -> {
+            if (holder[0] != tts) return; // veraltete Instanz
+            if (status != TextToSpeech.SUCCESS) {
+                if (engine != null) initTts(null); // Engine streikt → Systemstandard
+                return;
+            }
+            ttsReady = true;
+            Voices.apply(tts, prefs, engine);
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) { }
                 @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
                 @Override public void onError(String id) { main.post(JarvisService.this::onSpeechFinished); }
             });
+            if (pendingSpeech != null) {
+                String text = pendingSpeech;
+                pendingSpeech = null;
+                speakNow(text);
+            }
         });
+        tts = holder[0];
     }
 
     @Override
@@ -342,7 +383,15 @@ public class JarvisService extends Service {
     private void onBubbleTap() {
         switch (state) {
             case LISTENING:
-                if (recognizer != null) recognizer.stopListening();
+                // Antippen beim Zuhören = „fertig, abschicken“.
+                finishRequested = true;
+                if (recognizer != null) {
+                    recognizer.stopListening();
+                    main.removeCallbacks(pauseElapsed);
+                    main.postDelayed(pauseElapsed, 2500); // Sicherheitsnetz
+                } else {
+                    finishListening();
+                }
                 break;
             case THINKING:
                 showPanel("Einen Moment, Sir – ich denke noch nach …");
@@ -372,11 +421,43 @@ public class JarvisService extends Service {
             showPanel("Auf diesem Handy ist keine Spracherkennung verfügbar.");
             return;
         }
-        destroyRecognizer();
-        recognizer = createRecognizer();
-        recognizer.setRecognitionListener(new RecognitionListener() {
-            @Override public void onReadyForSpeech(Bundle params) { showPanel("Ich höre, Sir … sprich jetzt."); }
-            @Override public void onBeginningOfSpeech() { heardSomething = true; }
+        utterance.setLength(0);
+        finishRequested = false;
+        heardSomething = false;
+        setState(State.LISTENING);
+        showPanel("Einen Augenblick …");
+        beginRecognition();
+    }
+
+    /**
+     * Ein Erkennungsdurchgang. Nach jedem erkannten Satzteil startet sofort der nächste,
+     * damit Art Pausen machen kann. Abgeschickt wird erst, wenn nach einem Satzteil
+     * prefs.pauseMs() lang niemand spricht – oder wenn Art aufs J tippt.
+     */
+    private void beginRecognition() {
+        releaseRecognizer();
+        final SpeechRecognizer current = createRecognizer();
+        recognizer = current;
+        current.setRecognitionListener(new RecognitionListener() {
+            @Override
+            public void onReadyForSpeech(Bundle params) {
+                if (current != recognizer) return;
+                if (utterance.length() == 0) {
+                    showPanel("Ich höre, Sir … sprich jetzt.");
+                } else {
+                    showPanel(utterance + " …");
+                    main.removeCallbacks(pauseElapsed);
+                    main.postDelayed(pauseElapsed, prefs.pauseMs());
+                }
+            }
+
+            @Override
+            public void onBeginningOfSpeech() {
+                if (current != recognizer) return;
+                heardSomething = true;
+                if (!finishRequested) main.removeCallbacks(pauseElapsed);
+            }
+
             @Override public void onRmsChanged(float rmsdB) { }
             @Override public void onBufferReceived(byte[] buffer) { }
             @Override public void onEndOfSpeech() { }
@@ -384,26 +465,42 @@ public class JarvisService extends Service {
 
             @Override
             public void onPartialResults(Bundle partial) {
+                if (current != recognizer) return;
                 String text = firstResult(partial);
-                if (!text.isEmpty()) showPanel(text + " …");
+                if (!text.isEmpty()) showPanel(joined(text) + " …");
             }
 
             @Override
             public void onResults(Bundle results) {
+                if (current != recognizer) return;
+                main.removeCallbacks(pauseElapsed);
                 String text = firstResult(results);
-                main.post(JarvisService.this::destroyRecognizer);
-                if (text.isEmpty()) {
-                    setState(State.IDLE);
-                    showPanel("Ich habe nichts verstanden.");
-                    main.postDelayed(hidePanel, 3000);
-                } else {
-                    handleUtterance(text);
+                if (!text.isEmpty()) {
+                    if (utterance.length() > 0) utterance.append(' ');
+                    utterance.append(text);
                 }
+                releaseRecognizer();
+                if (finishRequested || utterance.length() > 1500) {
+                    finishListening();
+                    return;
+                }
+                // Weiterhören – vielleicht war es nur eine Denkpause.
+                main.postDelayed(() -> {
+                    if (state != State.LISTENING) return;
+                    if (finishRequested) finishListening();
+                    else beginRecognition();
+                }, 150);
             }
 
             @Override
             public void onError(int error) {
-                main.post(JarvisService.this::destroyRecognizer);
+                if (current != recognizer) return;
+                main.removeCallbacks(pauseElapsed);
+                releaseRecognizer();
+                if (utterance.length() > 0) {
+                    finishListening(); // Stille nach dem Sprechen = fertig
+                    return;
+                }
                 setState(State.IDLE);
                 if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
                     showPanel(heardSomething
@@ -420,10 +517,57 @@ public class JarvisService extends Service {
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "de-DE");
         i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-        heardSomething = false;
-        setState(State.LISTENING);
-        showPanel("Einen Augenblick …");
-        recognizer.startListening(i);
+        // Längere Pausen erlauben (nicht jede Spracherkennung beachtet das – daher zusätzlich das Weiterhören oben).
+        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L);
+        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L);
+        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 2000L);
+        try {
+            current.startListening(i);
+        } catch (Exception e) {
+            releaseRecognizer();
+            if (utterance.length() > 0) {
+                finishListening();
+            } else {
+                setState(State.IDLE);
+                showPanel("Spracherkennung konnte nicht starten. Tipp nochmal auf mich.");
+            }
+        }
+    }
+
+    private String joined(String partial) {
+        return utterance.length() == 0 ? partial : utterance + " " + partial;
+    }
+
+    /** Alles Gesagte zusammen abschicken. */
+    private void finishListening() {
+        main.removeCallbacks(pauseElapsed);
+        releaseRecognizer();
+        if (state != State.LISTENING) return;
+        String text = utterance.toString().trim();
+        utterance.setLength(0);
+        finishRequested = false;
+        if (text.isEmpty()) {
+            setState(State.IDLE);
+            showPanel("Ich habe nichts verstanden.");
+            main.postDelayed(hidePanel, 3000);
+            return;
+        }
+        handleUtterance(text);
+    }
+
+    /** Gibt den aktuellen Erkenner frei, ohne einen gerade neu gestarteten zu treffen. */
+    private void releaseRecognizer() {
+        final SpeechRecognizer r = recognizer;
+        recognizer = null;
+        if (r != null) {
+            main.post(() -> {
+                try {
+                    r.destroy();
+                } catch (Exception ignored) {
+                    // bereits freigegeben
+                }
+            });
+        }
     }
 
     /** Bevorzugt Googles Spracherkennung – die von Samsung lehnt Anfragen anderer Apps oft ab. */
@@ -457,6 +601,13 @@ public class JarvisService extends Service {
     }
 
     private void handleUtterance(String text) {
+        // „Merk dir …“ / „Vergiss …“ erledigt die App selbst – zuverlässig und ohne Kosten.
+        String local = Memory.handleCommand(text, prefs);
+        if (local != null) {
+            setState(State.IDLE);
+            speak(local);
+            return;
+        }
         String key = prefs.apiKey();
         if (key.isEmpty()) {
             setState(State.IDLE);
@@ -507,7 +658,7 @@ public class JarvisService extends Service {
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
-                answer = Memory.apply(answer, prefs);
+                answer = cleanForSpeech(Memory.applyTags(answer, prefs));
                 if (answer.isEmpty()) answer = "Erledigt, Sir.";
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", answer);
@@ -543,18 +694,44 @@ public class JarvisService extends Service {
     }
 
     private void speak(String text) {
-        showPanel(text);
-        if (!ttsReady) {
-            setState(State.IDLE);
-            main.postDelayed(hidePanel, 15000);
+        String clean = cleanForSpeech(text);
+        showPanel(clean);
+        // Wurde in den Einstellungen eine andere Engine gewählt? Dann neu starten und danach sprechen.
+        String engineNow = Voices.resolveEngine(this, prefs);
+        boolean engineChanged = engineNow == null ? ttsEngine != null : !engineNow.equals(ttsEngine);
+        if (engineChanged || !ttsReady) {
+            pendingSpeech = clean;
+            setState(State.SPEAKING);
+            if (engineChanged) initTts(engineNow);
+            main.postDelayed(() -> {
+                if (pendingSpeech != null) { // Sprachausgabe kam nicht hoch
+                    pendingSpeech = null;
+                    setState(State.IDLE);
+                    main.postDelayed(hidePanel, 15000);
+                }
+            }, 6000);
             return;
         }
-        String clean = text.replaceAll("[*#_`>]", "").trim();
+        speakNow(clean);
+    }
+
+    private void speakNow(String clean) {
         int max = TextToSpeech.getMaxSpeechInputLength() - 1;
-        if (clean.length() > max) clean = clean.substring(0, max);
+        String text = clean.length() > max ? clean.substring(0, max) : clean;
         setState(State.SPEAKING);
-        Voices.apply(tts, prefs); // Änderungen aus den Einstellungen sofort übernehmen
-        tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "jarvis-" + System.nanoTime());
+        Voices.apply(tts, prefs, ttsEngine); // Änderungen aus den Einstellungen sofort übernehmen
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis-" + System.nanoTime());
+    }
+
+    /** Entfernt alles, was beim Vorlesen stört: Markdown, Aufzählungszeichen, Nummerierungen, Emojis. */
+    static String cleanForSpeech(String s) {
+        if (s == null) return "";
+        String t = s.replaceAll("(?m)^\\s*(?:[-*•–]|\\d+[.)])\\s+", "");
+        t = t.replaceAll("[*#_`>~|]", "");
+        t = t.replaceAll("[\\x{1F000}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{2B00}-\\x{2BFF}\\x{FE0F}\\x{200D}]", "");
+        t = t.replaceAll("([^.!?:;,\\s])\\s*\\n+\\s*", "$1. ");
+        t = t.replaceAll("\\s*\\n+\\s*", " ");
+        return t.replaceAll(" {2,}", " ").trim();
     }
 
     private void onSpeechFinished() {

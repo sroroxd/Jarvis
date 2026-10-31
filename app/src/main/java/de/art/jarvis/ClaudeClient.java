@@ -33,7 +33,8 @@ final class ClaudeClient {
             try {
                 JSONObject body = new JSONObject();
                 body.put("model", model);
-                body.put("max_tokens", 1024);
+                body.put("max_tokens", 400);
+                body.put("temperature", 0.3); // nüchtern statt kreativ: weniger Erfundenes
                 body.put("system", system);
                 body.put("messages", messages);
                 byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
