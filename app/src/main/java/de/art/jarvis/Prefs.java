@@ -10,8 +10,12 @@ public final class Prefs {
     public static final String TFT_MODEL = "claude-sonnet-5-5";
     public static final String DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
 
-    /** Standardstimme: Alan (britisches Englisch, Piper „medium“) aus SherpaTTS, Tempo 0,9. */
-    public static final String DEFAULT_VOICE_HINT = "alan";
+    /**
+     * Standard-Stimmen für die Handy-Sprachausgabe, in dieser Reihenfolge gesucht:
+     * Thorsten (deutsch, männlich) → Miro (deutsch, männlich) → Alan (britisch, Notlösung).
+     * Premium (ElevenLabs „Daniel“) hat Vorrang, sobald ein ElevenLabs-Schlüssel eingetragen ist.
+     */
+    public static final String[] DEFAULT_VOICE_HINTS = {"thorsten", "miro", "alan"};
     public static final float DEFAULT_RATE = 0.9f;
     public static final float DEFAULT_PITCH = 1.0f;
     /** Wartezeit nach einer Sprechpause, bevor Jarvis die Frage abschickt. */
@@ -73,13 +77,13 @@ public final class Prefs {
         sp.edit().putString("engine_v2", value == null ? "" : value).apply();
     }
 
-    /** Name der gewählten Stimme; leer = automatisch (Alan bevorzugt). */
+    /** Name der gewählten Stimme; leer = automatisch (siehe DEFAULT_VOICE_HINTS). */
     public String voiceName() {
-        return sp.getString("voice_v2", "");
+        return sp.getString("voice_v3", "");
     }
 
     public void setVoiceName(String value) {
-        sp.edit().putString("voice_v2", value == null ? "" : value).apply();
+        sp.edit().putString("voice_v3", value == null ? "" : value).apply();
     }
 
     public float pitch() {

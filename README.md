@@ -37,7 +37,7 @@ Jede Änderung am Code wird automatisch getestet und als neue APK veröffentlich
 
 **Premium (empfohlen, am nächsten am Film-Jarvis):** ElevenLabs-Schlüssel in der App eintragen. Standardstimme ist „Daniel“ (britisch, tief, ruhig), die mit dem Modell *Multilingual v2* Deutsch mit leichtem britischem Einschlag spricht. Alternativ in ElevenLabs unter *Voice Design* eine eigene Stimme beschreiben und deren ID eintragen. Fällt ElevenLabs aus oder ist das Kontingent leer, spricht Jarvis automatisch mit der Handy-Stimme weiter. Der ElevenLabs-Schlüssel wird nicht in die Sicherungsdatei geschrieben.
 
-**Handy-Stimme:** Standard ist **Alan** (britisches Englisch, Piper „medium“) aus **SherpaTTS** mit Tempo 0,9. Engine, Stimme, Tempo, Tonhöhe und Sprechpause sind in der App einstellbar („Probe hören“). Alan ist eine englische Stimme und liest deutsche Antworten mit englischer Aussprache; für reines Deutsch eine deutsche SherpaTTS-Stimme wählen.
+**Handy-Stimme (offline):** Jarvis sucht automatisch in dieser Reihenfolge: **Thorsten** (deutsch, männlich) → **Miro** (deutsch, männlich) → **Alan** (britisch). Deutsche Stimmen dafür in SherpaTTS herunterladen (z. B. „de_DE thorsten high“). Früherer Standard war **Alan** (britisches Englisch, Piper „medium“) aus **SherpaTTS** mit Tempo 0,9. Engine, Stimme, Tempo, Tonhöhe und Sprechpause sind in der App einstellbar („Probe hören“). Alan ist eine englische Stimme und liest deutsche Antworten mit englischer Aussprache; für reines Deutsch eine deutsche SherpaTTS-Stimme wählen.
 
 ## Projektaufbau
 

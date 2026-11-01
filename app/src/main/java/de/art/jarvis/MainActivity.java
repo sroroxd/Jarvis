@@ -198,8 +198,9 @@ public class MainActivity extends Activity {
 
     private void buildVoiceSection(LinearLayout root) {
         root.addView(text("Stimme", 16, Color.WHITE));
-        root.addView(text("Standard: Alan (britisches Englisch) aus SherpaTTS, Tempo 0,9. "
-                + "Engine und Stimme wählen, dann „Probe hören“.", 12, 0xFF90A4AE));
+        root.addView(text("Standard: mit ElevenLabs-Schlüssel „Daniel“ (unten). Sonst offline über SherpaTTS: "
+                + "Thorsten → Miro → Alan, Tempo 0,9. Deutsche Stimmen vorher in SherpaTTS herunterladen. "
+                + "Eigene Auswahl hat immer Vorrang – „Probe hören“ zum Vergleichen.", 12, 0xFF90A4AE));
 
         root.addView(text("Sprachausgabe-Engine", 14, Color.WHITE));
         engineSpinner = new Spinner(this);

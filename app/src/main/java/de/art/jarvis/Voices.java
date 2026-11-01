@@ -107,8 +107,8 @@ final class Voices {
     }
 
     /**
-     * Die zu nutzende Stimme: gespeicherte Wahl → „Alan“ → britisch-englische Stimme
-     * (nur bei SherpaTTS, dort ist es das Alan-Modell) → beste deutsche Stimme.
+     * Die zu nutzende Stimme: gespeicherte Wahl → Thorsten → Miro → Alan (Namenssuche)
+     * → bei SherpaTTS: deutsche, dann britische Stimme → beste deutsche Stimme.
      */
     static Voice choose(TextToSpeech tts, Prefs prefs, String enginePkg) {
         List<Voice> voices = list(tts);
@@ -116,10 +116,14 @@ final class Voices {
         if (!wanted.isEmpty()) {
             for (Voice v : voices) if (v.getName().equals(wanted)) return v;
         }
-        for (Voice v : voices) {
-            if (v.getName().toLowerCase(Locale.ROOT).contains(Prefs.DEFAULT_VOICE_HINT)) return v;
+        for (String hint : Prefs.DEFAULT_VOICE_HINTS) {
+            for (Voice v : voices) {
+                if (v.getName().toLowerCase(Locale.ROOT).contains(hint)) return v;
+            }
         }
         if (enginePkg != null && isSherpa(enginePkg, "")) {
+            // SherpaTTS benennt Stimmen oft nur nach Sprache – dann zählt die Sprache des geladenen Modells.
+            for (Voice v : voices) if ("de".equals(v.getLocale().getLanguage())) return v;
             for (Voice v : voices) {
                 Locale l = v.getLocale();
                 if ("en".equals(l.getLanguage()) && "GB".equals(l.getCountry())) return v;
