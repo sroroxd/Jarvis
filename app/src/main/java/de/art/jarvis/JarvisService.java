@@ -79,6 +79,8 @@ public class JarvisService extends Service {
     private Prefs prefs;
     private ClaudeClient claude;
     private GeminiClient gemini;
+    private ElevenTts eleven;
+    private boolean elevenWarned;
     private WindowManager wm;
     private MediaProjection projection;
     private ScreenGrabber grabber;
@@ -116,6 +118,7 @@ public class JarvisService extends Service {
         prefs = new Prefs(this);
         claude = new ClaudeClient();
         gemini = new GeminiClient();
+        eleven = new ElevenTts(this);
         wm = getSystemService(WindowManager.class);
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Jarvis", NotificationManager.IMPORTANCE_LOW));
@@ -274,7 +277,7 @@ public class JarvisService extends Service {
                 main.removeCallbacks(hidePanel);
                 return;
             }
-            if (state == State.SPEAKING && tts != null) tts.stop();
+            if (state == State.SPEAKING) stopSpeaking();
             if (state == State.SPEAKING) setState(State.IDLE);
             hidePanel();
         });
@@ -396,7 +399,7 @@ public class JarvisService extends Service {
                 showPanel("Einen Moment, Sir – ich denke noch nach …");
                 break;
             case SPEAKING:
-                if (tts != null) tts.stop();
+                stopSpeaking();
                 startListening();
                 break;
             default:
@@ -406,7 +409,7 @@ public class JarvisService extends Service {
 
     private void resetConversation() {
         history.clear();
-        if (tts != null) tts.stop();
+        stopSpeaking();
         setState(State.IDLE);
         say("Neues Gespräch.");
     }
@@ -700,6 +703,44 @@ public class JarvisService extends Service {
     private void speak(String text) {
         String clean = Text.cleanForSpeech(text);
         showPanel(clean);
+        // Premium-Stimme (ElevenLabs), wenn eingerichtet – sonst die Stimme des Handys.
+        if (!prefs.elevenKey().isEmpty()) {
+            speakPremium(clean);
+            return;
+        }
+        speakDevice(clean);
+    }
+
+    private void speakPremium(String clean) {
+        setState(State.SPEAKING);
+        eleven.speak(prefs.elevenKey(), prefs.elevenVoice(), clean, prefs.rate(), new ElevenTts.Listener() {
+            @Override public void onStart() { }
+
+            @Override
+            public void onDone() {
+                onSpeechFinished();
+            }
+
+            @Override
+            public void onError(String message) {
+                // Einmal pro Sitzung Bescheid geben, dann mit der Handy-Stimme weitermachen.
+                if (!elevenWarned) {
+                    elevenWarned = true;
+                    showPanel(message + " Ich spreche mit der Handy-Stimme weiter.");
+                    main.postDelayed(() -> speakDevice(clean), 1500);
+                } else {
+                    speakDevice(clean);
+                }
+            }
+        });
+    }
+
+    private void stopSpeaking() {
+        if (tts != null) tts.stop();
+        if (eleven != null) eleven.stop();
+    }
+
+    private void speakDevice(String clean) {
         // Wurde in den Einstellungen eine andere Engine gewählt? Dann neu starten und danach sprechen.
         String engineNow = Voices.resolveEngine(this, prefs);
         boolean engineChanged = engineNow == null ? ttsEngine != null : !engineNow.equals(ttsEngine);
@@ -768,6 +809,7 @@ public class JarvisService extends Service {
         running = false;
         main.removeCallbacksAndMessages(null);
         destroyRecognizer();
+        if (eleven != null) eleven.stop();
         if (tts != null) {
             tts.stop();
             tts.shutdown();

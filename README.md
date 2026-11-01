@@ -35,7 +35,9 @@ Jede Änderung am Code wird automatisch getestet und als neue APK veröffentlich
 
 ## Stimme
 
-Standard ist **Alan** (britisches Englisch, Piper „medium“) aus **SherpaTTS** mit Tempo 0,9. Engine, Stimme, Tempo, Tonhöhe und Sprechpause sind in der App einstellbar („Probe hören“). Alan ist eine englische Stimme und liest deutsche Antworten mit englischer Aussprache; für reines Deutsch eine deutsche SherpaTTS-Stimme wählen.
+**Premium (empfohlen, am nächsten am Film-Jarvis):** ElevenLabs-Schlüssel in der App eintragen. Standardstimme ist „Daniel“ (britisch, tief, ruhig), die mit dem Modell *Multilingual v2* Deutsch mit leichtem britischem Einschlag spricht. Alternativ in ElevenLabs unter *Voice Design* eine eigene Stimme beschreiben und deren ID eintragen. Fällt ElevenLabs aus oder ist das Kontingent leer, spricht Jarvis automatisch mit der Handy-Stimme weiter. Der ElevenLabs-Schlüssel wird nicht in die Sicherungsdatei geschrieben.
+
+**Handy-Stimme:** Standard ist **Alan** (britisches Englisch, Piper „medium“) aus **SherpaTTS** mit Tempo 0,9. Engine, Stimme, Tempo, Tonhöhe und Sprechpause sind in der App einstellbar („Probe hören“). Alan ist eine englische Stimme und liest deutsche Antworten mit englischer Aussprache; für reines Deutsch eine deutsche SherpaTTS-Stimme wählen.
 
 ## Projektaufbau
 
@@ -48,7 +50,9 @@ Standard ist **Alan** (britisches Englisch, Piper „medium“) aus **SherpaTTS*
 | `Persona` | Anweisungen: Ton, Kürze, Ehrlichkeit, TFT-Modus |
 | `Memory` | Dauerhaftes Gedächtnis („Merk dir“ / „Vergiss“) |
 | `Text` | Textbereinigung, Schlüssel-/Modellprüfung, Fehlermeldungen |
-| `Voices` | Sprachausgabe-Engine und Stimmwahl |
+| `Voices` | Sprachausgabe-Engine und Stimmwahl (Handy) |
+| `ElevenTts` | Premium-Stimme über ElevenLabs |
+| `Backup` | Sicherungsdatei für Gedächtnis und Einstellungen |
 | `ScreenGrabber` | Bildschirmaufnahme |
 | `Prefs` | Gespeicherte Einstellungen |
 

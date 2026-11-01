@@ -119,6 +119,30 @@ public final class Prefs {
         sp.edit().putString("memory", value == null ? "" : value.trim()).apply();
     }
 
+    // ------------------------------------------------------------ Premium-Stimme (ElevenLabs, optional)
+
+    public String elevenKey() {
+        return sp.getString("eleven_key", "");
+    }
+
+    public void setElevenKey(String value) {
+        sp.edit().putString("eleven_key", Text.cleanKey(value)).apply();
+    }
+
+    /** Stimmen-ID; leer = Standard („Daniel“, britisch, ruhig). */
+    public String elevenVoice() {
+        String v = sp.getString("eleven_voice", "").trim();
+        return v.isEmpty() ? ElevenTts.DEFAULT_VOICE : v;
+    }
+
+    public String rawElevenVoice() {
+        return sp.getString("eleven_voice", "").trim();
+    }
+
+    public void setElevenVoice(String value) {
+        sp.edit().putString("eleven_voice", value == null ? "" : value.trim()).apply();
+    }
+
     /** Ort der automatischen Sicherungsdatei (vom Nutzer gewählt); leer = keine Sicherung. */
     public String backupUri() {
         return sp.getString("backup_uri", "");

@@ -17,7 +17,7 @@ import java.util.Locale;
 /**
  * Sicherungsdatei für Gedächtnis und Einstellungen. Liegt an einem Ort, den Art selbst wählt
  * (z. B. „Downloads“), und übersteht damit auch eine Deinstallation.
- * Der API-Schlüssel wird bewusst NICHT gespeichert – die Datei soll gefahrlos herumliegen können.
+ * API-Schlüssel (Claude/Gemini und ElevenLabs) werden bewusst NICHT gespeichert – die Datei soll gefahrlos herumliegen können.
  */
 final class Backup {
     static final String FILE_NAME = "jarvis-sicherung.json";
@@ -36,6 +36,7 @@ final class Backup {
         o.put("rate", (double) p.rate());
         o.put("pitch", (double) p.pitch());
         o.put("pause", p.pauseMs());
+        o.put("elevenVoice", p.rawElevenVoice());
         return o.toString(2);
     }
 
@@ -50,6 +51,7 @@ final class Backup {
         p.setRate((float) o.optDouble("rate", Prefs.DEFAULT_RATE));
         p.setPitch((float) o.optDouble("pitch", Prefs.DEFAULT_PITCH));
         p.setPauseMs(o.optInt("pause", Prefs.DEFAULT_PAUSE_MS));
+        p.setElevenVoice(o.optString("elevenVoice", ""));
         return Memory.load(p.memory()).size();
     }
 

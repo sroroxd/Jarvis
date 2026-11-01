@@ -47,6 +47,9 @@ public class MainActivity extends Activity {
     private boolean askedNotifications;
     private EditText memoryField;
     private TextView backupInfo;
+    private EditText elevenKeyField;
+    private EditText elevenVoiceField;
+    private ElevenTts elevenPreview;
     private Spinner voiceSpinner;
     private Spinner engineSpinner;
     private List<Voices.Engine> engines;
@@ -260,9 +263,42 @@ public class MainActivity extends Activity {
         pitchBar.setOnSeekBarChangeListener(l);
         pauseBar.setOnSeekBarChangeListener(l);
 
+        root.addView(space(16));
+        root.addView(text("Premium-Stimme (optional, ElevenLabs)", 14, Color.WHITE));
+        root.addView(text("Deutlich natürlicher und am nächsten am Film-Jarvis. Schlüssel von elevenlabs.io "
+                + "(kostenloser Plan: ca. 10 Minuten Sprache pro Monat). Leer lassen = Handy-Stimme oben. "
+                + "Standardstimme: „Daniel“ (britisch, ruhig, präzise) – oder die ID einer selbst entworfenen Stimme eintragen.",
+                12, 0xFF90A4AE));
+        elevenKeyField = new EditText(this);
+        elevenKeyField.setHint("ElevenLabs-Schlüssel (leer = aus)");
+        elevenKeyField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        elevenKeyField.setText(prefs.elevenKey());
+        elevenKeyField.setTextColor(Color.WHITE);
+        elevenKeyField.setHintTextColor(0xFF607D8B);
+        root.addView(elevenKeyField);
+        elevenVoiceField = new EditText(this);
+        elevenVoiceField.setHint("Stimmen-ID (leer = Daniel)");
+        elevenVoiceField.setSingleLine(true);
+        elevenVoiceField.setText(prefs.rawElevenVoice());
+        elevenVoiceField.setTextColor(Color.WHITE);
+        elevenVoiceField.setHintTextColor(0xFF607D8B);
+        root.addView(elevenVoiceField);
+        elevenPreview = new ElevenTts(this);
+
         Button preview = button("Probe hören");
         preview.setOnClickListener(v -> {
             saveVoice();
+            save();
+            if (!prefs.elevenKey().isEmpty()) {
+                setStatus("Premium-Stimme wird geladen …");
+                elevenPreview.speak(prefs.elevenKey(), prefs.elevenVoice(),
+                        "Guten Abend, Sir. Alle Systeme sind einsatzbereit.", prefs.rate(), new ElevenTts.Listener() {
+                            @Override public void onStart() { setStatus("✓ Premium-Stimme aktiv."); }
+                            @Override public void onDone() { }
+                            @Override public void onError(String message) { setStatus("✗ " + message); }
+                        });
+                return;
+            }
             if (previewTts == null || !previewReady) {
                 setStatus("Sprachausgabe lädt noch …");
                 return;
@@ -338,6 +374,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (previewTts != null) previewTts.shutdown();
+        if (elevenPreview != null) elevenPreview.stop();
         super.onDestroy();
     }
 
@@ -382,6 +419,8 @@ public class MainActivity extends Activity {
         prefs.setModel(model);
         prefs.setTftMode(tftSwitch.isChecked());
         if (memoryField != null) prefs.setMemory(memoryField.getText().toString());
+        if (elevenKeyField != null) prefs.setElevenKey(elevenKeyField.getText().toString());
+        if (elevenVoiceField != null) prefs.setElevenVoice(elevenVoiceField.getText().toString());
         Backup.autoSave(this, prefs);
     }
 
@@ -408,6 +447,7 @@ public class MainActivity extends Activity {
     private void refreshFromPrefs() {
         memoryField.setText(prefs.memory());
         modelField.setText(prefs.rawModel());
+        elevenVoiceField.setText(prefs.rawElevenVoice());
         tftSwitch.setChecked(prefs.tftMode());
         rateBar.setProgress(Math.round(prefs.rate() * 100) - 50);
         pitchBar.setProgress(Math.round(prefs.pitch() * 100) - 50);
