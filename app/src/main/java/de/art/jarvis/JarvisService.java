@@ -128,6 +128,8 @@ public class JarvisService extends Service {
     private Prefs prefs;
     private ClaudeClient claude;
     private GeminiClient gemini;
+    /** Websuche und Kalender – nur im Alltag mit Claude (der Spielmodus bleibt unverändert schnell). */
+    private Tools tools;
     private ElevenTts eleven;
     private boolean elevenWarned;
     private WindowManager wm;
@@ -194,6 +196,7 @@ public class JarvisService extends Service {
         prefs = new Prefs(this);
         claude = new ClaudeClient();
         gemini = new GeminiClient();
+        tools = new Tools(this);
         eleven = new ElevenTts(this);
         earcon = new Earcon();
         subtitles = new Subtitles(this);
@@ -780,7 +783,8 @@ public class JarvisService extends Service {
             return;
         }
 
-        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory());
+        boolean withTools = !prefs.tftMode() && !prefs.isGemini();
+        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), withTools);
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
@@ -802,8 +806,9 @@ public class JarvisService extends Service {
             }
         };
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
-        // Alltag: ohne Nachdenken antworten (schnellste Antwort). TFT/Spielmodus: kurz nachdenken.
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "low" : null, callback);
+        // Alltag: ohne Nachdenken antworten (schnellste Antwort), mit Werkzeugen. TFT/Spielmodus: kurz nachdenken, ohne Werkzeuge.
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "low" : null,
+                withTools ? tools : null, callback);
     }
 
     private void remember(String role, String text) {
@@ -956,7 +961,8 @@ public class JarvisService extends Service {
                 new Intent(this, JarvisService.class).setAction(ACTION_LISTEN), PendingIntent.FLAG_IMMUTABLE);
         PendingIntent open = PendingIntent.getActivity(this, 2,
                 new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
-        String title = prefs.tftMode() ? "Jarvis ist aktiv · Spielmodus" : "Jarvis ist aktiv";
+        String name = BuildConfig.TEST_APP ? "Jarvis Test" : "Jarvis";
+        String title = prefs.tftMode() ? name + " ist aktiv · Spielmodus" : name + " ist aktiv";
         String text = prefs.wakeWord()
                 ? "Sag „Hey Jarvis“ – oder tippe auf „Sprechen“."
                 : "Tippe auf „Sprechen“, um mit Jarvis zu reden.";

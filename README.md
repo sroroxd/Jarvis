@@ -8,6 +8,10 @@ Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude (oder G
 
 Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentlicht. Sie lässt sich direkt über die alte installieren; Schlüssel, Gedächtnis und Einstellungen bleiben erhalten.
 
+**Test-App (Arbeitszweige):** https://github.com/sroroxd/Jarvis/releases/download/test/JarvisTest.apk
+
+Jeder andere Zweig als `main` baut die separate App **„Jarvis Test“**. Sie installiert sich *neben* der normalen Jarvis-App (eigenes Symbol, eigene Einstellungen und eigenes Gedächtnis) und überschreibt sie nie. Eine Sicherung der normalen App lässt sich in der Test-App laden – die Test-App schreibt aber nie in diese Datei zurück. Bitte immer nur **eine** der beiden Apps einschalten, sonst reagieren beide auf „Hey Jarvis“.
+
 ## Einrichten
 
 1. APK installieren („Aus dieser Quelle erlauben“ bestätigen).
@@ -75,7 +79,8 @@ Modelle: `melspectrogram.onnx` und `embedding_model.onnx` (Apache 2.0), `hey_jar
 | `Earcon` | Signalton beim Zuhören |
 | `Commands` | Sprachbefehle der App („Spielmodus an/aus“) |
 | `ListenActivity` | Schnellstart „Jarvis sprechen“ (Seitentaste) |
-| `ClaudeClient`, `GeminiClient` | Anbindung der KI-Anbieter |
+| `ClaudeClient`, `GeminiClient` | Anbindung der KI-Anbieter; `ClaudeClient` mit Werkzeug-Schleife |
+| `Tools`, `Agenda` | Jarvis' „Hände“: Kalender lesen und Termine eintragen (Websuche läuft direkt bei Anthropic) |
 | `Persona` | Anweisungen: Ton, Kürze, Ehrlichkeit, Spielmodus |
 | `Memory` | Dauerhaftes Gedächtnis („Merk dir“ / „Vergiss“) |
 | `Text` | Textbereinigung, Schlüssel-/Modellprüfung, Fehlermeldungen |

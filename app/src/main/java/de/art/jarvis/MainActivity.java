@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private ActivityMainBinding b;
     private Prefs prefs;
     private boolean askedNotifications;
+    private boolean askedCalendar;
     private boolean askedOverlay;
     private boolean rendering;
     /** Nur in der Debug-Variante: fester Zustand für die automatischen Vorschaubilder. */
@@ -248,8 +249,14 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             missing.add(Manifest.permission.POST_NOTIFICATIONS);
         }
+        // Kalender (Termine vorlesen und eintragen) – einmal fragen; ohne ihn läuft Jarvis trotzdem.
+        if (!askedCalendar && checkSelfPermission(Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+            missing.add(Manifest.permission.READ_CALENDAR);
+            missing.add(Manifest.permission.WRITE_CALENDAR);
+        }
         if (!missing.isEmpty()) {
             askedNotifications = true;
+            askedCalendar = true;
             permissionLauncher.launch(missing.toArray(new String[0]));
             return;
         }
