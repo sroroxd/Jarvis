@@ -1,8 +1,9 @@
 name: Jarvis APK bauen
 
+# Jeder Zweig wird gebaut und getestet. Veröffentlicht wird nur, was auf „main“ landet.
 on:
   push:
-    branches: [ main ]
+    branches: [ '**' ]
   workflow_dispatch:
 
 permissions:
@@ -28,11 +29,12 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      # Erst die automatischen Tests, dann die APK. Schlägt ein Test fehl, wird nichts veröffentlicht.
+      # Erst die automatischen Tests (inkl. Wachwort-Erkennung mit echten Aufnahmen), dann die APK.
+      # Schlägt ein Test fehl, wird nichts veröffentlicht.
       - name: Tests und APK bauen
         run: |
           set -o pipefail
-          if ! gradle --no-daemon testDebugUnitTest assembleRelease 2>&1 | tee build.log; then
+          if ! gradle --no-daemon :wakeword:test testDebugUnitTest assembleRelease 2>&1 | tee build.log; then
             msg=$(grep -E "error:|FAILED|AssertionError|expected|What went wrong" build.log | head -40 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Build oder Tests fehlgeschlagen::$msg"
             exit 1
@@ -42,6 +44,7 @@ jobs:
         run: cp app/build/outputs/apk/release/app-release.apk Jarvis.apk
 
       - name: Als Release veröffentlichen
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v1.0.${{ github.run_number }}

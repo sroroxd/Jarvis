@@ -1,0 +1,31 @@
+// Wachwort-Erkennung („Hey Jarvis“) in reinem Java – ohne Android, damit sie
+// bei jedem Build mit echten Aufnahmen getestet werden kann.
+plugins {
+    id 'java-library'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    // Nur die Schnittstelle; in der App liefert onnxruntime-android die Umsetzung.
+    compileOnly 'com.microsoft.onnxruntime:onnxruntime:1.23.0'
+    testImplementation 'com.microsoft.onnxruntime:onnxruntime:1.23.0'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+test {
+    // Die Modelle liegen bei der App und werden von dort geladen.
+    systemProperty 'jarvis.models', file('../app/src/main/assets/wakeword').absolutePath
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+        showStandardStreams true
+    }
+}
