@@ -14,7 +14,7 @@ Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentl
 2. Jarvis öffnen → **Zahnrad** (Einstellungen) → API-Schlüssel einfügen → **Schlüssel testen**. Jarvis erkennt den Anbieter selbst:
    - **Claude:** platform.claude.com → API Keys (beginnt mit `sk-ant-`)
    - **Gemini (kostenlos, mit Limit):** aistudio.google.com → Get API key (beginnt mit `AIza`)
-3. Das Feld **Modell** leer lassen: Alltag = Claude Haiku 5.5 (sehr günstig), Spielmodus = Claude Sonnet 5.5.
+3. Das Feld **Modell** leer lassen: Claude Sonnet 5.5 – im Alltag ohne Nachdenken (schnell), im Spielmodus mit kurzem Nachdenken. Sparvariante: `claude-haiku-5-5` eintragen.
 4. Zurück zum Startbildschirm, auf den **Kern** tippen → Mikrofon, Mitteilungen und „Über anderen Apps anzeigen“ (für Untertitel) erlauben → **Gesamter Bildschirm** teilen.
 5. Optional: Seitentaste → Zweimal drücken → App öffnen → **Jarvis sprechen**.
 
