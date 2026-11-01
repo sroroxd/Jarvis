@@ -180,9 +180,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
         b.chipWake.setChecked(prefs.wakeWord());
         b.chipGame.setChecked(prefs.tftMode());
-        b.chipScreen.setText(!running ? "Bildschirm"
-                : JarvisService.isScreenShared() ? "Bildschirm geteilt" : "Ohne Bildschirm");
-        b.chipScreen.setAlpha(running && JarvisService.isScreenShared() ? 1f : 0.6f);
+        b.chipScreen.setChecked(JarvisService.isScreenShared());
 
         b.hint.setVisibility(running ? View.VISIBLE : View.GONE);
         b.hint.setText("Tippen: sprechen · Lang drücken: neues Gespräch");

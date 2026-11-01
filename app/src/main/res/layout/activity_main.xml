@@ -121,9 +121,10 @@
                     android:layout_height="wrap_content"
                     android:text="Spielmodus" />
 
+                <!-- Nur Anzeige: Haken = Bildschirm wird geteilt -->
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipScreen"
-                    style="@style/Widget.Material3.Chip.Assist"
+                    style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:clickable="false"

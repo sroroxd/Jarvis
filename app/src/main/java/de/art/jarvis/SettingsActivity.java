@@ -64,6 +64,13 @@ public class SettingsActivity extends AppCompatActivity {
         setupGame();
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
+        hideTicks(b.sliderSensitivity, b.sliderPause, b.sliderRate, b.sliderPitch);
+    }
+
+    /** Ohne die Rasterpunkte wirken die Regler ruhiger. */
+    @SuppressWarnings("deprecation")
+    private static void hideTicks(Slider... sliders) {
+        for (Slider s : sliders) s.setTickVisible(false);
     }
 
     // ---------------------------------------------------------------- Gehirn (KI)
