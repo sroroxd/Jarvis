@@ -6,7 +6,9 @@ import android.content.SharedPreferences;
 /** Einstellungen. Liegen nur privat auf dem Handy und überstehen Neustarts. */
 public final class Prefs {
     /** Alltag: Haiku 5.5 – sehr günstig. TFT: Sonnet 5.5 – stärker bei Bildern und Strategie. */
-    public static final String DEFAULT_MODEL = "claude-haiku-5-5";
+    /** Alltag: Sonnet 5.5 ohne Nachdenken – schnell und genau. Haiku 5.5 bleibt als Sparoption wählbar. */
+    public static final String DEFAULT_MODEL = "claude-sonnet-5-5";
+    public static final String BUDGET_MODEL = "claude-haiku-5-5";
     public static final String TFT_MODEL = "claude-sonnet-5-5";
     public static final String DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
 
@@ -19,7 +21,7 @@ public final class Prefs {
     public static final float DEFAULT_RATE = 0.9f;
     public static final float DEFAULT_PITCH = 1.0f;
     /** Wartezeit nach einer Sprechpause, bevor Jarvis die Frage abschickt. */
-    public static final int DEFAULT_PAUSE_MS = 1800;
+    public static final int DEFAULT_PAUSE_MS = 1200;
 
     private final SharedPreferences sp;
 
@@ -105,11 +107,11 @@ public final class Prefs {
     // ------------------------------------------------------------ Zuhören
 
     public int pauseMs() {
-        return sp.getInt("pause_ms", DEFAULT_PAUSE_MS);
+        return sp.getInt("pause_ms_v2", DEFAULT_PAUSE_MS);
     }
 
     public void setPauseMs(int value) {
-        sp.edit().putInt("pause_ms", value).apply();
+        sp.edit().putInt("pause_ms_v2", value).apply(); // v2: neue Bedeutung, einmalig auf 1,2 s zurückgesetzt
     }
 
     // ------------------------------------------------------------ Gedächtnis
@@ -157,6 +159,15 @@ public final class Prefs {
     }
 
     /** Spielmodus (TFT): nur Sprache, nichts verdeckt das Spielbild, TFT-Coach-Anweisungen. */
+    /** Schlüssel mit in die Sicherungsdatei schreiben (Standard: aus). */
+    public boolean backupKeys() {
+        return sp.getBoolean("backup_keys", false);
+    }
+
+    public void setBackupKeys(boolean value) {
+        sp.edit().putBoolean("backup_keys", value).apply();
+    }
+
     public boolean tftMode() {
         return sp.getBoolean("tft_mode", false);
     }

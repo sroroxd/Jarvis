@@ -26,8 +26,8 @@ import java.util.concurrent.Executors;
 final class ElevenTts {
     /** Standard: „Daniel“ – britisch, tief, ruhig und präzise (ElevenLabs-Fertigstimme). */
     static final String DEFAULT_VOICE = "onwK4e9ZLuTAKqWW03F9";
-    /** Beste Qualität für Deutsch. */
-    static final String MODEL = "eleven_multilingual_v2";
+    /** Schnellstes ElevenLabs-Modell mit Deutsch (vorher „multilingual_v2“: natürlicher, aber deutlich langsamer). */
+    static final String MODEL = "eleven_flash_v2_5";
 
     interface Listener {
         void onStart();
@@ -97,9 +97,8 @@ final class ElevenTts {
                 main.post(() -> {
                     if (gen == generation) listener.onError("ElevenLabs nicht erreichbar.");
                 });
-            } finally {
-                if (conn != null) conn.disconnect();
             }
+            // Kein disconnect(): Verbindung bleibt offen und wird wiederverwendet.
         });
     }
 

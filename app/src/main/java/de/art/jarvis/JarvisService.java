@@ -137,6 +137,7 @@ public class JarvisService extends Service {
     private TextToSpeech tts;
     private boolean ttsReady;
     private String ttsEngine;
+    private String appliedVoiceKey;
     private String pendingSpeech;
     private long lastInteraction;
     private boolean heardSomething;
@@ -581,11 +582,14 @@ public class JarvisService extends Service {
                     utterance.append(text);
                 }
                 releaseRecognizer();
-                if (finishRequested || utterance.length() > 1500) {
+                // Fertiger Satz → sofort abschicken. Nur wenn der Satz offensichtlich mittendrin endet
+                // („… und“, „ich wollte fragen ob“), hört Jarvis weiter zu. Früher wurde IMMER weitergehört,
+                // das kostete bei jeder Frage rund 2,5 Sekunden.
+                if (finishRequested || utterance.length() > 1500 || !Text.looksUnfinished(utterance.toString())) {
                     finishListening();
                     return;
                 }
-                // Weiterhören – vielleicht war es nur eine Denkpause.
+                // Weiterhören – es war nur eine Denkpause.
                 main.postDelayed(() -> {
                     if (state != State.LISTENING) return;
                     if (finishRequested) finishListening();
@@ -618,10 +622,11 @@ public class JarvisService extends Service {
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "de-DE");
         i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-        // Längere Pausen erlauben (nicht jede Spracherkennung beachtet das – daher zusätzlich das Weiterhören oben).
-        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L);
-        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L);
-        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 2000L);
+        // Sprechpause aus den Einstellungen. Keine erzwungene Mindestdauer mehr – die hielt früher
+        // auch kurze Fragen wie „Wie spät ist es?“ mindestens 2 Sekunden fest.
+        long silence = prefs.pauseMs();
+        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, silence);
+        i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, silence);
         try {
             current.startListening(i);
         } catch (Exception e) {
@@ -751,7 +756,7 @@ public class JarvisService extends Service {
             String image = grabber == null ? null : grabber.captureJpegBase64();
             setCaptureHidden(false);
             if (id == requestId) ask(id, key, text, image);
-        }, 300);
+        }, 120); // 120 ms reichen, damit das Bild ohne Einblendung neu gezeichnet ist (vorher 300 ms)
     }
 
     private void ask(int id, String key, String text, String image) {
@@ -797,8 +802,8 @@ public class JarvisService extends Service {
             }
         };
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
-        // TFT/Spielmodus: gründlicher nachdenken (Sonnet); Alltag: schnell (Haiku).
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low", callback);
+        // Alltag: ohne Nachdenken antworten (schnellste Antwort). TFT/Spielmodus: kurz nachdenken.
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "low" : null, callback);
     }
 
     private void remember(String role, String text) {
@@ -836,6 +841,7 @@ public class JarvisService extends Service {
             }
             ttsReady = true;
             Voices.apply(tts, prefs, engine);
+            appliedVoiceKey = null; // neue Engine → beim nächsten Satz sicher neu einstellen
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) { }
                 @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
@@ -921,7 +927,13 @@ public class JarvisService extends Service {
         int max = TextToSpeech.getMaxSpeechInputLength() - 1;
         String text = clean.length() > max ? clean.substring(0, max) : clean;
         setState(State.SPEAKING);
-        Voices.apply(tts, prefs, ttsEngine); // Änderungen aus den Einstellungen sofort übernehmen
+        // Stimme nur neu einstellen, wenn sich etwas geändert hat – das Durchsuchen aller Stimmen
+        // vor jedem Satz kostete spürbar Zeit.
+        String voiceKey = ttsEngine + "|" + prefs.voiceName() + "|" + prefs.rate() + "|" + prefs.pitch();
+        if (!voiceKey.equals(appliedVoiceKey)) {
+            Voices.apply(tts, prefs, ttsEngine);
+            appliedVoiceKey = voiceKey;
+        }
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis-" + System.nanoTime());
     }
 

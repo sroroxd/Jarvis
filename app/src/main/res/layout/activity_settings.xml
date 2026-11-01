@@ -621,7 +621,21 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Speichert Gedächtnis und Einstellungen in eine Datei auf deinem Handy (z. B. „Downloads“). Sie aktualisiert sich nach jeder Änderung und übersteht auch eine Deinstallation. API-Schlüssel werden nicht mitgespeichert." />
+                        android:text="Speichert Gedächtnis und Einstellungen in eine Datei auf deinem Handy (z. B. „Downloads“). Sie aktualisiert sich nach jeder Änderung und übersteht auch eine Deinstallation." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchBackupKeys"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="API-Schlüssel mitsichern" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Bequem nach einer Neuinstallation – aber dann steht der Schlüssel im Klartext in der Datei. Gib sie in dem Fall an niemanden weiter." />
 
                     <TextView
                         android:id="@+id/backupInfo"

@@ -293,6 +293,11 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void setupBackup() {
         b.memoryField.setText(prefs.memory());
+        b.switchBackupKeys.setChecked(prefs.backupKeys());
+        b.switchBackupKeys.setOnCheckedChangeListener((v, on) -> {
+            prefs.setBackupKeys(on);
+            Backup.autoSave(this, prefs);
+        });
         updateBackupInfo();
         b.backupCreate.setOnClickListener(v -> {
             saveTextFields();
@@ -341,6 +346,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
     private void refreshFromPrefs() {
+        b.switchBackupKeys.setChecked(prefs.backupKeys());
         b.memoryField.setText(prefs.memory());
         b.modelField.setText(prefs.rawModel());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());

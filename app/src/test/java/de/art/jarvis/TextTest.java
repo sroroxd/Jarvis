@@ -70,4 +70,25 @@ public class TextTest {
         assertEquals("Notiert, Sir.", Text.replyOrFallback("[MERKEN: Art mag Kaffee]", ""));
         assertEquals("Es ist acht Uhr.", Text.replyOrFallback("Es ist acht Uhr.", "Es ist acht Uhr."));
     }
+
+    @Test
+    public void vollstaendigeFrageWirdSofortAbgeschickt() {
+        assertFalse(Text.looksUnfinished("Wie spät ist es"));
+        assertFalse(Text.looksUnfinished("Was siehst du auf meinem Bildschirm"));
+        assertFalse(Text.looksUnfinished("Welche Items soll ich auf Jinx bauen?"));
+        assertFalse(Text.looksUnfinished("Merk dir dass ich Vanguard spiele"));
+        assertFalse(Text.looksUnfinished("Hörst du mich"));
+        assertFalse(Text.looksUnfinished("Mach das bitte"));
+        assertFalse(Text.looksUnfinished("Danke Jarvis"));
+    }
+
+    @Test
+    public void denkpauseMittenImSatzWirdAbgewartet() {
+        assertTrue(Text.looksUnfinished("Ich wollte fragen ob"));
+        assertTrue(Text.looksUnfinished("Kannst du mir sagen wie"));
+        assertTrue(Text.looksUnfinished("Was ist besser der"));
+        assertTrue(Text.looksUnfinished("Jarvis"));
+        assertTrue(Text.looksUnfinished("ähm"));
+        assertTrue(Text.looksUnfinished(""));
+    }
 }

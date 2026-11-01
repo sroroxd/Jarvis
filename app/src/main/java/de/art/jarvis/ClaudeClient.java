@@ -28,23 +28,26 @@ final class ClaudeClient {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
-    /** Alltag: wenig Nachdenken (schnell). */
+    /** Ohne Nachdenken – schnellste Antwort. */
     void send(String apiKey, String model, String system, JSONArray messages, Callback callback) {
-        send(apiKey, model, system, messages, "low", callback);
+        send(apiKey, model, system, messages, null, callback);
     }
 
     /**
      * Schickt die Anfrage. Die aktuellen Claude-Modelle denken standardmäßig nach, und dieses Nachdenken
      * zählt zu max_tokens. Ist das Budget zu knapp, kommt nur Nachdenken und KEIN Text zurück –
      * genau das führte zu den leeren „Erledigt, Sir.“-Antworten. Deshalb:
-     * 1. großzügiges Budget und gesteuerte Nachdenk-Tiefe (effort),
+     * 0. effort == null: gar nicht nachdenken (schnellste Antwort, Standard im Alltag),
+     * 1. sonst großzügiges Budget und gesteuerte Nachdenk-Tiefe (effort),
      * 2. kommt trotzdem kein Text, ein zweiter Versuch ohne Nachdenken,
      * 3. kennt ein (älteres) Modell diese Parameter nicht, ein Versuch ganz ohne sie.
      */
     void send(String apiKey, String model, String system, JSONArray messages, String effort, Callback callback) {
         executor.execute(() -> {
-            Result r = request(apiKey, model, system, messages, "adaptive", effort, 4096);
-            if (r.error == null && r.text.isEmpty()) {
+            Result r = effort == null
+                    ? request(apiKey, model, system, messages, "disabled", null, 1024)
+                    : request(apiKey, model, system, messages, "adaptive", effort, 4096);
+            if (r.error == null && r.text.isEmpty() && effort != null) {
                 r = request(apiKey, model, system, messages, "disabled", null, 1024);
             } else if (r.code == 400 && mentionsThinking(r.detail)) {
                 r = request(apiKey, model, system, messages, null, null, 1024);
@@ -76,7 +79,7 @@ final class ClaudeClient {
     private Result request(String apiKey, String model, String system, JSONArray messages,
                            String thinking, String effort, int maxTokens) {
         Result result = new Result();
-        HttpURLConnection conn = null;
+        HttpURLConnection conn;
         try {
             JSONObject body = new JSONObject();
             body.put("model", model);
@@ -130,9 +133,9 @@ final class ClaudeClient {
             result.text = sb.toString().trim();
         } catch (Exception e) {
             result.error = "Ich erreiche den Server gerade nicht. " + (e.getMessage() == null ? "" : e.getMessage());
-        } finally {
-            if (conn != null) conn.disconnect();
         }
+        // Kein disconnect(): So bleibt die Verbindung offen und wird für die nächste Frage
+        // wiederverwendet – das spart jedes Mal den Verbindungsaufbau (TLS-Handshake).
         return result;
     }
 

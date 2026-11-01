@@ -73,4 +73,34 @@ final class Text {
         if (raw != null && raw.toUpperCase(java.util.Locale.ROOT).contains("[MERKEN")) return "Notiert, Sir.";
         return "Ich habe darauf keine Antwort bekommen. Frag mich bitte noch einmal.";
     }
+
+    /**
+     * Wörter, nach denen ein deutscher Satz sicher noch nicht zu Ende ist. Pronomen wie „du“ oder „es“
+     * fehlen bewusst: „Was siehst du“ oder „Wie spät ist es“ sind fertige Fragen.
+     */
+    private static final java.util.Set<String> OPEN_ENDINGS = new java.util.HashSet<>(java.util.Arrays.asList(
+            "und", "oder", "aber", "denn", "dass", "weil", "wenn", "ob", "als", "wie", "wer", "wo", "wann",
+            "warum", "welche", "welcher", "welches", "der", "die", "das", "den", "dem", "des", "ein", "eine", "einen",
+            "einem", "einer", "mein", "meine", "meinen", "dein", "deine", "mit", "für", "von", "zu", "zum", "zur", "auf",
+            "in", "im", "an", "am", "bei", "nach", "über", "unter", "vor", "also", "ähm", "äh", "hm", "sondern",
+            "bis", "seit", "damit", "sowie", "kannst", "könntest", "sollst", "willst", "möchte"));
+
+    /** Ein einzelnes Wort davon ist noch keine Frage („Jarvis“, „ähm“ …). */
+    private static final java.util.Set<String> ONLY_FILLER = new java.util.HashSet<>(java.util.Arrays.asList(
+            "jarvis", "hey", "okay", "ok", "ähm", "äh", "hm", "also", "sir"));
+
+    /**
+     * Ob Art vermutlich mitten im Satz eine Denkpause macht. Dann hört Jarvis weiter zu,
+     * sonst schickt er sofort ab – das spart bei normalen Fragen mehrere Sekunden.
+     */
+    static boolean looksUnfinished(String utterance) {
+        if (utterance == null) return true;
+        String t = utterance.trim().toLowerCase(java.util.Locale.GERMANY);
+        if (t.isEmpty()) return true;
+        if (t.endsWith("?") || t.endsWith("!") || t.endsWith(".")) return false;
+        String[] words = t.replaceAll("[^\\p{L}\\p{N} ]", " ").trim().split("\\s+");
+        if (words.length == 0) return true;
+        if (words.length == 1 && ONLY_FILLER.contains(words[0])) return true;
+        return OPEN_ENDINGS.contains(words[words.length - 1]);
+    }
 }

@@ -96,9 +96,8 @@ final class GeminiClient {
                 result.text = sb.toString().trim();
             } catch (Exception e) {
                 result.error = "Ich erreiche den Server gerade nicht. " + (e.getMessage() == null ? "" : e.getMessage());
-            } finally {
-                if (conn != null) conn.disconnect();
             }
+            // Kein disconnect(): Verbindung bleibt für die nächste Frage offen (schneller).
         }
         return result;
     }

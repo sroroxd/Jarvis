@@ -37,6 +37,10 @@ final class Backup {
         o.put("pitch", (double) p.pitch());
         o.put("pause", p.pauseMs());
         o.put("elevenVoice", p.rawElevenVoice());
+        if (p.backupKeys()) { // nur auf ausdrücklichen Wunsch
+            o.put("apiKey", p.apiKey());
+            o.put("elevenKey", p.elevenKey());
+        }
         o.put("wakeWord", p.wakeWord());
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
@@ -59,6 +63,13 @@ final class Backup {
         p.setPitch((float) o.optDouble("pitch", Prefs.DEFAULT_PITCH));
         p.setPauseMs(o.optInt("pause", Prefs.DEFAULT_PAUSE_MS));
         p.setElevenVoice(o.optString("elevenVoice", ""));
+        String apiKey = o.optString("apiKey", "");
+        if (!apiKey.isEmpty()) {
+            p.setApiKey(apiKey);
+            p.setBackupKeys(true);
+        }
+        String elevenKey = o.optString("elevenKey", "");
+        if (!elevenKey.isEmpty()) p.setElevenKey(elevenKey);
         p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));
