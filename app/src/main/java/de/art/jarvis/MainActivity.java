@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private boolean askedNotifications;
     private boolean askedOverlay;
     private boolean rendering;
+    /** Nur in der Debug-Variante: fester Zustand für die automatischen Vorschaubilder. */
+    private JarvisService.State demo;
 
     private final ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissions);
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(b.getRoot());
         prefs = new Prefs(this);
+        readDemo(getIntent());
 
         b.settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
 
@@ -88,6 +91,26 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        readDemo(intent);
+        render();
+    }
+
+    private void readDemo(Intent intent) {
+        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        String d = intent == null ? null : intent.getStringExtra("demo");
+        demo = null;
+        if (debuggable && d != null) {
+            try {
+                demo = JarvisService.State.valueOf(d);
+            } catch (IllegalArgumentException ignored) {
+                // unbekannter Zustand
+            }
+        }
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
         JarvisService.setUiListener(this);
@@ -109,8 +132,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
     private void render() {
         rendering = true;
-        boolean running = JarvisService.isRunning();
-        JarvisService.State s = JarvisService.currentState();
+        boolean running = JarvisService.isRunning() || demo != null;
+        JarvisService.State s = demo != null ? demo : JarvisService.currentState();
         ReactorView.Mode mode;
         String label;
         String status;
@@ -164,7 +187,12 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.hint.setVisibility(running ? View.VISIBLE : View.GONE);
         b.hint.setText("Tippen: sprechen · Lang drücken: neues Gespräch");
         b.stopButton.setVisibility(running ? View.VISIBLE : View.INVISIBLE);
-        renderExchange(JarvisService.lastYou(), JarvisService.lastJarvis());
+        if (demo != null) {
+            renderExchange("Was soll ich in dieser Runde kaufen?",
+                    "Kauf den zweiten Kämpfer und leg ihn auf die Bank. Danach: auf Stufe sechs gehen.");
+        } else {
+            renderExchange(JarvisService.lastYou(), JarvisService.lastJarvis());
+        }
         rendering = false;
     }
 

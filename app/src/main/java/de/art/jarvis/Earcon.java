@@ -31,7 +31,7 @@ final class Earcon {
                         .build();
                 track.write(samples, 0, samples.length);
             }
-            track.stop();
+            if (track.getPlayState() != AudioTrack.PLAYSTATE_STOPPED) track.stop();
             track.reloadStaticData();
             track.play();
         } catch (Exception ignored) {

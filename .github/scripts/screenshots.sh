@@ -12,23 +12,9 @@ adb shell am start -W -n de.art.jarvis/.MainActivity
 sleep 6
 adb exec-out screencap -p > shots/01_start.png
 
-# Zahnrad antippen (Position aus der Oberflächenbeschreibung lesen)
-tap_desc() {
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null
-  adb pull /sdcard/ui.xml ui.xml >/dev/null
-  python3 - "$1" <<'PY'
-import re, sys, subprocess
-xml = open("ui.xml", encoding="utf-8").read()
-want = sys.argv[1]
-for node in re.findall(r"<node [^>]*>", xml):
-    if f'content-desc="{want}"' in node or f'text="{want}"' in node:
-        x1, y1, x2, y2 = map(int, re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', node).groups())
-        subprocess.run(["adb", "shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2)])
-        break
-PY
-}
-
-tap_desc "Einstellungen"
+# Zahnrad oben rechts antippen (feste Position auf dem Pixel-6-Profil, 1080 × 2400).
+# Eine Oberflächenbeschreibung per uiautomator klappt nicht, weil der Reaktor ständig animiert.
+adb shell input tap 989 228
 sleep 4
 adb exec-out screencap -p > shots/02_einstellungen_1.png
 for i in 2 3 4 5 6 7; do
@@ -36,5 +22,12 @@ for i in 2 3 4 5 6 7; do
   sleep 2
   adb exec-out screencap -p > shots/02_einstellungen_$i.png
 done
-adb logcat -d -s AndroidRuntime:E > shots/crash.txt || true
+# Zustände des Startbildschirms (nur Debug-Variante kennt das Extra „demo“)
+for st in IDLE LISTENING THINKING SPEAKING; do
+  adb shell am start -n de.art.jarvis/.MainActivity --es demo $st
+  sleep 3
+  adb exec-out screencap -p > shots/03_zustand_$st.png
+done
+echo "Absturzprotokoll (leer = kein Absturz):" > shots/crash.txt
+adb logcat -d -s AndroidRuntime:E >> shots/crash.txt || true
 ls -la shots
