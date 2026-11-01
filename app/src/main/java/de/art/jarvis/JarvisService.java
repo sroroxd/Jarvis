@@ -783,8 +783,7 @@ public class JarvisService extends Service {
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
                 prefs.setMemory(tagged.memory);
                 Backup.autoSave(JarvisService.this, prefs);
-                answer = Text.cleanForSpeech(tagged.reply);
-                if (answer.isEmpty()) answer = "Erledigt, Sir.";
+                answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", answer);
                 speak(answer);
@@ -798,7 +797,8 @@ public class JarvisService extends Service {
             }
         };
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
-        else claude.send(key, prefs.model(), system, messages, callback);
+        // TFT/Spielmodus: gründlicher nachdenken (Sonnet); Alltag: schnell (Haiku).
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low", callback);
     }
 
     private void remember(String role, String text) {

@@ -62,4 +62,12 @@ public class TextTest {
                 "Your credit balance is too low to access the Anthropic API.").contains("Guthaben"));
         assertTrue(Text.claudeError(529, "overloaded_error", "Overloaded").contains("überlastet"));
     }
+
+    @Test
+    public void leereAntwortKlingtNichtWieBestaetigung() {
+        // Früher wurde eine leere KI-Antwort als „Erledigt, Sir.“ vorgelesen.
+        assertTrue(Text.replyOrFallback("", "").contains("keine Antwort"));
+        assertEquals("Notiert, Sir.", Text.replyOrFallback("[MERKEN: Art mag Kaffee]", ""));
+        assertEquals("Es ist acht Uhr.", Text.replyOrFallback("Es ist acht Uhr.", "Es ist acht Uhr."));
+    }
 }

@@ -63,4 +63,14 @@ final class Text {
         if (code == 400) return "Die Anfrage wurde abgelehnt (Fehler 400)" + suffix;
         return "Fehler " + code + suffix;
     }
+
+    /**
+     * Was Jarvis sagt, wenn nach dem Bereinigen nichts übrig bleibt. Bestand die Antwort nur aus einer
+     * [MERKEN:]-Zeile, ist „Notiert“ richtig – war sie leer, darf es nicht wie eine Bestätigung klingen.
+     */
+    static String replyOrFallback(String raw, String cleaned) {
+        if (cleaned != null && !cleaned.isEmpty()) return cleaned;
+        if (raw != null && raw.toUpperCase(java.util.Locale.ROOT).contains("[MERKEN")) return "Notiert, Sir.";
+        return "Ich habe darauf keine Antwort bekommen. Frag mich bitte noch einmal.";
+    }
 }
