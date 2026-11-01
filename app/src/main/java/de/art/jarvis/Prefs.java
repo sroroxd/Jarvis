@@ -156,11 +156,102 @@ public final class Prefs {
         sp.edit().putString("backup_uri", value == null ? "" : value).apply();
     }
 
+    /** Spielmodus (TFT): nur Sprache, nichts verdeckt das Spielbild, TFT-Coach-Anweisungen. */
     public boolean tftMode() {
         return sp.getBoolean("tft_mode", false);
     }
 
     public void setTftMode(boolean value) {
         sp.edit().putBoolean("tft_mode", value).apply();
+    }
+
+    // ------------------------------------------------------------ Freihändig („Hey Jarvis“)
+
+    public static final boolean DEFAULT_WAKE_WORD = true;
+    /** 1 = reagiert nur auf sehr deutliches „Hey Jarvis“, 10 = reagiert auf fast alles. */
+    public static final int DEFAULT_SENSITIVITY = 5;
+
+    public boolean wakeWord() {
+        return sp.getBoolean("wake_word", DEFAULT_WAKE_WORD);
+    }
+
+    public void setWakeWord(boolean value) {
+        sp.edit().putBoolean("wake_word", value).apply();
+    }
+
+    public int sensitivity() {
+        return clamp(sp.getInt("wake_sensitivity", DEFAULT_SENSITIVITY), 1, 10);
+    }
+
+    public void setSensitivity(int value) {
+        sp.edit().putInt("wake_sensitivity", clamp(value, 1, 10)).apply();
+    }
+
+    /** Erkennungsschwelle: Stufe 5 = 0,5 (Standard von openWakeWord), Stufe 10 = 0,1, Stufe 1 = 0,82. */
+    public static float thresholdFor(int sensitivity) {
+        return 0.9f - clamp(sensitivity, 1, 10) * 0.08f;
+    }
+
+    /** Kurzer Ton, sobald Jarvis zuhört – wichtig, wenn nichts auf dem Bildschirm erscheint. */
+    public boolean earcon() {
+        return sp.getBoolean("earcon", true);
+    }
+
+    public void setEarcon(boolean value) {
+        sp.edit().putBoolean("earcon", value).apply();
+    }
+
+    // ------------------------------------------------------------ Anzeige
+
+    /** Schwebendes J über anderen Apps. Standard: aus. Im Spielmodus immer ausgeblendet. */
+    public boolean floatingJ() {
+        return sp.getBoolean("floating_j", false);
+    }
+
+    public void setFloatingJ(boolean value) {
+        sp.edit().putBoolean("floating_j", value).apply();
+    }
+
+    public int bubbleX(int fallback) {
+        return sp.getInt("bubble_x", fallback);
+    }
+
+    public int bubbleY(int fallback) {
+        return sp.getInt("bubble_y", fallback);
+    }
+
+    public void setBubblePosition(int x, int y) {
+        sp.edit().putInt("bubble_x", x).putInt("bubble_y", y).apply();
+    }
+
+    /** Untertitel am Bildschirmrand im Alltag (nicht anklickbar, verschwinden von selbst). */
+    public boolean subtitles() {
+        return sp.getBoolean("subtitles", true);
+    }
+
+    public void setSubtitles(boolean value) {
+        sp.edit().putBoolean("subtitles", value).apply();
+    }
+
+    /** Untertitel auch im Spielmodus – Standard aus, dort antwortet Jarvis nur per Sprache. */
+    public boolean subtitlesInGame() {
+        return sp.getBoolean("subtitles_game", false);
+    }
+
+    public void setSubtitlesInGame(boolean value) {
+        sp.edit().putBoolean("subtitles_game", value).apply();
+    }
+
+    /** Untertitel oben (Standard) oder unten am Bildschirmrand. */
+    public boolean subtitlesTop() {
+        return sp.getBoolean("subtitles_top", true);
+    }
+
+    public void setSubtitlesTop(boolean value) {
+        sp.edit().putBoolean("subtitles_top", value).apply();
+    }
+
+    private static int clamp(int v, int min, int max) {
+        return Math.max(min, Math.min(max, v));
     }
 }

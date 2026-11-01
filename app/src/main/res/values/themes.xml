@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dunkles Material-3-Theme mit festen Jarvis-Farben (keine Systemfarben). -->
+    <style name="Theme.Jarvis" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/jarvis_primary</item>
+        <item name="colorOnPrimary">@color/jarvis_on_primary</item>
+        <item name="colorPrimaryContainer">@color/jarvis_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/jarvis_on_primary_container</item>
+        <item name="colorSecondary">@color/jarvis_secondary</item>
+        <item name="colorOnSecondary">@color/jarvis_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/jarvis_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/jarvis_on_secondary_container</item>
+        <item name="colorTertiary">@color/jarvis_tertiary</item>
+        <item name="colorOnTertiary">@color/jarvis_on_tertiary</item>
+        <item name="colorError">@color/jarvis_error</item>
+        <item name="colorOnError">@color/jarvis_on_error</item>
+
+        <item name="android:colorBackground">@color/jarvis_background</item>
+        <item name="colorOnBackground">@color/jarvis_on_surface</item>
+        <item name="colorSurface">@color/jarvis_surface</item>
+        <item name="colorOnSurface">@color/jarvis_on_surface</item>
+        <item name="colorSurfaceVariant">@color/jarvis_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/jarvis_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/jarvis_surface_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/jarvis_surface_low</item>
+        <item name="colorSurfaceContainer">@color/jarvis_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/jarvis_surface_high</item>
+        <item name="colorSurfaceContainerHighest">@color/jarvis_surface_highest</item>
+        <item name="colorOutline">@color/jarvis_outline</item>
+        <item name="colorOutlineVariant">@color/jarvis_outline_variant</item>
+
+        <item name="android:windowBackground">@drawable/bg_screen</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- Abschnittsüberschrift in den Einstellungen -->
+    <style name="Jarvis.SectionTitle" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <!-- Erklärtext unter einer Einstellung -->
+    <style name="Jarvis.Hint" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceBodySmall</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:lineSpacingMultiplier">1.15</item>
+    </style>
+
+    <!-- Bezeichnung einer Einstellung -->
+    <style name="Jarvis.Label" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Karte für eine Einstellungsgruppe -->
+    <style name="Jarvis.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainer</item>
+        <item name="cardCornerRadius">24dp</item>
+        <item name="contentPadding">20dp</item>
+    </style>
+</resources>

@@ -1,0 +1,460 @@
+package de.art.jarvis;
+
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
+import android.view.View;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.slider.Slider;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import de.art.jarvis.databinding.ActivitySettingsBinding;
+
+/** Alle Einstellungen, übersichtlich in Gruppen. Änderungen gelten sofort. */
+public class SettingsActivity extends AppCompatActivity {
+    private static final String PREVIEW_TEXT = "Guten Abend, Sir. Alle Systeme sind einsatzbereit.";
+
+    private ActivitySettingsBinding b;
+    private Prefs prefs;
+
+    private ElevenTts elevenPreview;
+    private TextToSpeech previewTts;
+    private boolean previewReady;
+    private String previewEngine;
+    private List<Voices.Engine> engines = new ArrayList<>();
+    private List<Voice> voices = new ArrayList<>();
+
+    private final ActivityResultLauncher<String> backupCreate =
+            registerForActivityResult(new ActivityResultContracts.CreateDocument("application/json"), this::onBackupCreated);
+    private final ActivityResultLauncher<String[]> backupOpen =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onBackupOpened);
+    private final ActivityResultLauncher<Intent> overlayLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), r -> {
+                updateOverlayWarning();
+                refreshService();
+            });
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        b = ActivitySettingsBinding.inflate(getLayoutInflater());
+        setContentView(b.getRoot());
+        prefs = new Prefs(this);
+        b.toolbar.setNavigationOnClickListener(v -> finish());
+
+        setupBrain();
+        setupVoiceControl();
+        setupVoice();
+        setupDisplay();
+        setupGame();
+        setupBackup();
+        b.versionText.setText("Jarvis " + versionName());
+    }
+
+    // ---------------------------------------------------------------- Gehirn (KI)
+
+    private void setupBrain() {
+        b.keyField.setText(prefs.apiKey());
+        b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        b.modelField.setText(prefs.rawModel());
+        b.testKey.setOnClickListener(v -> testKey());
+    }
+
+    /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
+    private void testKey() {
+        saveTextFields();
+        if (prefs.apiKey().isEmpty()) {
+            showResult(b.keyResult, "Bitte zuerst einen Schlüssel einfügen.");
+            return;
+        }
+        showResult(b.keyResult, "Teste Schlüssel …");
+        JSONArray messages = new JSONArray();
+        try {
+            messages.put(new JSONObject().put("role", "user").put("content", "Antworte nur mit: OK"));
+        } catch (JSONException ignored) {
+            return;
+        }
+        ClaudeClient.Callback cb = new ClaudeClient.Callback() {
+            @Override
+            public void onResult(String text) {
+                showResult(b.keyResult, "✓ Schlüssel funktioniert (Modell " + prefs.model() + ").");
+            }
+
+            @Override
+            public void onError(String message) {
+                showResult(b.keyResult, "✗ " + message);
+            }
+        };
+        if (prefs.isGemini()) new GeminiClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+        else new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+    }
+
+    // ---------------------------------------------------------------- Sprachsteuerung
+
+    private void setupVoiceControl() {
+        b.switchWake.setChecked(prefs.wakeWord());
+        b.switchWake.setOnCheckedChangeListener((v, on) -> {
+            prefs.setWakeWord(on);
+            refreshService();
+        });
+
+        setSlider(b.sliderSensitivity, prefs.sensitivity());
+        b.sensitivityValue.setText(String.valueOf(prefs.sensitivity()));
+        b.sliderSensitivity.setLabelFormatter(v -> String.valueOf(Math.round(v)));
+        b.sliderSensitivity.addOnChangeListener((s, value, fromUser) -> {
+            b.sensitivityValue.setText(String.valueOf(Math.round(value)));
+            if (fromUser) prefs.setSensitivity(Math.round(value));
+        });
+        b.sliderSensitivity.addOnSliderTouchListener(onRelease(this::refreshService));
+
+        b.switchEarcon.setChecked(prefs.earcon());
+        b.switchEarcon.setOnCheckedChangeListener((v, on) -> prefs.setEarcon(on));
+
+        setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
+        b.pauseValue.setText(seconds(prefs.pauseMs() / 1000f));
+        b.sliderPause.setLabelFormatter(this::seconds);
+        b.sliderPause.addOnChangeListener((s, value, fromUser) -> {
+            b.pauseValue.setText(seconds(value));
+            if (fromUser) prefs.setPauseMs(Math.round(value * 1000));
+        });
+    }
+
+    // ---------------------------------------------------------------- Stimme
+
+    private void setupVoice() {
+        elevenPreview = new ElevenTts(this);
+        engines = Voices.engines(this);
+        String active = Voices.resolveEngine(this, prefs);
+        String[] labels = new String[Math.max(1, engines.size())];
+        int selected = -1;
+        for (int i = 0; i < engines.size(); i++) {
+            labels[i] = engines.get(i).label;
+            if (engines.get(i).pkg.equals(active)) selected = i;
+        }
+        if (engines.isEmpty()) labels[0] = "Systemstandard";
+        b.engineDropdown.setSimpleItems(labels);
+        b.engineDropdown.setText(selected >= 0 ? labels[selected] : labels[0], false);
+        b.engineDropdown.setOnItemClickListener((parent, view, position, id) -> {
+            if (position >= engines.size()) return;
+            String pkg = engines.get(position).pkg;
+            if (pkg.equals(previewEngine)) return;
+            prefs.setEngine(pkg);
+            prefs.setVoiceName(""); // neue Engine → wieder automatisch wählen
+            loadPreviewEngine(pkg);
+        });
+
+        setSlider(b.sliderRate, prefs.rate());
+        setSlider(b.sliderPitch, prefs.pitch());
+        b.rateValue.setText(decimal(prefs.rate()));
+        b.pitchValue.setText(pitchText(prefs.pitch()));
+        b.sliderRate.setLabelFormatter(this::decimal);
+        b.sliderPitch.setLabelFormatter(this::decimal);
+        b.sliderRate.addOnChangeListener((s, value, fromUser) -> {
+            b.rateValue.setText(decimal(value));
+            if (fromUser) prefs.setRate(value);
+        });
+        b.sliderPitch.addOnChangeListener((s, value, fromUser) -> {
+            b.pitchValue.setText(pitchText(value));
+            if (fromUser) prefs.setPitch(value);
+        });
+
+        b.elevenKeyField.setText(prefs.elevenKey());
+        b.elevenVoiceField.setText(prefs.rawElevenVoice());
+        b.previewVoice.setOnClickListener(v -> preview());
+        loadPreviewEngine(active);
+    }
+
+    private void preview() {
+        saveTextFields();
+        if (!prefs.elevenKey().isEmpty()) {
+            showResult(b.voiceResult, "Premium-Stimme wird geladen …");
+            elevenPreview.speak(prefs.elevenKey(), prefs.elevenVoice(), PREVIEW_TEXT, prefs.rate(), new ElevenTts.Listener() {
+                @Override public void onStart() { showResult(b.voiceResult, "✓ Premium-Stimme aktiv."); }
+                @Override public void onDone() { }
+                @Override public void onError(String message) { showResult(b.voiceResult, "✗ " + message); }
+            });
+            return;
+        }
+        if (previewTts == null || !previewReady) {
+            showResult(b.voiceResult, "Sprachausgabe lädt noch …");
+            return;
+        }
+        b.voiceResult.setVisibility(View.GONE);
+        Voices.apply(previewTts, prefs, previewEngine);
+        previewTts.speak(PREVIEW_TEXT, TextToSpeech.QUEUE_FLUSH, null, "preview");
+    }
+
+    /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */
+    private void loadPreviewEngine(String engine) {
+        if (previewTts != null) previewTts.shutdown();
+        previewReady = false;
+        previewEngine = engine;
+        b.voiceDropdown.setSimpleItems(new String[]{"Stimmen werden geladen …"});
+        b.voiceDropdown.setText("Stimmen werden geladen …", false);
+        final TextToSpeech[] holder = new TextToSpeech[1];
+        holder[0] = Voices.create(this, engine, status -> {
+            if (holder[0] != previewTts || isFinishing()) return;
+            if (status != TextToSpeech.SUCCESS) {
+                b.voiceDropdown.setText("Diese Sprachausgabe startet nicht – bitte eine andere wählen.", false);
+                return;
+            }
+            previewReady = true;
+            voices = Voices.list(previewTts);
+            Voice chosen = Voices.choose(previewTts, prefs, engine);
+            String[] labels = new String[Math.max(1, voices.size())];
+            int selected = 0;
+            for (int i = 0; i < voices.size(); i++) {
+                labels[i] = Voices.label(voices.get(i));
+                if (chosen != null && voices.get(i).getName().equals(chosen.getName())) selected = i;
+            }
+            if (voices.isEmpty()) labels[0] = "Standardstimme der Engine";
+            b.voiceDropdown.setSimpleItems(labels);
+            b.voiceDropdown.setText(labels[selected], false);
+            b.voiceDropdown.setOnItemClickListener((parent, view, position, id) -> {
+                if (position < voices.size()) prefs.setVoiceName(voices.get(position).getName());
+            });
+        });
+        previewTts = holder[0];
+    }
+
+    // ---------------------------------------------------------------- Anzeige
+
+    private void setupDisplay() {
+        b.switchFloatingJ.setChecked(prefs.floatingJ());
+        b.switchFloatingJ.setOnCheckedChangeListener((v, on) -> {
+            prefs.setFloatingJ(on);
+            if (on && !Settings.canDrawOverlays(this)) requestOverlay();
+            updateOverlayWarning();
+            refreshService();
+        });
+        b.switchSubtitles.setChecked(prefs.subtitles());
+        b.switchSubtitles.setOnCheckedChangeListener((v, on) -> {
+            prefs.setSubtitles(on);
+            updateOverlayWarning();
+            refreshService();
+        });
+        b.switchSubtitlesGame.setChecked(prefs.subtitlesInGame());
+        b.switchSubtitlesGame.setOnCheckedChangeListener((v, on) -> {
+            prefs.setSubtitlesInGame(on);
+            updateOverlayWarning();
+            refreshService();
+        });
+        b.positionGroup.check(prefs.subtitlesTop() ? R.id.positionTop : R.id.positionBottom);
+        b.positionGroup.addOnButtonCheckedListener((group, id, checked) -> {
+            if (checked) prefs.setSubtitlesTop(id == R.id.positionTop);
+        });
+        b.grantOverlay.setOnClickListener(v -> requestOverlay());
+        updateOverlayWarning();
+    }
+
+    private void requestOverlay() {
+        overlayLauncher.launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:" + getPackageName())));
+    }
+
+    private void updateOverlayWarning() {
+        boolean needed = prefs.floatingJ() || prefs.subtitles() || prefs.subtitlesInGame();
+        b.overlayWarning.setVisibility(needed && !Settings.canDrawOverlays(this) ? View.VISIBLE : View.GONE);
+    }
+
+    // ---------------------------------------------------------------- Spielmodus
+
+    private void setupGame() {
+        b.switchGame.setChecked(prefs.tftMode());
+        b.switchGame.setOnCheckedChangeListener((v, on) -> {
+            prefs.setTftMode(on);
+            refreshService();
+        });
+    }
+
+    // ---------------------------------------------------------------- Gedächtnis und Sicherung
+
+    private void setupBackup() {
+        b.memoryField.setText(prefs.memory());
+        updateBackupInfo();
+        b.backupCreate.setOnClickListener(v -> {
+            saveTextFields();
+            backupCreate.launch(Backup.FILE_NAME);
+        });
+        b.backupOpen.setOnClickListener(v -> backupOpen.launch(new String[]{"*/*"}));
+    }
+
+    private void onBackupCreated(Uri uri) {
+        if (uri == null) return;
+        useAsBackupTarget(uri);
+        boolean ok = Backup.write(this, prefs, uri);
+        b.backupInfo.setText(ok ? "✓ Sicherung eingerichtet. Sie aktualisiert sich ab jetzt automatisch."
+                : "✗ Die Sicherungsdatei ließ sich nicht schreiben.");
+    }
+
+    private void onBackupOpened(Uri uri) {
+        if (uri == null) return;
+        try {
+            int count = Backup.apply(prefs, Backup.read(this, uri));
+            useAsBackupTarget(uri); // künftig in dieselbe Datei sichern
+            refreshFromPrefs();
+            b.backupInfo.setText("✓ Wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen.");
+            refreshService();
+        } catch (Exception e) {
+            b.backupInfo.setText("✗ Das ist keine gültige Jarvis-Sicherung.");
+        }
+    }
+
+    /** Merkt sich die Datei dauerhaft als Sicherungsziel (Zugriff bleibt auch nach Neustarts erhalten). */
+    private void useAsBackupTarget(Uri uri) {
+        try {
+            getContentResolver().takePersistableUriPermission(uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            prefs.setBackupUri(uri.toString());
+        } catch (Exception e) {
+            prefs.setBackupUri("");
+        }
+    }
+
+    private void updateBackupInfo() {
+        b.backupInfo.setText(prefs.backupUri().isEmpty()
+                ? "Noch keine Sicherung eingerichtet."
+                : "✓ Automatische Sicherung aktiv.");
+    }
+
+    /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
+    private void refreshFromPrefs() {
+        b.memoryField.setText(prefs.memory());
+        b.modelField.setText(prefs.rawModel());
+        b.elevenVoiceField.setText(prefs.rawElevenVoice());
+        b.switchWake.setChecked(prefs.wakeWord());
+        setSlider(b.sliderSensitivity, prefs.sensitivity());
+        b.switchEarcon.setChecked(prefs.earcon());
+        setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
+        setSlider(b.sliderRate, prefs.rate());
+        setSlider(b.sliderPitch, prefs.pitch());
+        b.switchFloatingJ.setChecked(prefs.floatingJ());
+        b.switchSubtitles.setChecked(prefs.subtitles());
+        b.switchSubtitlesGame.setChecked(prefs.subtitlesInGame());
+        b.positionGroup.check(prefs.subtitlesTop() ? R.id.positionTop : R.id.positionBottom);
+        b.switchGame.setChecked(prefs.tftMode());
+        String active = Voices.resolveEngine(this, prefs);
+        for (int i = 0; i < engines.size(); i++) {
+            if (engines.get(i).pkg.equals(active)) b.engineDropdown.setText(engines.get(i).label, false);
+        }
+        loadPreviewEngine(active);
+    }
+
+    // ---------------------------------------------------------------- Speichern
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Jarvis kann sich im Hintergrund Neues gemerkt haben.
+        b.memoryField.setText(prefs.memory());
+        updateOverlayWarning();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        saveTextFields();
+        refreshService();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (previewTts != null) previewTts.shutdown();
+        if (elevenPreview != null) elevenPreview.stop();
+        super.onDestroy();
+    }
+
+    private void saveTextFields() {
+        prefs.setApiKey(text(b.keyField));
+        b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        String model = text(b.modelField).trim();
+        if (!model.isEmpty() && !Prefs.isValidModel(model)) {
+            b.modelField.setText("");
+            model = "";
+            b.modelLayout.setError("Kein gültiger Modellname – Jarvis wählt automatisch.");
+        } else {
+            b.modelLayout.setError(null);
+        }
+        prefs.setModel(model);
+        prefs.setMemory(text(b.memoryField));
+        prefs.setElevenKey(text(b.elevenKeyField));
+        prefs.setElevenVoice(text(b.elevenVoiceField));
+        Backup.autoSave(this, prefs);
+    }
+
+    /** Läuft Jarvis, übernimmt er die Änderungen sofort. */
+    private void refreshService() {
+        Backup.autoSave(this, prefs);
+        if (JarvisService.isRunning()) {
+            startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_REFRESH));
+        }
+    }
+
+    // ---------------------------------------------------------------- Hilfen
+
+    private static String text(android.widget.EditText e) {
+        return e.getText() == null ? "" : e.getText().toString();
+    }
+
+    private void showResult(android.widget.TextView view, String message) {
+        view.setText(message);
+        view.setVisibility(View.VISIBLE);
+    }
+
+    /** Setzt einen Schieberegler sicher (auf Raster und Bereich), sonst wirft Material eine Ausnahme. */
+    private static void setSlider(Slider s, float value) {
+        float from = s.getValueFrom();
+        float to = s.getValueTo();
+        float step = s.getStepSize();
+        float v = Math.max(from, Math.min(to, value));
+        if (step > 0) {
+            v = from + Math.round((v - from) / step) * step;
+            v = Math.round(v * 1000f) / 1000f;
+            v = Math.max(from, Math.min(to, v));
+        }
+        s.setValue(v);
+    }
+
+    private static Slider.OnSliderTouchListener onRelease(Runnable r) {
+        return new Slider.OnSliderTouchListener() {
+            @Override public void onStartTrackingTouch(Slider slider) { }
+            @Override public void onStopTrackingTouch(Slider slider) { r.run(); }
+        };
+    }
+
+    private String seconds(float v) {
+        return String.format(Locale.GERMANY, "%.1f s", v);
+    }
+
+    private String decimal(float v) {
+        return String.format(Locale.GERMANY, "%.2f", v);
+    }
+
+    private String pitchText(float v) {
+        return decimal(v) + (v < 0.995f ? " (tiefer)" : v > 1.005f ? " (höher)" : "");
+    }
+
+    private String versionName() {
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return info.versionName;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+}

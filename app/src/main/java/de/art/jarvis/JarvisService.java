@@ -6,34 +6,31 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
-import android.graphics.Color;
-import android.graphics.PixelFormat;
 import android.graphics.Rect;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.Icon;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
-import android.view.Gravity;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,12 +40,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Das Herz von Jarvis: schwebendes „J“ über allen Apps, Zuhören, Bildschirm sehen,
- * Claude fragen und die Antwort vorlesen.
+ * Das Herz von Jarvis: hört auf „Hey Jarvis“ (oder Antippen), sieht den Bildschirm,
+ * fragt Claude und spricht die Antwort.
+ *
+ * <p>Sichtbar ist nur, was eingeschaltet ist: das schwebende J (Standard aus) und die
+ * nicht anklickbaren Untertitel. Im Spielmodus verdeckt nichts das Spielbild – Jarvis antwortet nur per Stimme.
  */
 public class JarvisService extends Service {
     public static final String ACTION_START = "de.art.jarvis.START";
     public static final String ACTION_LISTEN = "de.art.jarvis.LISTEN";
+    public static final String ACTION_RESET = "de.art.jarvis.RESET";
+    public static final String ACTION_REFRESH = "de.art.jarvis.REFRESH";
     public static final String ACTION_STOP = "de.art.jarvis.STOP";
     public static final String EXTRA_CODE = "code";
     public static final String EXTRA_DATA = "data";
@@ -57,23 +59,70 @@ public class JarvisService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private static final long CONVERSATION_TIMEOUT_MS = 15 * 60 * 1000L;
     private static final int MAX_HISTORY = 16;
+    private static final long CAPTION_LINGER_MS = 4000;
 
-    private static final int COLOR_IDLE = 0xFF00B4D8;
-    private static final int COLOR_LISTENING = 0xFFE63946;
-    private static final int COLOR_THINKING = 0xFFF4A261;
-    private static final int COLOR_SPEAKING = 0xFF2A9D8F;
+    public enum State { IDLE, LISTENING, THINKING, SPEAKING }
+
+    /** Für den Startbildschirm. Alle Aufrufe kommen auf dem Haupt-Thread. */
+    public interface UiListener {
+        void onStateChanged(State state);
+
+        void onLevel(float level);
+
+        void onExchange(String you, String jarvis);
+
+        void onStatusChanged();
+    }
+
+    // ---------------------------------------------------------------- Zustand für die Oberfläche
 
     private static volatile boolean running;
+    private static State uiState = State.IDLE;
+    private static UiListener ui;
+    private static String lastYou = "";
+    private static String lastJarvis = "";
+    private static boolean screenShared;
+    private static String wakeProblem;
+    private static boolean screenAwake = true;
 
     public static boolean isRunning() {
         return running;
     }
 
-    private enum State { IDLE, LISTENING, THINKING, SPEAKING }
+    static State currentState() {
+        return uiState;
+    }
+
+    static String lastYou() {
+        return lastYou;
+    }
+
+    static String lastJarvis() {
+        return lastJarvis;
+    }
+
+    static boolean isScreenShared() {
+        return running && screenShared;
+    }
+
+    /** Fehlertext der Wachwort-Erkennung oder {@code null}. */
+    static String wakeProblem() {
+        return wakeProblem;
+    }
+
+    static boolean isScreenAwake() {
+        return screenAwake;
+    }
+
+    static void setUiListener(UiListener listener) {
+        ui = listener;
+    }
+
+    // ---------------------------------------------------------------- Felder
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final List<JSONObject> history = new ArrayList<>();
-    private final Runnable hidePanel = this::hidePanel;
+    private final StringBuilder utterance = new StringBuilder();
 
     private State state = State.IDLE;
     private Prefs prefs;
@@ -87,17 +136,22 @@ public class JarvisService extends Service {
     private SpeechRecognizer recognizer;
     private TextToSpeech tts;
     private boolean ttsReady;
-    private TextView bubble;
-    private TextView panel;
-    private WindowManager.LayoutParams bubbleLp;
-    private WindowManager.LayoutParams panelLp;
-    private long lastInteraction;
-    private boolean heardSomething;
-    private boolean panelExpanded;
     private String ttsEngine;
     private String pendingSpeech;
-    private final StringBuilder utterance = new StringBuilder();
+    private long lastInteraction;
+    private boolean heardSomething;
     private boolean finishRequested;
+    /** Jede Anfrage bekommt eine Nummer; Antworten auf überholte Anfragen werden verworfen. */
+    private int requestId;
+
+    private FloatingJ floatingJ;
+    private Subtitles subtitles;
+    private WakeWordEngine wake;
+    private Earcon earcon;
+    private long wakeRetryMs = 2000;
+    private boolean wakeErrorSpoken;
+    private boolean receiverRegistered;
+
     /** Nach der Sprechpause ist niemand mehr zu hören → abschicken. */
     private final Runnable pauseElapsed = () -> {
         if (state != State.LISTENING) return;
@@ -110,7 +164,28 @@ public class JarvisService extends Service {
         }
         finishListening();
     };
-    private static final int COMPACT_LINES = 3;
+
+    /** Nach dem Zuhören das Wachwort wieder scharf schalten (kurz warten, bis die Spracherkennung das Mikrofon frei gibt). */
+    private final Runnable resumeWake = () -> {
+        if (state != State.LISTENING) updateWake();
+    };
+
+    private final Runnable retryWake = () -> {
+        wakeProblem = null;
+        updateWake();
+        notifyUi();
+    };
+
+    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            screenAwake = Intent.ACTION_SCREEN_ON.equals(intent.getAction());
+            updateWake();
+            notifyUi();
+        }
+    };
+
+    // ---------------------------------------------------------------- Lebenszyklus
 
     @Override
     public void onCreate() {
@@ -119,45 +194,30 @@ public class JarvisService extends Service {
         claude = new ClaudeClient();
         gemini = new GeminiClient();
         eleven = new ElevenTts(this);
+        earcon = new Earcon();
+        subtitles = new Subtitles(this);
         wm = getSystemService(WindowManager.class);
-        NotificationManager nm = getSystemService(NotificationManager.class);
-        nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Jarvis", NotificationManager.IMPORTANCE_LOW));
-        initTts(Voices.resolveEngine(this, prefs));
-    }
+        wake = new WakeWordEngine(this, new WakeWordEngine.Listener() {
+            @Override
+            public void onWakeWord() {
+                JarvisService.this.onWakeWord();
+            }
 
-    /** Startet die Sprachausgabe mit der gewählten Engine (z. B. SherpaTTS für „Alan“). */
-    private void initTts(String engine) {
-        if (tts != null) {
-            try {
-                tts.stop();
-                tts.shutdown();
-            } catch (Exception ignored) {
-                // alte Instanz bereits weg
-            }
-        }
-        ttsReady = false;
-        ttsEngine = engine;
-        final TextToSpeech[] holder = new TextToSpeech[1];
-        holder[0] = Voices.create(this, engine, status -> {
-            if (holder[0] != tts) return; // veraltete Instanz
-            if (status != TextToSpeech.SUCCESS) {
-                if (engine != null) initTts(null); // Engine streikt → Systemstandard
-                return;
-            }
-            ttsReady = true;
-            Voices.apply(tts, prefs, engine);
-            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) { }
-                @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
-                @Override public void onError(String id) { main.post(JarvisService.this::onSpeechFinished); }
-            });
-            if (pendingSpeech != null) {
-                String text = pendingSpeech;
-                pendingSpeech = null;
-                speakNow(text);
+            @Override
+            public void onWakeError(String message) {
+                JarvisService.this.onWakeError(message);
             }
         });
-        tts = holder[0];
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Jarvis", NotificationManager.IMPORTANCE_LOW));
+        screenAwake = getSystemService(PowerManager.class).isInteractive();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(screenReceiver, filter);
+        receiverRegistered = true;
+        initTts(Voices.resolveEngine(this, prefs));
     }
 
     @Override
@@ -168,28 +228,101 @@ public class JarvisService extends Service {
             return START_NOT_STICKY;
         }
         if (ACTION_START.equals(action)) {
-            // Mikrofon-Typ ist nötig, damit Android Jarvis auch über anderen Apps zuhören lässt.
-            int types = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
-            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                types |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            @SuppressWarnings("deprecation")
+            Intent data = intent.getParcelableExtra(EXTRA_DATA);
+            int code = intent.getIntExtra(EXTRA_CODE, 0);
+            boolean withScreen = projection != null || data != null;
+            int types = 0;
+            if (withScreen) types |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
+            // Mikrofon-Typ ist nötig, damit Jarvis auch über anderen Apps zuhören darf.
+            if (micGranted()) types |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            if (types == 0) {
+                stopSelf();
+                return START_NOT_STICKY;
             }
+            boolean wasRunning = running;
             startForeground(NOTIFICATION_ID, buildNotification(), types);
             running = true;
-            if (projection == null) {
-                int code = intent.getIntExtra(EXTRA_CODE, 0);
-                @SuppressWarnings("deprecation")
-                Intent data = intent.getParcelableExtra(EXTRA_DATA);
-                if (data != null) startProjection(code, data);
-            }
-            if (bubble == null) showOverlay();
-            main.postDelayed(() -> say("Zu Diensten, Sir."), 600);
+            if (projection == null && data != null) startProjection(code, data);
+            applySettings();
+            if (!wasRunning) main.postDelayed(() -> say("Zu Diensten, Sir."), 500);
             return START_NOT_STICKY;
         }
-        if (ACTION_LISTEN.equals(action)) {
-            if (running) onBubbleTap();
-            else stopSelf();
+        if (!running) {
+            // Ohne Start (z. B. alte Benachrichtigung) nichts tun.
+            stopSelf();
+            return START_NOT_STICKY;
         }
+        if (ACTION_LISTEN.equals(action)) onTap();
+        else if (ACTION_RESET.equals(action)) resetConversation();
+        else if (ACTION_REFRESH.equals(action)) applySettings();
         return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        running = false;
+        screenShared = false;
+        main.removeCallbacksAndMessages(null);
+        if (receiverRegistered) {
+            unregisterReceiver(screenReceiver);
+            receiverRegistered = false;
+        }
+        wake.release();
+        destroyRecognizer();
+        eleven.stop();
+        earcon.release();
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        if (floatingJ != null) floatingJ.remove();
+        floatingJ = null;
+        subtitles.destroy();
+        if (grabber != null) grabber.stop();
+        grabber = null;
+        if (projection != null) projection.stop();
+        projection = null;
+        state = State.IDLE;
+        uiState = State.IDLE;
+        stopForeground(STOP_FOREGROUND_REMOVE);
+        if (ui != null) {
+            ui.onStateChanged(State.IDLE);
+            ui.onStatusChanged();
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    /** Übernimmt geänderte Einstellungen (J, Untertitel, Wachwort, Spielmodus) sofort. */
+    private void applySettings() {
+        boolean showJ = prefs.floatingJ() && !prefs.tftMode() && Settings.canDrawOverlays(this);
+        if (showJ && floatingJ == null) {
+            floatingJ = new FloatingJ(this, prefs, new FloatingJ.Callbacks() {
+                @Override public void onTap() { JarvisService.this.onTap(); }
+                @Override public void onLongPress() { resetConversation(); }
+            });
+            floatingJ.show(state);
+        } else if (!showJ && floatingJ != null) {
+            floatingJ.remove();
+            floatingJ = null;
+        }
+        if (!subtitlesWanted()) subtitles.hide();
+        wake.setSensitivity(prefs.sensitivity());
+        wakeProblem = null;
+        wakeRetryMs = 2000;
+        main.removeCallbacks(retryWake);
+        updateWake();
+        updateNotification();
+        notifyUi();
+    }
+
+    private boolean micGranted() {
+        return checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
     }
 
     // ---------------------------------------------------------------- Bildschirm
@@ -202,7 +335,7 @@ public class JarvisService extends Service {
             projection = null;
         }
         if (projection == null) {
-            showPanel("Bildschirmfreigabe fehlgeschlagen – ich arbeite vorerst ohne Bild.");
+            screenShared = false;
             return;
         }
         projection.registerCallback(new MediaProjection.Callback() {
@@ -214,12 +347,15 @@ public class JarvisService extends Service {
                         grabber = null;
                     }
                     projection = null;
+                    screenShared = false;
+                    notifyUi();
                 });
             }
         }, main);
         Rect b = wm.getCurrentWindowMetrics().getBounds();
         grabber = new ScreenGrabber(projection);
         grabber.start(b.width(), b.height(), getResources().getDisplayMetrics().densityDpi);
+        screenShared = true;
     }
 
     @Override
@@ -231,158 +367,101 @@ public class JarvisService extends Service {
         }
     }
 
-    // ---------------------------------------------------------------- Overlay
+    // ---------------------------------------------------------------- Anzeige
 
-    private void showOverlay() {
-        if (!Settings.canDrawOverlays(this)) return;
-        int size = dp(44);
-        bubble = new TextView(this);
-        bubble.setText("J");
-        bubble.setTextColor(Color.WHITE);
-        bubble.setTextSize(18);
-        bubble.setTypeface(Typeface.DEFAULT_BOLD);
-        bubble.setGravity(Gravity.CENTER);
-        bubble.setBackground(circle(COLOR_IDLE));
-        bubble.setElevation(dp(6));
-        bubbleLp = new WindowManager.LayoutParams(size, size,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
-        bubbleLp.gravity = Gravity.TOP | Gravity.START;
-        bubbleLp.x = dp(8);
-        bubbleLp.y = dp(220);
-        bubble.setOnTouchListener(new DragOrTap());
-        wm.addView(bubble, bubbleLp);
-
-        panel = new TextView(this);
-        panel.setTextColor(Color.WHITE);
-        panel.setTextSize(12);
-        panel.setMaxWidth(dp(240));
-        panel.setMaxLines(COMPACT_LINES);
-        panel.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        panel.setPadding(dp(10), dp(6), dp(10), dp(6));
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(0xCC0B1D2A);
-        bg.setCornerRadius(dp(10));
-        bg.setStroke(dp(1), COLOR_IDLE);
-        panel.setBackground(bg);
-        panel.setVisibility(View.GONE);
-        // Antippen: gekürzten Text ganz zeigen; nochmal antippen: schließen (und Sprechen stoppen).
-        panel.setOnClickListener(v -> {
-            if (!panelExpanded && panel.getLayout() != null
-                    && panel.getLayout().getEllipsisCount(panel.getLineCount() - 1) > 0) {
-                panelExpanded = true;
-                panel.setMaxLines(Integer.MAX_VALUE);
-                panel.setMaxWidth(dp(320));
-                main.removeCallbacks(hidePanel);
-                return;
-            }
-            if (state == State.SPEAKING) stopSpeaking();
-            if (state == State.SPEAKING) setState(State.IDLE);
-            hidePanel();
-        });
-        panelLp = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
-        panelLp.gravity = Gravity.TOP | Gravity.START;
-        wm.addView(panel, panelLp);
+    private boolean subtitlesWanted() {
+        if (!Settings.canDrawOverlays(this)) return false;
+        return prefs.tftMode() ? prefs.subtitlesInGame() : prefs.subtitles();
     }
 
-    private final class DragOrTap implements View.OnTouchListener {
-        private float downX, downY;
-        private int startX, startY;
-        private long downTime;
-        private boolean dragging;
-
-        @Override
-        public boolean onTouch(View v, MotionEvent e) {
-            switch (e.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    downX = e.getRawX();
-                    downY = e.getRawY();
-                    startX = bubbleLp.x;
-                    startY = bubbleLp.y;
-                    downTime = System.currentTimeMillis();
-                    dragging = false;
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    float dx = e.getRawX() - downX;
-                    float dy = e.getRawY() - downY;
-                    if (!dragging && Math.hypot(dx, dy) > dp(10)) dragging = true;
-                    if (dragging) {
-                        bubbleLp.x = startX + (int) dx;
-                        bubbleLp.y = startY + (int) dy;
-                        wm.updateViewLayout(bubble, bubbleLp);
-                        if (panel.getVisibility() == View.VISIBLE) positionPanel();
-                    }
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    if (!dragging) {
-                        if (System.currentTimeMillis() - downTime > 700) resetConversation();
-                        else onBubbleTap();
-                    }
-                    return true;
-                default:
-                    return false;
-            }
-        }
+    /** Kurzer Zwischenstand („Ich höre …“, Mitschrift). Nur im Alltag – im Spielmodus bleibt der Bildschirm frei. */
+    private void status(String text) {
+        if (prefs.tftMode() || !subtitlesWanted()) return;
+        subtitles.show(text, false, prefs.subtitlesTop(), 0);
     }
 
-    private void positionPanel() {
-        int screenWidth = wm.getCurrentWindowMetrics().getBounds().width();
-        boolean bubbleOnRight = bubbleLp.x + dp(22) > screenWidth / 2;
-        if (bubbleOnRight) {
-            panelLp.gravity = Gravity.TOP | Gravity.END;
-            panelLp.x = screenWidth - bubbleLp.x + dp(8);
-        } else {
-            panelLp.gravity = Gravity.TOP | Gravity.START;
-            panelLp.x = bubbleLp.x + dp(52);
-        }
-        panelLp.y = bubbleLp.y;
-        wm.updateViewLayout(panel, panelLp);
+    /** Wie {@link #status}, blendet sich aber nach ein paar Sekunden selbst aus. */
+    private void statusBriefly(String text) {
+        if (prefs.tftMode() || !subtitlesWanted()) return;
+        subtitles.show(text, false, prefs.subtitlesTop(), CAPTION_LINGER_MS);
     }
 
-    private void showPanel(String text) {
-        if (panel == null) return;
-        main.removeCallbacks(hidePanel);
-        if (panelExpanded) {
-            panelExpanded = false;
-            panel.setMaxLines(COMPACT_LINES);
-            panel.setMaxWidth(dp(240));
-        }
-        panel.setText(text);
-        panel.setVisibility(View.VISIBLE);
-        positionPanel();
+    /** Antworttext als Untertitel (im Spielmodus nur, wenn ausdrücklich eingeschaltet). */
+    private void caption(String text) {
+        if (!subtitlesWanted()) return;
+        subtitles.show(text, prefs.tftMode(), prefs.subtitlesTop(), 0);
     }
 
-    private void hidePanel() {
-        if (panel != null) panel.setVisibility(View.GONE);
-    }
-
-    private void setOverlayVisible(boolean visible) {
-        int v = visible ? View.VISIBLE : View.INVISIBLE;
-        if (bubble != null) bubble.setVisibility(v);
-        if (panel != null) panel.setVisibility(v);
+    private void setCaptureHidden(boolean hidden) {
+        if (floatingJ != null) floatingJ.setCaptureHidden(hidden);
+        subtitles.setCaptureHidden(hidden);
     }
 
     private void setState(State s) {
+        State old = state;
         state = s;
-        if (bubble == null) return;
-        int color;
-        switch (s) {
-            case LISTENING: color = COLOR_LISTENING; break;
-            case THINKING: color = COLOR_THINKING; break;
-            case SPEAKING: color = COLOR_SPEAKING; break;
-            default: color = COLOR_IDLE;
+        uiState = s;
+        if (floatingJ != null) floatingJ.setState(s);
+        if (ui != null) ui.onStateChanged(s);
+        if (old == State.LISTENING && s != State.LISTENING) {
+            main.removeCallbacks(resumeWake);
+            main.postDelayed(resumeWake, 350);
         }
-        bubble.setBackground(circle(color));
+    }
+
+    private void notifyUi() {
+        if (ui != null) ui.onStatusChanged();
+    }
+
+    private void publishExchange(String you, String jarvis) {
+        if (you != null) lastYou = you;
+        if (jarvis != null) lastJarvis = jarvis;
+        if (ui != null) ui.onExchange(lastYou, lastJarvis);
+    }
+
+    // ---------------------------------------------------------------- Wachwort „Hey Jarvis“
+
+    private void updateWake() {
+        boolean should = running && prefs.wakeWord() && micGranted() && screenAwake
+                && state != State.LISTENING && wakeProblem == null;
+        if (should) wake.start();
+        else wake.stop(null);
+    }
+
+    private void onWakeWord() {
+        if (!running) return;
+        wakeRetryMs = 2000;
+        switch (state) {
+            case LISTENING:
+                return;
+            case SPEAKING:
+                stopSpeaking();
+                break;
+            case THINKING:
+                requestId++; // laufende Antwort verwerfen – Art hat eine neue Frage
+                break;
+            default:
+                break;
+        }
+        startListening();
+    }
+
+    private void onWakeError(String message) {
+        wakeProblem = message;
+        notifyUi();
+        if (!wakeErrorSpoken) {
+            wakeErrorSpoken = true;
+            statusBriefly("„Hey Jarvis“ pausiert: " + message);
+        }
+        main.removeCallbacks(retryWake);
+        main.postDelayed(retryWake, wakeRetryMs);
+        wakeRetryMs = Math.min(30000, wakeRetryMs * 2);
     }
 
     // ---------------------------------------------------------------- Ablauf
 
-    private void onBubbleTap() {
+    /** Antippen (Reaktor, J, Benachrichtigung, Seitentaste). */
+    private void onTap() {
         switch (state) {
             case LISTENING:
                 // Antippen beim Zuhören = „fertig, abschicken“.
@@ -396,7 +475,7 @@ public class JarvisService extends Service {
                 }
                 break;
             case THINKING:
-                showPanel("Einen Moment, Sir – ich denke noch nach …");
+                statusBriefly("Einen Moment, Sir – ich denke noch nach …");
                 break;
             case SPEAKING:
                 stopSpeaking();
@@ -409,32 +488,44 @@ public class JarvisService extends Service {
 
     private void resetConversation() {
         history.clear();
+        requestId++;
         stopSpeaking();
+        if (state == State.LISTENING) {
+            main.removeCallbacks(pauseElapsed);
+            releaseRecognizer();
+            utterance.setLength(0);
+        }
         setState(State.IDLE);
+        publishExchange("", "");
         say("Neues Gespräch.");
     }
 
     private void startListening() {
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            showPanel("Mikrofon-Berechtigung fehlt – bitte die Jarvis-App öffnen.");
+        if (!micGranted()) {
+            say("Mir fehlt die Mikrofon-Berechtigung. Bitte öffne die Jarvis-App.");
             return;
         }
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            showPanel("Auf diesem Handy ist keine Spracherkennung verfügbar.");
+            say("Auf diesem Handy ist keine Spracherkennung verfügbar.");
             return;
         }
         utterance.setLength(0);
         finishRequested = false;
         heardSomething = false;
         setState(State.LISTENING);
-        showPanel("Einen Augenblick …");
-        beginRecognition();
+        if (prefs.earcon()) earcon.play();
+        if (prefs.tftMode()) subtitles.hide(); // alte Antwort weg, Spielbild frei
+        status("Ich höre …");
+        // Erst das Wachwort-Mikrofon freigeben, dann übernimmt die Spracherkennung.
+        wake.stop(() -> {
+            if (state == State.LISTENING) beginRecognition();
+        });
     }
 
     /**
      * Ein Erkennungsdurchgang. Nach jedem erkannten Satzteil startet sofort der nächste,
      * damit Art Pausen machen kann. Abgeschickt wird erst, wenn nach einem Satzteil
-     * prefs.pauseMs() lang niemand spricht – oder wenn Art aufs J tippt.
+     * prefs.pauseMs() lang niemand spricht – oder wenn Art erneut antippt.
      */
     private void beginRecognition() {
         releaseRecognizer();
@@ -445,9 +536,9 @@ public class JarvisService extends Service {
             public void onReadyForSpeech(Bundle params) {
                 if (current != recognizer) return;
                 if (utterance.length() == 0) {
-                    showPanel("Ich höre, Sir … sprich jetzt.");
+                    status("Ich höre, Sir …");
                 } else {
-                    showPanel(utterance + " …");
+                    status(utterance + " …");
                     main.removeCallbacks(pauseElapsed);
                     main.postDelayed(pauseElapsed, prefs.pauseMs());
                 }
@@ -460,7 +551,12 @@ public class JarvisService extends Service {
                 if (!finishRequested) main.removeCallbacks(pauseElapsed);
             }
 
-            @Override public void onRmsChanged(float rmsdB) { }
+            @Override
+            public void onRmsChanged(float rmsdB) {
+                if (current != recognizer || ui == null) return;
+                ui.onLevel(Math.max(0f, Math.min(1f, (rmsdB + 2f) / 12f)));
+            }
+
             @Override public void onBufferReceived(byte[] buffer) { }
             @Override public void onEndOfSpeech() { }
             @Override public void onEvent(int eventType, Bundle params) { }
@@ -469,7 +565,10 @@ public class JarvisService extends Service {
             public void onPartialResults(Bundle partial) {
                 if (current != recognizer) return;
                 String text = firstResult(partial);
-                if (!text.isEmpty()) showPanel(joined(text) + " …");
+                if (!text.isEmpty()) {
+                    status(joined(text) + " …");
+                    publishExchange(joined(text), "");
+                }
             }
 
             @Override
@@ -505,13 +604,13 @@ public class JarvisService extends Service {
                 }
                 setState(State.IDLE);
                 if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                    showPanel(heardSomething
-                            ? "Ich habe dich gehört, aber nichts verstanden (Code " + error + ")."
-                            : "Ich habe gar nichts gehört (Code " + error + "). Ist das Mikrofon frei?");
+                    // Nach „Hey Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
+                    statusBriefly(heardSomething ? "Ich habe dich nicht verstanden." : "Ich habe nichts gehört.");
                 } else {
-                    showPanel("Spracherkennung meldet Fehler " + error + ". Tipp einfach nochmal auf mich.");
+                    String msg = "Die Spracherkennung meldet Fehler " + error + ".";
+                    if (prefs.tftMode()) say(msg);
+                    else statusBriefly(msg + " Versuch es einfach nochmal.");
                 }
-                main.postDelayed(hidePanel, 4000);
             }
         });
         Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -531,7 +630,7 @@ public class JarvisService extends Service {
                 finishListening();
             } else {
                 setState(State.IDLE);
-                showPanel("Spracherkennung konnte nicht starten. Tipp nochmal auf mich.");
+                say("Die Spracherkennung konnte nicht starten.");
             }
         }
     }
@@ -550,10 +649,10 @@ public class JarvisService extends Service {
         finishRequested = false;
         if (text.isEmpty()) {
             setState(State.IDLE);
-            showPanel("Ich habe nichts verstanden.");
-            main.postDelayed(hidePanel, 3000);
+            statusBriefly("Ich habe nichts verstanden.");
             return;
         }
+        publishExchange(text, "");
         handleUtterance(text);
     }
 
@@ -603,7 +702,18 @@ public class JarvisService extends Service {
     }
 
     private void handleUtterance(String text) {
-        // „Merk dir …“ / „Vergiss …“ erledigt die App selbst – zuverlässig und ohne Kosten.
+        // „Spielmodus an/aus“ erledigt die App selbst.
+        Boolean game = Commands.gameMode(text);
+        if (game != null) {
+            prefs.setTftMode(game);
+            Backup.autoSave(this, prefs);
+            setState(State.IDLE);
+            applySettings();
+            speak(game ? "Spielmodus aktiv. Ich bleibe unsichtbar und antworte nur per Stimme."
+                    : "Spielmodus beendet.");
+            return;
+        }
+        // „Merk dir …“ / „Vergiss …“ ebenso – zuverlässig und ohne Kosten.
         Memory.Outcome local = Memory.command(text, prefs.memory());
         if (local != null) {
             prefs.setMemory(local.memory);
@@ -615,29 +725,36 @@ public class JarvisService extends Service {
         String key = prefs.apiKey();
         if (key.isEmpty()) {
             setState(State.IDLE);
-            say("Mir fehlt noch der API-Schlüssel. Bitte trag ihn in der Jarvis-App ein.");
+            say("Mir fehlt noch der API-Schlüssel. Bitte trag ihn in den Jarvis-Einstellungen ein.");
             return;
         }
         long now = System.currentTimeMillis();
         if (now - lastInteraction > CONVERSATION_TIMEOUT_MS) history.clear();
         lastInteraction = now;
 
+        final int id = ++requestId;
         setState(State.THINKING);
-        showPanel("„" + text + "“\n…");
+        status("„" + text + "“");
         if (grabber == null) {
-            ask(key, text, null);
+            ask(id, key, text, null);
             return;
         }
-        // Overlay kurz ausblenden, damit es nicht auf dem Bildschirmfoto landet.
-        setOverlayVisible(false);
+        boolean overlayVisible = floatingJ != null || subtitles.isShowing();
+        if (!overlayVisible) {
+            // Nichts eingeblendet (z. B. Spielmodus) → sofort fotografieren, keine Wartezeit.
+            ask(id, key, text, grabber.captureJpegBase64());
+            return;
+        }
+        // Eingeblendetes kurz verstecken, damit es nicht auf dem Bildschirmfoto landet.
+        setCaptureHidden(true);
         main.postDelayed(() -> {
             String image = grabber == null ? null : grabber.captureJpegBase64();
-            setOverlayVisible(true);
-            ask(key, text, image);
+            setCaptureHidden(false);
+            if (id == requestId) ask(id, key, text, image);
         }, 300);
     }
 
-    private void ask(String key, String text, String image) {
+    private void ask(int id, String key, String text, String image) {
         JSONArray messages = new JSONArray();
         try {
             for (JSONObject m : history) messages.put(m);
@@ -662,6 +779,7 @@ public class JarvisService extends Service {
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
+                if (id != requestId || !running) return; // überholt (neue Frage, neues Gespräch)
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
                 prefs.setMemory(tagged.memory);
                 Backup.autoSave(JarvisService.this, prefs);
@@ -674,6 +792,7 @@ public class JarvisService extends Service {
 
             @Override
             public void onError(String message) {
+                if (id != requestId || !running) return;
                 setState(State.IDLE);
                 say(message);
             }
@@ -696,13 +815,53 @@ public class JarvisService extends Service {
 
     // ---------------------------------------------------------------- Sprechen
 
+    /** Startet die Sprachausgabe mit der gewählten Engine (z. B. SherpaTTS). */
+    private void initTts(String engine) {
+        if (tts != null) {
+            try {
+                tts.stop();
+                tts.shutdown();
+            } catch (Exception ignored) {
+                // alte Instanz bereits weg
+            }
+        }
+        ttsReady = false;
+        ttsEngine = engine;
+        final TextToSpeech[] holder = new TextToSpeech[1];
+        holder[0] = Voices.create(this, engine, status -> {
+            if (holder[0] != tts) return; // veraltete Instanz
+            if (status != TextToSpeech.SUCCESS) {
+                if (engine != null) initTts(null); // Engine streikt → Systemstandard
+                return;
+            }
+            ttsReady = true;
+            Voices.apply(tts, prefs, engine);
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override public void onStart(String id) { }
+                @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
+                @Override public void onError(String id) { main.post(JarvisService.this::onSpeechFinished); }
+            });
+            if (pendingSpeech != null) {
+                String text = pendingSpeech;
+                pendingSpeech = null;
+                speakNow(text);
+            }
+        });
+        tts = holder[0];
+    }
+
     private void say(String text) {
         speak(text);
     }
 
     private void speak(String text) {
         String clean = Text.cleanForSpeech(text);
-        showPanel(clean);
+        if (clean.isEmpty()) {
+            onSpeechFinished();
+            return;
+        }
+        caption(clean);
+        publishExchange(null, clean);
         // Premium-Stimme (ElevenLabs), wenn eingerichtet – sonst die Stimme des Handys.
         if (!prefs.elevenKey().isEmpty()) {
             speakPremium(clean);
@@ -726,18 +885,17 @@ public class JarvisService extends Service {
                 // Einmal pro Sitzung Bescheid geben, dann mit der Handy-Stimme weitermachen.
                 if (!elevenWarned) {
                     elevenWarned = true;
-                    showPanel(message + " Ich spreche mit der Handy-Stimme weiter.");
-                    main.postDelayed(() -> speakDevice(clean), 1500);
-                } else {
-                    speakDevice(clean);
+                    statusBriefly(message + " Ich spreche mit der Handy-Stimme weiter.");
                 }
+                speakDevice(clean);
             }
         });
     }
 
     private void stopSpeaking() {
+        pendingSpeech = null;
         if (tts != null) tts.stop();
-        if (eleven != null) eleven.stop();
+        eleven.stop();
     }
 
     private void speakDevice(String clean) {
@@ -751,8 +909,7 @@ public class JarvisService extends Service {
             main.postDelayed(() -> {
                 if (pendingSpeech != null) { // Sprachausgabe kam nicht hoch
                     pendingSpeech = null;
-                    setState(State.IDLE);
-                    main.postDelayed(hidePanel, 15000);
+                    onSpeechFinished();
                 }
             }, 6000);
             return;
@@ -770,64 +927,37 @@ public class JarvisService extends Service {
 
     private void onSpeechFinished() {
         if (state == State.SPEAKING) setState(State.IDLE);
-        main.removeCallbacks(hidePanel);
-        if (!panelExpanded) main.postDelayed(hidePanel, 5000);
+        subtitles.hideAfter(CAPTION_LINGER_MS);
     }
 
-    // ---------------------------------------------------------------- Hilfen
+    // ---------------------------------------------------------------- Benachrichtigung
+
+    private void updateNotification() {
+        if (!running) return;
+        getSystemService(NotificationManager.class).notify(NOTIFICATION_ID, buildNotification());
+    }
 
     private Notification buildNotification() {
         PendingIntent stop = PendingIntent.getService(this, 1,
                 new Intent(this, JarvisService.class).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent listen = PendingIntent.getService(this, 3,
+                new Intent(this, JarvisService.class).setAction(ACTION_LISTEN), PendingIntent.FLAG_IMMUTABLE);
         PendingIntent open = PendingIntent.getActivity(this, 2,
                 new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
+        String title = prefs.tftMode() ? "Jarvis ist aktiv · Spielmodus" : "Jarvis ist aktiv";
+        String text = prefs.wakeWord()
+                ? "Sag „Hey Jarvis“ – oder tippe auf „Sprechen“."
+                : "Tippe auf „Sprechen“, um mit Jarvis zu reden.";
+        Icon icon = Icon.createWithResource(this, R.drawable.ic_jarvis);
         return new Notification.Builder(this, CHANNEL)
                 .setSmallIcon(R.drawable.ic_jarvis)
-                .setContentTitle("Jarvis ist aktiv")
-                .setContentText("Tippe auf das J zum Sprechen. Lange drücken = neues Gespräch.")
+                .setContentTitle(title)
+                .setContentText(text)
                 .setContentIntent(open)
                 .setOngoing(true)
-                .addAction(new Notification.Action.Builder(
-                        Icon.createWithResource(this, R.drawable.ic_jarvis), "Beenden", stop).build())
+                .setOnlyAlertOnce(true)
+                .addAction(new Notification.Action.Builder(icon, "Sprechen", listen).build())
+                .addAction(new Notification.Action.Builder(icon, "Beenden", stop).build())
                 .build();
-    }
-
-    private GradientDrawable circle(int color) {
-        GradientDrawable d = new GradientDrawable();
-        d.setShape(GradientDrawable.OVAL);
-        d.setColor(color);
-        d.setStroke(dp(2), 0x55FFFFFF);
-        return d;
-    }
-
-    private int dp(int v) {
-        return Math.round(v * getResources().getDisplayMetrics().density);
-    }
-
-    @Override
-    public void onDestroy() {
-        running = false;
-        main.removeCallbacksAndMessages(null);
-        destroyRecognizer();
-        if (eleven != null) eleven.stop();
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        if (bubble != null) wm.removeView(bubble);
-        if (panel != null) wm.removeView(panel);
-        bubble = null;
-        panel = null;
-        if (grabber != null) grabber.stop();
-        grabber = null;
-        if (projection != null) projection.stop();
-        projection = null;
-        stopForeground(STOP_FOREGROUND_REMOVE);
-        super.onDestroy();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
     }
 }

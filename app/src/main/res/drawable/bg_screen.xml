@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hintergrund: oben ein Hauch Blau, nach unten tiefes Nachtblau. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/jarvis_background_top"
+        android:centerColor="@color/jarvis_background"
+        android:endColor="@color/jarvis_background"
+        android:type="linear" />
+</shape>

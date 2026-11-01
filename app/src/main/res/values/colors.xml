@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Jarvis-Farben: tiefes Nachtblau als Fläche, leuchtendes Blau als Akzent. -->
+<resources>
+    <color name="jarvis_background">#FF060A12</color>
+    <color name="jarvis_background_top">#FF0B1626</color>
+    <color name="jarvis_surface">#FF0A111C</color>
+    <color name="jarvis_surface_lowest">#FF070C14</color>
+    <color name="jarvis_surface_low">#FF0D1521</color>
+    <color name="jarvis_surface_container">#FF111A28</color>
+    <color name="jarvis_surface_high">#FF16212F</color>
+    <color name="jarvis_surface_highest">#FF1C2837</color>
+    <color name="jarvis_surface_variant">#FF1F2C3C</color>
+
+    <color name="jarvis_primary">#FF6CCBFF</color>
+    <color name="jarvis_on_primary">#FF00344F</color>
+    <color name="jarvis_primary_container">#FF0B4A6E</color>
+    <color name="jarvis_on_primary_container">#FFCBE9FF</color>
+
+    <color name="jarvis_secondary">#FF9CC7E6</color>
+    <color name="jarvis_on_secondary">#FF02324A</color>
+    <color name="jarvis_secondary_container">#FF1A3A52</color>
+    <color name="jarvis_on_secondary_container">#FFCDE6FA</color>
+
+    <color name="jarvis_tertiary">#FF8FA2FF</color>
+    <color name="jarvis_on_tertiary">#FF102478</color>
+
+    <color name="jarvis_on_surface">#FFE2EAF4</color>
+    <color name="jarvis_on_surface_variant">#FF9DB0C4</color>
+    <color name="jarvis_outline">#FF3B4B5F</color>
+    <color name="jarvis_outline_variant">#FF223143</color>
+    <color name="jarvis_error">#FFFF8A80</color>
+    <color name="jarvis_on_error">#FF5C0B05</color>
+
+    <!-- Zustände (Reaktor, J, Statuspunkt) -->
+    <color name="state_off">#FF3D5A73</color>
+    <color name="state_idle">#FF2E9BFF</color>
+    <color name="state_listening">#FF33E1FF</color>
+    <color name="state_thinking">#FF7B6CFF</color>
+    <color name="state_speaking">#FF2EE6C5</color>
+</resources>

@@ -37,6 +37,13 @@ final class Backup {
         o.put("pitch", (double) p.pitch());
         o.put("pause", p.pauseMs());
         o.put("elevenVoice", p.rawElevenVoice());
+        o.put("wakeWord", p.wakeWord());
+        o.put("sensitivity", p.sensitivity());
+        o.put("earcon", p.earcon());
+        o.put("floatingJ", p.floatingJ());
+        o.put("subtitles", p.subtitles());
+        o.put("subtitlesGame", p.subtitlesInGame());
+        o.put("subtitlesTop", p.subtitlesTop());
         return o.toString(2);
     }
 
@@ -52,6 +59,13 @@ final class Backup {
         p.setPitch((float) o.optDouble("pitch", Prefs.DEFAULT_PITCH));
         p.setPauseMs(o.optInt("pause", Prefs.DEFAULT_PAUSE_MS));
         p.setElevenVoice(o.optString("elevenVoice", ""));
+        p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
+        p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
+        p.setEarcon(o.optBoolean("earcon", true));
+        p.setFloatingJ(o.optBoolean("floatingJ", false));
+        p.setSubtitles(o.optBoolean("subtitles", true));
+        p.setSubtitlesInGame(o.optBoolean("subtitlesGame", false));
+        p.setSubtitlesTop(o.optBoolean("subtitlesTop", true));
         return Memory.load(p.memory()).size();
     }
 
