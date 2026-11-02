@@ -26,7 +26,8 @@ Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentl
 - Ohne Wachwort: Kern auf dem Startbildschirm antippen, **„Sprechen“** in der Benachrichtigung, Seitentaste oder (falls eingeschaltet) das schwebende J.
 - **Während Jarvis spricht:** „Jarvis“ oder Antippen unterbricht und hört neu zu.
 - **Kern lange drücken:** neues Gespräch.
-- **„Spielmodus an“ / „Spielmodus aus“** schaltet per Sprache um – oder der Schalter auf dem Startbildschirm.
+- **„Spielmodus an“ / „Spielmodus aus“** schaltet per Sprache um – oder der Schalter auf dem Startbildschirm. Jeder Moduswechsel beginnt ein frisches Gespräch.
+- **„Neue Partie“** (oder „neues Spiel“): Jarvis vergisst den Verlauf der letzten Partie, damit alte Pläne nicht weiterwirken; der Spielmodus geht dabei an.
 - **„Merk dir …“** speichert dauerhaft, **„Vergiss …“** löscht. Alles einsehbar unter Einstellungen → Gedächtnis.
 
 | Farbe des Kerns | Bedeutung |
@@ -40,6 +41,8 @@ Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentl
 ### Spielmodus (TFT)
 
 Nichts verdeckt das Spielbild: kein J, keine Fenster, Antworten nur per Stimme (kurz und knapp, TFT-Coach mit Claude Sonnet 5.5). Optional zeigt eine schmale, halbtransparente Untertitelleiste die Antwort – sie ist nicht anklickbar (Fingertipps gehen durch sie hindurch ins Spiel) und verschwindet nach wenigen Sekunden. Einstellbar unter Einstellungen → Anzeige.
+
+Im Spielmodus schickt Jarvis ein schärferes Bildschirmfoto (1920 statt 1280 Pixel an der langen Kante, weniger Kompression), damit Gold, Stufe, Händler und kleine Gegenstände lesbar bleiben – Claude-Modelle ab 4.7 verarbeiten bis 2576 Pixel. Der Bildschirm-Mitschnitt selbst läuft dauerhaft nur in dieser Größe statt in voller Auflösung (weniger Akku und Wärme in langen Partien). Fehlt die Bildschirmfreigabe, sagt Jarvis das bei Fragen zur Partie zuerst, statt blind zu raten. Begriffe wie im deutschen Client: Phase, Stufe, Händler, Taktikerleben, Attribute.
 
 ### Anzeige
 

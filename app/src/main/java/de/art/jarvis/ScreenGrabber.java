@@ -14,9 +14,14 @@ import android.util.Base64;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
-/** Hält den Bildschirm-Mitschnitt offen und liefert auf Abruf das aktuelle Bild als JPEG (Base64). */
+/**
+ * Hält den Bildschirm-Mitschnitt offen und liefert auf Abruf das aktuelle Bild als JPEG (Base64).
+ *
+ * <p>Der Mitschnitt läuft verkleinert ({@link CaptureSize#MIRROR_EDGE}) statt in voller Auflösung (3120 × 1440):
+ * Das System skaliert beim Spiegeln, jedes Einzelbild ist rund 2,6-mal kleiner – spürbar weniger Akku und
+ * Wärme während einer langen TFT-Partie. Für ein Foto wird nur noch höchstens auf die Alltagsgröße verkleinert.
+ */
 final class ScreenGrabber {
-    private static final int MAX_EDGE = 1280;
 
     private final MediaProjection projection;
     private final Object lock = new Object();
@@ -32,20 +37,24 @@ final class ScreenGrabber {
         this.projection = projection;
     }
 
+    /** Startet den Mitschnitt; w/h/dpi sind die echten Bildschirmmaße, verkleinert wird hier. */
     void start(int w, int h, int dpi) {
         thread = new HandlerThread("jarvis-capture");
         thread.start();
         handler = new Handler(thread.getLooper());
-        reader = newReader(w, h);
-        display = projection.createVirtualDisplay("jarvis-screen", w, h, dpi,
+        int[] s = CaptureSize.fit(w, h, CaptureSize.MIRROR_EDGE);
+        reader = newReader(s[0], s[1]);
+        display = projection.createVirtualDisplay("jarvis-screen", s[0], s[1], CaptureSize.scaledDpi(dpi, w, s[0]),
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader.getSurface(), null, handler);
     }
 
     /** Bei Drehung (z. B. TFT im Querformat) das Abbild an die neue Größe anpassen. */
     void resize(int w, int h, int dpi) {
         if (handler == null) return;
+        final int[] s = CaptureSize.fit(w, h, CaptureSize.MIRROR_EDGE);
+        final int scaledDpi = CaptureSize.scaledDpi(dpi, w, s[0]);
         handler.post(() -> {
-            if (display == null || (w == width && h == height)) return;
+            if (display == null || (s[0] == width && s[1] == height)) return;
             ImageReader old = reader;
             synchronized (lock) {
                 if (latest != null) {
@@ -53,8 +62,8 @@ final class ScreenGrabber {
                     latest = null;
                 }
             }
-            reader = newReader(w, h);
-            display.resize(w, h, dpi);
+            reader = newReader(s[0], s[1]);
+            display.resize(s[0], s[1], scaledDpi);
             display.setSurface(reader.getSurface());
             old.close();
         });
@@ -80,8 +89,11 @@ final class ScreenGrabber {
         return r;
     }
 
-    /** Aktuelles Bild als JPEG in Base64 oder null, wenn noch keins da ist. */
-    String captureJpegBase64() {
+    /**
+     * Aktuelles Bild als JPEG in Base64 oder null, wenn noch keins da ist.
+     * game = Spielmodus: schärfer (größer, weniger Kompression), damit TFT-Details lesbar bleiben.
+     */
+    String captureJpegBase64(boolean game) {
         Bitmap bitmap;
         synchronized (lock) {
             if (latest == null) return null;
@@ -91,9 +103,9 @@ final class ScreenGrabber {
                 return null;
             }
         }
-        Bitmap scaled = scale(bitmap);
+        Bitmap scaled = scale(bitmap, CaptureSize.edge(game));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        scaled.compress(Bitmap.CompressFormat.JPEG, 75, out);
+        scaled.compress(Bitmap.CompressFormat.JPEG, CaptureSize.quality(game), out);
         if (scaled != bitmap) scaled.recycle();
         bitmap.recycle();
         return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
@@ -125,13 +137,12 @@ final class ScreenGrabber {
         return cropped;
     }
 
-    private static Bitmap scale(Bitmap b) {
+    private static Bitmap scale(Bitmap b, int maxEdge) {
         int w = b.getWidth();
         int h = b.getHeight();
-        int longEdge = Math.max(w, h);
-        if (longEdge <= MAX_EDGE) return b;
-        float f = MAX_EDGE / (float) longEdge;
-        return Bitmap.createScaledBitmap(b, Math.round(w * f), Math.round(h * f), true);
+        if (Math.max(w, h) <= maxEdge) return b;
+        int[] s = CaptureSize.fit(w, h, maxEdge);
+        return Bitmap.createScaledBitmap(b, s[0], s[1], true);
     }
 
     void stop() {
