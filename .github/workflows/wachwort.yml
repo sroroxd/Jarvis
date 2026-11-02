@@ -18,9 +18,9 @@ on:
       daten_lauf:
         description: Lauf-ID mit fertigen Merkmalen (leer = neu erzeugen)
         default: ''
+  # Neu trainieren: training/wakeword/start.txt ändern (z. B. Datum eintragen) und pushen – oder „Run workflow“.
   push:
-    branches: [ wachwort-jarvis ]
-    paths: [ 'training/wakeword/**', '.github/workflows/wachwort.yml' ]
+    paths: [ 'training/wakeword/start.txt' ]
 
 # Fertige Merkmale eines früheren Laufs wiederverwenden: Lauf-ID in training/wakeword/daten_lauf.txt
 # (oder als Eingabe). Datei löschen, sobald sich Stimmen, Texte oder Verrauschen ändern.
@@ -171,7 +171,7 @@ jobs:
       - name: Prüfen (neu gegen alt, Stimmen die nie im Training waren)
         run: |
           python training/wakeword/jarvis_wakeword.py evaluate --model out/jarvis.onnx \
-            --old app/src/main/assets/wakeword/hey_jarvis_v0.1.onnx --models app/src/main/assets/wakeword \
+            --old training/wakeword/referenz/hey_jarvis_v0.1.onnx --models app/src/main/assets/wakeword \
             --voices testvoices --report out/eval.json 2>&1 | grep -v "Missing phoneme" | tee out/eval.txt
           { echo "### Variante ${{ matrix.cfg.name }}"; echo '```'; grep -E "Gewählt" out/training.log; sed -n '/Teststimmen/,/Schwächste/p' out/eval.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 

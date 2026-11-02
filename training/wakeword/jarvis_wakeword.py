@@ -734,7 +734,9 @@ class Streamer:
         self.heads = {k: ort.InferenceSession(v, so, providers=p) for k, v in heads.items()}
 
     def scores(self, audio):
-        a = np.concatenate([np.zeros(8000, np.int16), audio, np.zeros(12000, np.int16)]).astype(np.float32)
+        # 2 s Stille vorweg: Der Detektor braucht nach dem Start ~1,7 s Anlauf (16 Merkmal-Frames + 5 verworfene
+        # Vorhersagen). Mit weniger Vorlauf wären kurze Sätze vorbei, bevor er zuhört – so lief es im ersten Lauf.
+        a = np.concatenate([np.zeros(32000, np.int16), audio, np.zeros(12000, np.int16)]).astype(np.float32)
         raw = np.zeros(0, np.float32)
         mel = [np.ones(32, np.float32)] * 76
         feats = []
