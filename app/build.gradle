@@ -68,4 +68,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.13.0'
     testImplementation 'junit:junit:4.13.2'
+    // Echtes org.json für JVM-Tests (Android-Stub wirft dort)
+    testImplementation 'org.json:json:20240303'
 }
