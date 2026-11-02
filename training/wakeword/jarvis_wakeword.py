@@ -542,9 +542,11 @@ def cmd_features(args):
 
 def open_feature_file(path, max_rows=None):
     """Öffnet eine (N,16,96)-Merkmaldatei als memmap – auch wenn sie nur teilweise heruntergeladen ist."""
+    fmt = np.lib.format
     with open(path, "rb") as f:
-        version = np.lib.format.read_magic(f)
-        shape, fortran, dtype = np.lib.format._read_array_header(f, version)
+        version = fmt.read_magic(f)
+        reader = fmt.read_array_header_1_0 if version == (1, 0) else fmt.read_array_header_2_0
+        shape, fortran, dtype = reader(f)
         offset = f.tell()
     row = int(np.prod(shape[1:])) * np.dtype(dtype).itemsize
     avail = (os.path.getsize(path) - offset) // row
@@ -593,6 +595,11 @@ def cmd_train(args):
     if acav is not None and acav.nbytes < 6e9:
         acav = np.ascontiguousarray(acav)
     val_stream = np.load(args.val_fp).astype(np.float32) if args.val_fp else None
+    if val_stream is not None and val_stream.ndim == 3:
+        # Falls schon in Fenster geschnitten: zurück zu einem durchgehenden Strom (letzter Frame je Fenster).
+        val_stream = np.concatenate([val_stream[0], val_stream[1:, -1]])
+    if val_stream is not None:
+        print(f"  Validierungsstrom {val_stream.shape}")
     print(f"Training: pos {len(pos_tr)}  neg {len(neg_tr)}  ACAV {0 if acav is None else len(acav)}  "
           f"Validierung: pos {len(pos_val)} neg {len(neg_val)} "
           f"Strom {0 if val_stream is None else val_stream.shape[0] * 0.08 / 3600:.1f} h")

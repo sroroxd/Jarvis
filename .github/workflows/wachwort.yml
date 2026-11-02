@@ -15,9 +15,18 @@ on:
       steps:
         description: Trainingsschritte pro Durchgang
         default: '40000'
+      daten_lauf:
+        description: Lauf-ID mit fertigen Merkmalen (leer = neu erzeugen)
+        default: ''
   push:
     branches: [ wachwort-jarvis ]
     paths: [ 'training/wakeword/**', '.github/workflows/wachwort.yml' ]
+
+# Fertige Merkmale eines früheren Laufs wiederverwenden: Lauf-ID in training/wakeword/daten_lauf.txt
+# (oder als Eingabe). Datei löschen, sobald sich Stimmen, Texte oder Verrauschen ändern.
+permissions:
+  contents: read
+  actions: read
 
 concurrency:
   group: wachwort-${{ github.ref }}
@@ -34,7 +43,22 @@ env:
   PYTHONUNBUFFERED: '1'
 
 jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      reuse: ${{ steps.p.outputs.reuse }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: p
+        run: |
+          r="${{ github.event.inputs.daten_lauf }}"
+          if [ -z "$r" ] && [ -f training/wakeword/daten_lauf.txt ]; then r=$(tr -dc 0-9 < training/wakeword/daten_lauf.txt); fi
+          echo "reuse=$r" >> "$GITHUB_OUTPUT"
+          echo "Merkmale wiederverwenden aus Lauf: ${r:-nein, neu erzeugen}"
+
   daten:
+    needs: plan
+    if: needs.plan.outputs.reuse == ''
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     strategy:
@@ -81,7 +105,8 @@ jobs:
           retention-days: 3
 
   training:
-    needs: daten
+    needs: [ plan, daten ]
+    if: always() && needs.plan.result == 'success' && (needs.daten.result == 'success' || needs.daten.result == 'skipped')
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     steps:
@@ -96,10 +121,21 @@ jobs:
           pip install -q --index-url https://download.pytorch.org/whl/cpu torch
           pip install -q onnx onnxruntime numpy scipy piper-tts==1.8.0
 
-      - uses: actions/download-artifact@v4
+      - name: Merkmale aus diesem Lauf
+        if: needs.plan.outputs.reuse == ''
+        uses: actions/download-artifact@v4
         with:
           pattern: merkmale-*
           path: work
+
+      - name: Merkmale aus früherem Lauf
+        if: needs.plan.outputs.reuse != ''
+        uses: actions/download-artifact@v4
+        with:
+          pattern: merkmale-*
+          path: work
+          run-id: ${{ needs.plan.outputs.reuse }}
+          github-token: ${{ github.token }}
 
       - name: Alltagsaudio laden (ACAV100M, ca. 370 Stunden) und Validierungsset (ca. 11 Stunden)
         run: |
