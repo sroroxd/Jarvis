@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
@@ -81,6 +82,9 @@ public class JarvisService extends Service {
     private static UiListener ui;
     private static String lastYou = "";
     private static String lastJarvis = "";
+    private static volatile String lastTiming = "";
+    private static String lastModel = "";
+    private final Timing timing = new Timing();
     private static boolean screenShared;
     private static String wakeProblem;
     private static boolean screenAwake = true;
@@ -99,6 +103,11 @@ public class JarvisService extends Service {
 
     static String lastJarvis() {
         return lastJarvis;
+    }
+
+    /** Zeitmessung der letzten Antwort, z. B. „Zuhören 0,4 s · KI 1,8 s · Stimme 0,6 s · gesamt 2,8 s“. */
+    static String lastTiming() {
+        return lastTiming;
     }
 
     static boolean isScreenShared() {
@@ -513,6 +522,7 @@ public class JarvisService extends Service {
         utterance.setLength(0);
         finishRequested = false;
         heardSomething = false;
+        timing.reset();
         setState(State.LISTENING);
         if (prefs.earcon()) earcon.play();
         if (prefs.tftMode()) subtitles.hide(); // alte Antwort weg, Spielbild frei
@@ -559,7 +569,10 @@ public class JarvisService extends Service {
             }
 
             @Override public void onBufferReceived(byte[] buffer) { }
-            @Override public void onEndOfSpeech() { }
+            @Override
+            public void onEndOfSpeech() {
+                if (current == recognizer) timing.speechEnded(SystemClock.elapsedRealtime());
+            }
             @Override public void onEvent(int eventType, Bundle params) { }
 
             @Override
@@ -649,6 +662,7 @@ public class JarvisService extends Service {
         main.removeCallbacks(pauseElapsed);
         releaseRecognizer();
         if (state != State.LISTENING) return;
+        timing.speechEndedIfUnknown(SystemClock.elapsedRealtime());
         String text = utterance.toString().trim();
         utterance.setLength(0);
         finishRequested = false;
@@ -784,6 +798,7 @@ public class JarvisService extends Service {
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
+                timing.answered(SystemClock.elapsedRealtime());
                 if (id != requestId || !running) return; // überholt (neue Frage, neues Gespräch)
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
                 prefs.setMemory(tagged.memory);
@@ -801,9 +816,13 @@ public class JarvisService extends Service {
                 say(message);
             }
         };
+        timing.sent(SystemClock.elapsedRealtime());
+        lastModel = prefs.model();
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
         // Alltag: ohne Nachdenken antworten (schnellste Antwort). TFT/Spielmodus: kurz nachdenken.
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "low" : null, callback);
+        // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
+        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher.
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low", callback);
     }
 
     private void remember(String role, String text) {
@@ -843,7 +862,7 @@ public class JarvisService extends Service {
             Voices.apply(tts, prefs, engine);
             appliedVoiceKey = null; // neue Engine → beim nächsten Satz sicher neu einstellen
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) { }
+                @Override public void onStart(String id) { main.post(JarvisService.this::onVoiceStarted); }
                 @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
                 @Override public void onError(String id) { main.post(JarvisService.this::onSpeechFinished); }
             });
@@ -879,7 +898,7 @@ public class JarvisService extends Service {
     private void speakPremium(String clean) {
         setState(State.SPEAKING);
         eleven.speak(prefs.elevenKey(), prefs.elevenVoice(), clean, prefs.rate(), new ElevenTts.Listener() {
-            @Override public void onStart() { }
+            @Override public void onStart() { onVoiceStarted(); }
 
             @Override
             public void onDone() {
@@ -896,6 +915,14 @@ public class JarvisService extends Service {
                 speakDevice(clean);
             }
         });
+    }
+
+    /** Erster Ton einer Antwort: Messung abschließen und auf dem Startbildschirm zeigen. */
+    private void onVoiceStarted() {
+        if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
+            lastTiming = timing.summary() + " (" + lastModel + ")";
+            notifyUi();
+        }
     }
 
     private void stopSpeaking() {

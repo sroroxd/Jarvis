@@ -183,7 +183,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.chipScreen.setChecked(JarvisService.isScreenShared());
 
         b.hint.setVisibility(running ? View.VISIBLE : View.GONE);
-        b.hint.setText("Tippen: sprechen · Lang drücken: neues Gespräch");
+        String timing = JarvisService.lastTiming();
+        b.hint.setText(timing.isEmpty() || s != JarvisService.State.IDLE
+                ? "Tippen: sprechen · Lang drücken: neues Gespräch"
+                : "Letzte Antwort: " + timing);
         b.stopButton.setVisibility(running ? View.VISIBLE : View.INVISIBLE);
         if (demo != null) {
             renderExchange("Was soll ich in dieser Runde kaufen?",
