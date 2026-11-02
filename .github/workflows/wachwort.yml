@@ -68,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -98,7 +98,7 @@ jobs:
           python training/wakeword/jarvis_wakeword.py features --work work \
             --models app/src/main/assets/wakeword $rirs --seed 2${{ matrix.shard }} --workers 4
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: merkmale-${{ matrix.shard }}
           path: work/feat_*.npy
@@ -126,7 +126,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -137,14 +137,14 @@ jobs:
 
       - name: Merkmale aus diesem Lauf
         if: needs.plan.outputs.reuse == ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: merkmale-*
           path: work
 
       - name: Merkmale aus früherem Lauf
         if: needs.plan.outputs.reuse != ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: merkmale-*
           path: work
@@ -192,7 +192,7 @@ jobs:
           done
           exit 1
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: wachwort-modell-${{ matrix.cfg.name }}
