@@ -8,6 +8,8 @@ Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude (oder G
 
 Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentlicht. Sie lässt sich direkt über die alte installieren; Schlüssel, Gedächtnis und Einstellungen bleiben erhalten.
 
+**Test-Apps von Arbeitszweigen:** Jeder andere Zweig baut die separate App **„Jarvis Test“** (Vorab-Version `test-<Zweig>`, z. B. https://github.com/sroroxd/Jarvis/releases/download/test-wachwort-jarvis/JarvisTest.apk). Sie installiert sich neben der normalen App, hat eigene Einstellungen und überschreibt nichts. Immer nur eine der beiden Apps einschalten, sonst reagieren beide auf das Wachwort.
+
 ## Einrichten
 
 1. APK installieren („Aus dieser Quelle erlauben“ bestätigen).
@@ -79,7 +81,8 @@ Im Spielmodus recherchiert Jarvis **einmal am Tag** mit Claudes Websuche die akt
 | `Earcon` | Signalton beim Zuhören |
 | `Commands` | Sprachbefehle der App („Spielmodus an/aus“) |
 | `ListenActivity` | Schnellstart „Jarvis sprechen“ (Seitentaste) |
-| `ClaudeClient`, `GeminiClient` | Anbindung der KI-Anbieter |
+| `ClaudeClient`, `GeminiClient` | Anbindung der KI-Anbieter; `ClaudeClient` mit Werkzeug-Schleife |
+| `Tools`, `Agenda` | Jarvis' „Hände“: Kalender lesen und Termine eintragen (Websuche läuft direkt bei Anthropic) |
 | `Persona` | Anweisungen: Ton, Kürze, Ehrlichkeit, Spielmodus |
 | `Memory` | Dauerhaftes Gedächtnis („Merk dir“ / „Vergiss“) |
 | `Text` | Textbereinigung, Schlüssel-/Modellprüfung, Fehlermeldungen |

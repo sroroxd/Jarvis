@@ -137,6 +137,8 @@ public class JarvisService extends Service {
     private Prefs prefs;
     private ClaudeClient claude;
     private GeminiClient gemini;
+    /** Websuche und Kalender – nur im Alltag mit Claude (der Spielmodus bleibt unverändert schnell). */
+    private Tools tools;
     private ElevenTts eleven;
     private boolean elevenWarned;
     private WindowManager wm;
@@ -203,6 +205,7 @@ public class JarvisService extends Service {
         prefs = new Prefs(this);
         claude = new ClaudeClient();
         gemini = new GeminiClient();
+        tools = new Tools(this);
         eleven = new ElevenTts(this);
         earcon = new Earcon();
         subtitles = new Subtitles(this);
@@ -833,7 +836,10 @@ public class JarvisService extends Service {
             return;
         }
 
-        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate());
+        // Werkzeuge (Websuche, Kalender) nur im Alltag mit Claude – der Spielmodus bleibt schnell und nutzt die Tages-Meta.
+        boolean withTools = !prefs.tftMode() && !prefs.isGemini();
+        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate(),
+                withTools);
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
@@ -858,10 +864,10 @@ public class JarvisService extends Service {
         timing.sent(SystemClock.elapsedRealtime());
         lastModel = prefs.model();
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
-        // Alltag: ohne Nachdenken antworten (schnellste Antwort). TFT/Spielmodus: kurz nachdenken.
         // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
-        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher.
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low", callback);
+        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low",
+                withTools ? tools : null, callback);
     }
 
     private void remember(String role, String text) {
@@ -1022,7 +1028,8 @@ public class JarvisService extends Service {
                 new Intent(this, JarvisService.class).setAction(ACTION_LISTEN), PendingIntent.FLAG_IMMUTABLE);
         PendingIntent open = PendingIntent.getActivity(this, 2,
                 new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
-        String title = prefs.tftMode() ? "Jarvis ist aktiv · Spielmodus" : "Jarvis ist aktiv";
+        String name = BuildConfig.TEST_APP ? "Jarvis Test" : "Jarvis";
+        String title = prefs.tftMode() ? name + " ist aktiv · Spielmodus" : name + " ist aktiv";
         String text = prefs.wakeWord()
                 ? "Sag „Hey Jarvis“ – oder tippe auf „Sprechen“."
                 : "Tippe auf „Sprechen“, um mit Jarvis zu reden.";
