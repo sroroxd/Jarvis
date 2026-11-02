@@ -631,7 +631,7 @@ def cmd_train(args):
     def run(max_neg_weight, attempt):
         model = build_model(args.hidden)
         opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-3)
-        sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=args.lr, total_steps=args.steps, pct_start=0.1)
+        sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=args.lr, total_steps=args.steps, pct_start=0.2)
         best, best_key, best_entry, history = None, None, None, []
         t0 = time.time()
         for step in range(1, args.steps + 1):
@@ -644,15 +644,16 @@ def cmd_train(args):
             x = torch.from_numpy(np.concatenate(parts))
             y = torch.cat([torch.ones(len(bp)), torch.zeros(len(x) - len(bp))])
             p = model(x).squeeze(1)
-            loss_each = bce(p, y)
-            # Schwierige Beispiele zählen; Gewicht der Negativen wächst im Lauf (weniger Fehlalarme).
+            # Wie openWakeWord: nur schwierige Beispiele zählen, Negative mit wachsendem Gewicht
+            # (bis max_neg_weight), gewichteter Mittelwert. So lernt das Modell vor allem, NICHT anzuspringen.
             w_neg = 1.0 + (max_neg_weight - 1.0) * min(1.0, step / (0.7 * args.steps))
-            hard_pos = (y == 1) & (p < 0.99)
-            hard_neg = (y == 0) & (p > 0.01)
-            loss = (loss_each[hard_pos].sum() + w_neg * loss_each[hard_neg].sum()) / len(x)
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
+            hard = ((y == 0) & (p >= 0.001)) | ((y == 1) & (p < 0.999))
+            if hard.any():
+                w = torch.where(y[hard] == 0, torch.full_like(y[hard], w_neg), torch.ones_like(y[hard]))
+                loss = (bce(p[hard], y[hard]) * w).mean()
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
             sched.step()
 
             if step % args.eval_every == 0 or step == args.steps:
@@ -669,8 +670,14 @@ def cmd_train(args):
                       f"Fehlalarme/h {'-' if fph is None else f'{fph:.2f}'}  ({time.time() - t0:.0f}s)", flush=True)
                 # Auswahl: erst Fehlalarm-Ziel, dann maximale Trefferquote.
                 fp_metric = fph if fph is not None else far * 1000
-                ok = fp_metric <= args.max_fp
-                key = (1, rec) if ok else (0, -fp_metric)
+                usable = rec >= args.recall_floor
+                if usable and fp_metric <= args.max_fp:
+                    key = (2, rec)            # Ziel erreicht: höchste Trefferquote gewinnt
+                elif usable:
+                    key = (1, -fp_metric)     # brauchbar, aber zu viele Fehlalarme: wenigste gewinnen
+                else:
+                    key = (0, rec)            # erkennt kaum etwas
+
                 if best_key is None or key > best_key:
                     best_key = key
                     best = {k: v.clone() for k, v in model.state_dict().items()}
@@ -686,7 +693,7 @@ def cmd_train(args):
         history += hist
         if chosen is None or key > chosen[1]:
             chosen = (model, key, entry)
-        if key[0] == 1 and entry["recall"] >= args.min_recall:
+        if key[0] == 2 and entry["recall"] >= args.min_recall:
             break
         weight *= 2
     model, _, best_entry = chosen
@@ -822,6 +829,17 @@ def cmd_evaluate(args):
                                 "fehlalarme": int(np.sum(n >= thr))}
             print(f"  Empfindlichkeit {sens} (Schwelle {thr:.2f}): erkannt {np.mean(p >= thr):6.1%}   "
                   f"Fehlalarme {int(np.sum(n >= thr))}/{len(n)}")
+    print("\nAufschlüsselung (Empfindlichkeit 5, Schwelle 0,50):")
+    groups = {}
+    for r in rows:
+        lang = "de" if "de" in r[0][:5].lower() else "en"
+        for key in ((lang, r[1], r[4]), (lang, r[1], "alle"), ("Text " + r[2][:28], r[1], "alle")):
+            groups.setdefault(key, []).append(r[5])
+    for key in sorted(groups):
+        vals = groups[key]
+        line = "  ".join(f"{k}: {np.mean([v[k] >= 0.5 for v in vals]):5.0%}" for k in heads)
+        print(f"  {key[0]:<36s} {key[1]:3s} {key[2]:<15s} n={len(vals):3d}  {line}")
+        summary.setdefault("gruppen", {})["|".join(key)] = {k: round(float(np.mean([v[k] >= 0.5 for v in vals])), 3) for k in heads}
     misses = sorted([r for r in rows if r[1] == "pos"], key=lambda r: r[5]["neu"])[:12]
     fps = sorted([r for r in rows if r[1] == "neg"], key=lambda r: -r[5]["neu"])[:8]
     print("\nSchwächste Jarvis-Fälle:")
@@ -865,15 +883,16 @@ def main():
     t.add_argument("--acav-rows", type=int, default=None)
     t.add_argument("--val-fp", default=None, help="validation_set_features.npy")
     t.add_argument("--steps", type=int, default=30000)
-    t.add_argument("--batch-pos", type=int, default=256)
-    t.add_argument("--batch-neg", type=int, default=256)
+    t.add_argument("--batch-pos", type=int, default=64)
+    t.add_argument("--batch-neg", type=int, default=128)
     t.add_argument("--batch-acav", type=int, default=1024)
-    t.add_argument("--hidden", type=int, default=128)
-    t.add_argument("--lr", type=float, default=1e-3)
-    t.add_argument("--max-neg-weight", type=float, default=30.0)
+    t.add_argument("--hidden", type=int, default=64)
+    t.add_argument("--lr", type=float, default=2e-4)
+    t.add_argument("--max-neg-weight", type=float, default=1500.0)
     t.add_argument("--max-fp", type=float, default=0.5, help="Ziel: Fehlalarme pro Stunde")
     t.add_argument("--min-recall", type=float, default=0.85, help="sonst neuer Durchgang mit mehr Gewicht")
-    t.add_argument("--attempts", type=int, default=3)
+    t.add_argument("--attempts", type=int, default=2)
+    t.add_argument("--recall-floor", type=float, default=0.3, help="darunter gilt ein Stand als unbrauchbar")
     t.add_argument("--eval-every", type=int, default=1000)
     t.add_argument("--workers", type=int, default=os.cpu_count())
     t.add_argument("--seed", type=int, default=3)

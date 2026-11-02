@@ -109,8 +109,22 @@ jobs:
     if: always() && needs.plan.result == 'success' && (needs.daten.result == 'success' || needs.daten.result == 'skipped')
     runs-on: ubuntu-24.04
     timeout-minutes: 240
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Drei Varianten parallel; die beste kommt in die App. a = openWakeWord-Standard.
+        cfg:
+          - { name: a, hidden: 32, weight: 1500 }
+          - { name: b, hidden: 64, weight: 1500 }
+          - { name: c, hidden: 64, weight: 400 }
+    name: training (${{ matrix.cfg.name }})
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -146,9 +160,10 @@ jobs:
 
       - name: Trainieren
         run: |
+          mkdir -p out
           python training/wakeword/jarvis_wakeword.py train --work work --out out \
-            --acav acav.npy --val-fp val.npy --steps "$STEPS" --workers 4 2>&1 | tee out_train.log
-          mkdir -p out && mv out_train.log out/
+            --acav acav.npy --val-fp val.npy --steps "$STEPS" --workers 4 \
+            --hidden ${{ matrix.cfg.hidden }} --max-neg-weight ${{ matrix.cfg.weight }} 2>&1 | tee out/training.log
 
       - name: Teststimmen laden
         run: bash training/wakeword/get_voices.sh testvoices test
@@ -158,10 +173,28 @@ jobs:
           python training/wakeword/jarvis_wakeword.py evaluate --model out/jarvis.onnx \
             --old app/src/main/assets/wakeword/hey_jarvis_v0.1.onnx --models app/src/main/assets/wakeword \
             --voices testvoices --report out/eval.json 2>&1 | grep -v "Missing phoneme" | tee out/eval.txt
-          { echo '```'; tail -40 out/eval.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### Variante ${{ matrix.cfg.name }}"; echo '```'; grep -E "Gewählt" out/training.log; sed -n '/Teststimmen/,/Schwächste/p' out/eval.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      # Ergebnis direkt in den Zweig schreiben (Artefakte sind aus der Entwicklungsumgebung nicht abrufbar).
+      # Pushes mit dem GITHUB_TOKEN lösen keinen neuen Lauf aus.
+      - name: Ergebnis in den Zweig schreiben
+        run: |
+          d=training/wakeword/ergebnis/${{ matrix.cfg.name }}
+          rm -rf "$d" && mkdir -p "$d"
+          cp out/jarvis.onnx out/jarvis_training.json out/eval.txt out/eval.json out/training.log "$d"/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$d"
+          git commit -q -m "Wachwort-Ergebnis Variante ${{ matrix.cfg.name }} (Lauf ${{ github.run_id }})"
+          for i in 1 2 3 4 5 6; do
+            git pull -q --rebase origin "${{ github.ref_name }}" && git push -q origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep $(( (RANDOM % 15) + 5 ))
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: wachwort-modell
+          name: wachwort-modell-${{ matrix.cfg.name }}
           path: out/
           retention-days: 14
