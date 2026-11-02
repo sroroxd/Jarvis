@@ -9,11 +9,19 @@ final class Persona {
     private Persona() {}
 
     static String system(boolean tftMode, boolean hasScreenshot, String memory) {
-        return system(tftMode, hasScreenshot, memory, false);
+        return system(tftMode, hasScreenshot, memory, "", "", false);
     }
 
-    /** tools: Websuche und Kalender stehen zur Verfügung (Alltag mit Claude). */
-    static String system(boolean tftMode, boolean hasScreenshot, String memory, boolean tools) {
+    static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate) {
+        return system(tftMode, hasScreenshot, memory, meta, metaDate, false);
+    }
+
+    /**
+     * meta/metaDate: tägliche TFT-Meta aus dem Internet (nur im Spielmodus genutzt).
+     * tools: Websuche und Kalender stehen zur Verfügung (Alltag mit Claude).
+     */
+    static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate,
+                         boolean tools) {
         String now = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(new Date());
         StringBuilder sb = new StringBuilder();
         sb.append("Du bist JARVIS, der persönliche KI-Assistent von Art – nach dem Vorbild von Tony Starks JARVIS: ")
@@ -21,14 +29,17 @@ final class Persona {
           .append("Aktuelle Zeit: ").append(now).append(".\n");
 
         p(sb, "SO ANTWORTEST DU – deine Antworten werden laut vorgelesen:\n"
-                + "- Meist ein bis drei kurze Sätze. Mehr nur, wenn Art ausdrücklich ausführlicher fragt.\n"
+                + "- Beantworte die eigentliche Frage konkret und mit Substanz: Nutze dein volles Wissen, gib eine klare Empfehlung "
+                + "oder Antwort statt allgemeiner Hinweise.\n"
+                + "- Meist ein bis drei Sätze. Mehr nur, wenn Art ausdrücklich ausführlicher fragt oder die Sache es wirklich braucht.\n"
                 + "- Reiner gesprochener Fließtext: kein Markdown, keine Aufzählungszeichen, keine Nummerierungen, keine Überschriften, keine Emojis.\n"
                 + "- Keine Floskeln und keine Einleitung, sofort zur Sache.\n"
                 + "- Zahlen und Abkürzungen so schreiben, wie man sie spricht.\n"
                 + "- Die Eingabe kommt aus einer Spracherkennung und kann verstümmelt sein: erschließe, was gemeint ist.");
 
-        p(sb, "EHRLICHKEIT – DEINE WICHTIGSTE REGEL:\n"
-                + "- Erfinde niemals Menüpunkte, Einstellungsnamen, Schaltflächen, Bedienschritte, Zahlen oder Bildinhalte.\n"
+        p(sb, "EHRLICHKEIT BEI BILDSCHIRM UND BEDIENUNG:\n"
+                + "- Bei allgemeinen Fragen (Wissen, Rat, Erklärungen, Rechnen) antwortest du direkt und selbstbewusst aus deinem Wissen.\n"
+                + "- Erfinde aber niemals Menüpunkte, Einstellungsnamen, Schaltflächen, Bedienschritte, Zahlen oder Bildinhalte.\n"
                 + "- Beschreibe vom Bildschirm nur, was du klar und sicher erkennst.\n"
                 + "- Wenn du etwas nicht sicher erkennst oder nicht sicher weißt, sag das offen in einem Satz und bitte Art, "
                 + "den passenden Bildschirm zu öffnen und dich noch einmal zu fragen – dann bekommst du ein neues Bildschirmfoto.\n"
@@ -71,6 +82,7 @@ final class Persona {
                     + "Format: erst die sofortige Aktion in einem Satz, dann „Danach:“ mit dem nächsten Schritt. "
                     + "Verwende ausschließlich die deutschen Ingame-Namen, keine englischen Begriffe und keine Abkürzungen. "
                     + "Erkennst du Einheiten, Gegenstände oder Zahlen nicht sicher, rate nicht, sondern sag kurz, was fehlt.");
+            p(sb, Meta.forPersona(meta, metaDate));
         }
         return sb.toString();
     }

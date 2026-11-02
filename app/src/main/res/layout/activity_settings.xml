@@ -551,6 +551,29 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:text="Aktuelle Meta: Im Spielmodus recherchiert Jarvis einmal am Tag im Internet die aktuellen Comps, Augments und Patch-Änderungen (Claude-Websuche, ca. 3–5 Cent pro Tag)." />
+
+                    <TextView
+                        android:id="@+id/metaInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary" />
+
+                    <Button
+                        android:id="@+id/metaUpdate"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Meta jetzt aktualisieren" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Hinweis: Live-Tipps während einer Partie verstoßen gegen Riots Regeln – Nutzung auf eigenes Risiko." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

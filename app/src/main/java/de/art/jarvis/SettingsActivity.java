@@ -282,6 +282,8 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Spielmodus
 
     private void setupGame() {
+        updateMetaInfo();
+        b.metaUpdate.setOnClickListener(v -> updateMetaNow());
         b.switchGame.setChecked(prefs.tftMode());
         b.switchGame.setOnCheckedChangeListener((v, on) -> {
             prefs.setTftMode(on);
@@ -425,6 +427,44 @@ public class SettingsActivity extends AppCompatActivity {
 
     private static String text(android.widget.EditText e) {
         return e.getText() == null ? "" : e.getText().toString();
+    }
+
+    private void updateMetaInfo() {
+        String date = prefs.metaDate();
+        if (date.isEmpty()) {
+            b.metaInfo.setText("Noch keine Meta recherchiert.");
+            return;
+        }
+        String text = prefs.metaText().replaceAll("\\s+", " ").trim();
+        if (text.length() > 160) text = text.substring(0, 160) + " …";
+        b.metaInfo.setText("Stand " + date + ": " + text);
+    }
+
+    /** Recherche sofort starten (z. B. nach einem neuen Patch). */
+    private void updateMetaNow() {
+        saveTextFields();
+        if (prefs.apiKey().isEmpty() || prefs.isGemini()) {
+            b.metaInfo.setText("Die Meta-Recherche braucht einen Claude-Schlüssel (sk-ant-…).");
+            return;
+        }
+        b.metaUpdate.setEnabled(false);
+        b.metaInfo.setText("Recherchiere die aktuelle Meta … (dauert etwa 20–40 Sekunden)");
+        final String today = JarvisService.today();
+        new ClaudeClient().sendWithWebSearch(prefs.apiKey(), Meta.MODEL, Meta.system(), Meta.prompt(today),
+                Meta.MAX_SEARCHES, new ClaudeClient.Callback() {
+                    @Override
+                    public void onResult(String text) {
+                        prefs.setMeta(text, today);
+                        b.metaUpdate.setEnabled(true);
+                        updateMetaInfo();
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        b.metaUpdate.setEnabled(true);
+                        b.metaInfo.setText("✗ " + message);
+                    }
+                });
     }
 
     private void showResult(android.widget.TextView view, String message) {

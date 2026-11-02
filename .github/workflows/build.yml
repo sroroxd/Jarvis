@@ -58,7 +58,7 @@ jobs:
           body: |
             Jarvis.apk herunterladen und installieren – wird über die vorherige Version installiert.
 
-      # Test-App eines Arbeitszweigs: eigene Vorab-Version „test“. Wird nie als „neueste Version“
+      # Test-App eines Arbeitszweigs: eigene Vorab-Version „test-<Zweig>“. Wird nie als „neueste Version“
       # markiert – der normale Download-Link (latest) zeigt weiter auf die main-App.
       - name: Test-App umbenennen
         if: github.ref != 'refs/heads/main'
@@ -68,7 +68,7 @@ jobs:
         if: github.ref != 'refs/heads/main'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: test
+          tag_name: test-${{ github.ref_name }}
           target_commitish: ${{ github.sha }}
           name: Jarvis Test (Zweig ${{ github.ref_name }})
           prerelease: true
@@ -77,4 +77,4 @@ jobs:
           body: |
             Test-App vom Arbeitszweig „${{ github.ref_name }}“. Installiert sich NEBEN der normalen Jarvis-App
             (eigenes Symbol „Jarvis Test“, eigene Einstellungen) und überschreibt sie nicht.
-            Bitte immer nur eine der beiden Apps einschalten – sonst reagieren beide auf „Hey Jarvis“.
+            Bitte immer nur eine der beiden Apps einschalten – sonst reagieren beide auf das Wachwort.

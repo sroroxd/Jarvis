@@ -8,9 +8,7 @@ Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude (oder G
 
 Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentlicht. Sie lässt sich direkt über die alte installieren; Schlüssel, Gedächtnis und Einstellungen bleiben erhalten.
 
-**Test-App (Arbeitszweige):** https://github.com/sroroxd/Jarvis/releases/download/test/JarvisTest.apk
-
-Jeder andere Zweig als `main` baut die separate App **„Jarvis Test“**. Sie installiert sich *neben* der normalen Jarvis-App (eigenes Symbol, eigene Einstellungen und eigenes Gedächtnis) und überschreibt sie nie. Eine Sicherung der normalen App lässt sich in der Test-App laden – die Test-App schreibt aber nie in diese Datei zurück. Bitte immer nur **eine** der beiden Apps einschalten, sonst reagieren beide auf „Hey Jarvis“.
+**Test-Apps von Arbeitszweigen:** Jeder andere Zweig baut die separate App **„Jarvis Test“** (Vorab-Version `test-<Zweig>`, z. B. https://github.com/sroroxd/Jarvis/releases/download/test-wachwort-jarvis/JarvisTest.apk). Sie installiert sich neben der normalen App, hat eigene Einstellungen und überschreibt nichts. Immer nur eine der beiden Apps einschalten, sonst reagieren beide auf das Wachwort.
 
 ## Einrichten
 
@@ -57,6 +55,10 @@ Picovoice Porcupine wurde bewusst nicht genommen: Das kostenlose Angebot wurde z
 Ein reines „Jarvis“ (ohne „Hey“) gibt es nicht als fertiges Modell. Es lässt sich mit dem Trainings-Notebook von openWakeWord in Google Colab selbst erstellen und gegen `app/src/main/assets/wakeword/hey_jarvis_v0.1.onnx` austauschen.
 
 Modelle: `melspectrogram.onnx` und `embedding_model.onnx` (Apache 2.0), `hey_jarvis_v0.1.onnx` von David Scripka (CC BY-NC-SA 4.0 – nur nicht-kommerziell).
+
+## Aktuelle TFT-Meta
+
+Im Spielmodus recherchiert Jarvis **einmal am Tag** mit Claudes Websuche die aktuelle Meta (Set, Patch, stärkste Comps, Augments, Buffs/Nerfs) und nutzt sie den ganzen Tag als Wissensstand. Die Recherche läuft im Hintergrund, Fragen warten nicht darauf. Kosten: wenige Cent pro Tag. Manuell: Einstellungen → Spielmodus → „Meta jetzt aktualisieren“. Braucht einen Claude-Schlüssel.
 
 ## Stimme
 

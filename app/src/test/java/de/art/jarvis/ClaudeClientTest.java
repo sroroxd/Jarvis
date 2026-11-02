@@ -51,6 +51,29 @@ public class ClaudeClientTest {
     }
 
     @Test
+    public void eineWebsucheFuerAlltagUndTftMeta() throws Exception {
+        org.json.JSONObject t = ClaudeClient.webSearchTool(3);
+        assertEquals("web_search_20250305", t.getString("type"));
+        assertEquals("web_search", t.getString("name"));
+        assertEquals(3, t.getInt("max_uses"));
+        assertEquals("DE", t.getJSONObject("user_location").getString("country"));
+    }
+
+    @Test
+    public void metaRechercheOhneZwischenansagen() throws Exception {
+        // Die Tages-Meta nutzt dieselbe Auswertung: nur der Text nach der letzten Suche wird gespeichert.
+        JSONArray c = new JSONArray("["
+                + "{\"type\":\"text\",\"text\":\"Ich recherchiere die aktuelle Meta.\"},"
+                + "{\"type\":\"server_tool_use\",\"id\":\"srvtoolu_1\",\"name\":\"web_search\",\"input\":{\"query\":\"TFT meta\"}},"
+                + "{\"type\":\"web_search_tool_result\",\"tool_use_id\":\"srvtoolu_1\",\"content\":[]},"
+                + "{\"type\":\"text\",\"text\":\"Lass mich noch die Patchnotes prüfen.\"},"
+                + "{\"type\":\"server_tool_use\",\"id\":\"srvtoolu_2\",\"name\":\"web_search\",\"input\":{\"query\":\"TFT patch\"}},"
+                + "{\"type\":\"web_search_tool_result\",\"tool_use_id\":\"srvtoolu_2\",\"content\":[]},"
+                + "{\"type\":\"text\",\"text\":\"Set 17, Patch 16.21.\"}]");
+        assertEquals("Set 17, Patch 16.21.", ClaudeClient.spokenText(c));
+    }
+
+    @Test
     public void websuchFehlerWirdErkannt() {
         assertTrue(ClaudeClient.mentionsWebSearch("Web search is not enabled for this organization"));
         assertTrue(ClaudeClient.mentionsWebSearch("tools.0: web_search_20250305 is not supported"));

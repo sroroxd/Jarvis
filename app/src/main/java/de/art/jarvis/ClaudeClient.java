@@ -24,6 +24,9 @@ import java.util.concurrent.Executors;
  * Mit Werkzeugen („Hände“) läuft eine Schleife: Will Claude ein Werkzeug benutzen (stop_reason
  * „tool_use“), führt Jarvis es auf dem Handy aus, schickt das Ergebnis zurück und fragt erneut –
  * so lange, bis Claude normal antwortet. Die Websuche erledigt Anthropic selbst auf dem Server.
+ *
+ * Es gibt genau EINE Websuche-Anbindung: Sie dient den Fragen im Alltag (als Werkzeug) und der
+ * täglichen TFT-Meta-Recherche ({@link #sendWithWebSearch}).
  */
 final class ClaudeClient {
     interface Callback {
@@ -42,9 +45,17 @@ final class ClaudeClient {
     private static final String ENDPOINT = "https://api.anthropic.com/v1/messages";
     /** Höchstzahl an Runden pro Frage – schützt vor Endlosschleifen und Kosten. */
     private static final int MAX_ROUNDS = 6;
+    /** Höchstens so oft „pause_turn“ fortsetzen (lange Recherchen pausiert die API zwischendurch). */
+    private static final int MAX_RESUMES = 2;
 
-    /** Ein gemeinsamer Hintergrund-Thread für alle Anfragen (vorher: pro Client ein neuer, der nie endete). */
+    /** Fragen an Jarvis: ein gemeinsamer Thread, die Reihenfolge bleibt erhalten. */
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /**
+     * Hintergrund-Recherchen (tägliche TFT-Meta) laufen auf einem EIGENEN Thread. Vorher teilten sie sich
+     * den Thread mit den Fragen – eine Frage direkt nach „Spielmodus an“ wartete dann 20–40 Sekunden,
+     * bis die Recherche fertig war.
+     */
+    private static final ExecutorService background = Executors.newSingleThreadExecutor();
     /** Lehnt das Konto die Websuche ab (in der Claude Console nicht freigeschaltet), lassen wir sie danach weg. */
     private static volatile boolean webSearchUnavailable;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -62,12 +73,12 @@ final class ClaudeClient {
      * Schickt die Anfrage. Die aktuellen Claude-Modelle denken standardmäßig nach, und dieses Nachdenken
      * zählt zu max_tokens. Ist das Budget zu knapp, kommt nur Nachdenken und KEIN Text zurück –
      * genau das führte zu den leeren „Erledigt, Sir.“-Antworten. Deshalb:
-     * 0. effort == null: gar nicht nachdenken (schnellste Antwort, Standard im Alltag),
+     * 0. effort == null: gar nicht nachdenken (schnellste Antwort),
      * 1. sonst großzügiges Budget und gesteuerte Nachdenk-Tiefe (effort),
      * 2. kommt trotzdem kein Text, ein zweiter Versuch ohne Nachdenken,
      * 3. kennt ein (älteres) Modell diese Parameter nicht, ein Versuch ganz ohne sie.
      *
-     * tools == null: keine Werkzeuge (Spielmodus, Schlüsseltest) – genau wie bisher.
+     * tools == null: keine Werkzeuge (Spielmodus, Schlüsseltest).
      */
     void send(String apiKey, String model, String system, JSONArray messages, String effort,
               ToolRunner tools, Callback callback) {
@@ -75,15 +86,45 @@ final class ClaudeClient {
             Result r = tools == null
                     ? ask(apiKey, model, system, messages, effort, null)
                     : converse(apiKey, model, system, messages, effort, tools);
-            final Result result = r;
-            if (result.error != null) {
-                main.post(() -> callback.onError(result.error));
-            } else if (result.text.isEmpty()) {
-                main.post(() -> callback.onError("Ich habe darauf keine Antwort bekommen. Frag mich bitte noch einmal."));
-            } else {
-                main.post(() -> callback.onResult(result.text));
-            }
+            deliver(r, "Ich habe darauf keine Antwort bekommen. Frag mich bitte noch einmal.", callback);
         });
+    }
+
+    /**
+     * Recherche mit Claudes eingebauter Websuche (z. B. die tägliche TFT-Meta). Kostet pro Suche etwa
+     * 1 Cent plus Tokens; maxUses begrenzt die Zahl der Suchen. Läuft im Hintergrund, ohne Fragen zu blockieren.
+     * Ergebnis ist nur der Text nach der letzten Suche – Zwischenansagen wie „Ich suche …“ fallen weg.
+     */
+    void sendWithWebSearch(String apiKey, String model, String system, String userText, int maxUses, Callback callback) {
+        background.execute(() -> {
+            Result r;
+            try {
+                JSONArray tools = new JSONArray().put(webSearchTool(maxUses));
+                JSONArray messages = new JSONArray()
+                        .put(new JSONObject().put("role", "user").put("content", userText));
+                r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
+                for (int i = 0; i < MAX_RESUMES && r.error == null && "pause_turn".equals(r.stopReason); i++) {
+                    messages.put(new JSONObject().put("role", "assistant").put("content", r.content));
+                    r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
+                }
+                if (r.code == 400 && mentionsWebSearch(r.detail)) {
+                    r = failed("Die Websuche ist im Anthropic-Konto nicht freigeschaltet. Das lässt sich in der Claude Console ändern.");
+                }
+            } catch (JSONException e) {
+                r = failed("Recherche fehlgeschlagen: " + e.getMessage());
+            }
+            deliver(r, "Die Recherche hat nichts ergeben.", callback);
+        });
+    }
+
+    private void deliver(Result result, String emptyMessage, Callback callback) {
+        if (result.error != null) {
+            main.post(() -> callback.onError(result.error));
+        } else if (result.text.isEmpty()) {
+            main.post(() -> callback.onError(emptyMessage));
+        } else {
+            main.post(() -> callback.onResult(result.text));
+        }
     }
 
     /** Die Werkzeug-Schleife. Arbeitet auf einer Kopie – der gespeicherte Gesprächsverlauf bleibt schlank. */
@@ -132,18 +173,21 @@ final class ClaudeClient {
         return failed("Das hat zu viele Schritte gebraucht. Frag mich bitte etwas einfacher.");
     }
 
+    /** Claudes Websuche als Server-Werkzeug (läuft bei Anthropic, nicht auf dem Handy). */
+    static JSONObject webSearchTool(int maxUses) throws JSONException {
+        return new JSONObject()
+                .put("type", "web_search_20250305")
+                .put("name", "web_search")
+                .put("max_uses", maxUses) // Kostenbremse
+                .put("user_location", new JSONObject()
+                        .put("type", "approximate")
+                        .put("country", "DE")
+                        .put("timezone", "Europe/Berlin"));
+    }
+
     private static JSONArray toolDefinitions(ToolRunner tools) throws JSONException {
         JSONArray defs = new JSONArray();
-        if (!webSearchUnavailable) {
-            defs.put(new JSONObject()
-                    .put("type", "web_search_20250305")
-                    .put("name", "web_search")
-                    .put("max_uses", 3) // Kostenbremse: höchstens drei Suchen pro Frage
-                    .put("user_location", new JSONObject()
-                            .put("type", "approximate")
-                            .put("country", "DE")
-                            .put("timezone", "Europe/Berlin")));
-        }
+        if (!webSearchUnavailable) defs.put(webSearchTool(3)); // höchstens drei Suchen pro Frage
         JSONArray own = tools.definitions();
         for (int i = 0; i < own.length(); i++) defs.put(own.get(i));
         return defs;

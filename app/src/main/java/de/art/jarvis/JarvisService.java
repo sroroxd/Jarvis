@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
@@ -81,6 +82,9 @@ public class JarvisService extends Service {
     private static UiListener ui;
     private static String lastYou = "";
     private static String lastJarvis = "";
+    private static volatile String lastTiming = "";
+    private static String lastModel = "";
+    private final Timing timing = new Timing();
     private static boolean screenShared;
     private static String wakeProblem;
     private static boolean screenAwake = true;
@@ -99,6 +103,11 @@ public class JarvisService extends Service {
 
     static String lastJarvis() {
         return lastJarvis;
+    }
+
+    /** Zeitmessung der letzten Antwort, z. B. „Zuhören 0,4 s · KI 1,8 s · Stimme 0,6 s · gesamt 2,8 s“. */
+    static String lastTiming() {
+        return lastTiming;
     }
 
     static boolean isScreenShared() {
@@ -322,7 +331,45 @@ public class JarvisService extends Service {
         main.removeCallbacks(retryWake);
         updateWake();
         updateNotification();
+        maybeUpdateMeta();
         notifyUi();
+    }
+
+    // ---------------------------------------------------------------- Tägliche TFT-Meta
+
+    private boolean metaRunning;
+    private long metaLastAttempt;
+
+    /**
+     * Holt im Spielmodus einmal am Tag die aktuelle Meta aus dem Internet (im Hintergrund, die Frage wartet nicht).
+     * Nach einem Fehlschlag frühestens nach 30 Minuten erneut.
+     */
+    private void maybeUpdateMeta() {
+        if (metaRunning || !prefs.tftMode() || prefs.isGemini() || prefs.apiKey().isEmpty()) return;
+        final String today = today();
+        if (Meta.isFresh(prefs.metaDate(), today)) return;
+        long now = SystemClock.elapsedRealtime();
+        if (metaLastAttempt != 0 && now - metaLastAttempt < 30 * 60 * 1000L) return;
+        metaLastAttempt = now;
+        metaRunning = true;
+        claude.sendWithWebSearch(prefs.apiKey(), Meta.MODEL, Meta.system(), Meta.prompt(today), Meta.MAX_SEARCHES,
+                new ClaudeClient.Callback() {
+                    @Override
+                    public void onResult(String text) {
+                        metaRunning = false;
+                        prefs.setMeta(text, today);
+                        notifyUi();
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        metaRunning = false;
+                    }
+                });
+    }
+
+    static String today() {
+        return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(new java.util.Date());
     }
 
     private boolean micGranted() {
@@ -380,19 +427,19 @@ public class JarvisService extends Service {
 
     /** Kurzer Zwischenstand („Ich höre …“, Mitschrift). Nur im Alltag – im Spielmodus bleibt der Bildschirm frei. */
     private void status(String text) {
-        if (prefs.tftMode() || !subtitlesWanted()) return;
+        if (prefs.tftMode() || !subtitlesWanted() || ui != null) return; // in der eigenen App steht alles schon da
         subtitles.show(text, false, prefs.subtitlesTop(), 0);
     }
 
     /** Wie {@link #status}, blendet sich aber nach ein paar Sekunden selbst aus. */
     private void statusBriefly(String text) {
-        if (prefs.tftMode() || !subtitlesWanted()) return;
+        if (prefs.tftMode() || !subtitlesWanted() || ui != null) return;
         subtitles.show(text, false, prefs.subtitlesTop(), CAPTION_LINGER_MS);
     }
 
     /** Antworttext als Untertitel (im Spielmodus nur, wenn ausdrücklich eingeschaltet). */
     private void caption(String text) {
-        if (!subtitlesWanted()) return;
+        if (!subtitlesWanted() || ui != null) return;
         subtitles.show(text, prefs.tftMode(), prefs.subtitlesTop(), 0);
     }
 
@@ -516,6 +563,7 @@ public class JarvisService extends Service {
         utterance.setLength(0);
         finishRequested = false;
         heardSomething = false;
+        timing.reset();
         setState(State.LISTENING);
         if (prefs.earcon()) earcon.play();
         if (prefs.tftMode()) subtitles.hide(); // alte Antwort weg, Spielbild frei
@@ -562,7 +610,10 @@ public class JarvisService extends Service {
             }
 
             @Override public void onBufferReceived(byte[] buffer) { }
-            @Override public void onEndOfSpeech() { }
+            @Override
+            public void onEndOfSpeech() {
+                if (current == recognizer) timing.speechEnded(SystemClock.elapsedRealtime());
+            }
             @Override public void onEvent(int eventType, Bundle params) { }
 
             @Override
@@ -652,6 +703,7 @@ public class JarvisService extends Service {
         main.removeCallbacks(pauseElapsed);
         releaseRecognizer();
         if (state != State.LISTENING) return;
+        timing.speechEndedIfUnknown(SystemClock.elapsedRealtime());
         String text = utterance.toString().trim();
         utterance.setLength(0);
         finishRequested = false;
@@ -710,6 +762,7 @@ public class JarvisService extends Service {
     }
 
     private void handleUtterance(String text) {
+        maybeUpdateMeta();
         // „Spielmodus an/aus“ erledigt die App selbst.
         Boolean game = Commands.gameMode(text);
         if (game != null) {
@@ -783,11 +836,14 @@ public class JarvisService extends Service {
             return;
         }
 
+        // Werkzeuge (Websuche, Kalender) nur im Alltag mit Claude – der Spielmodus bleibt schnell und nutzt die Tages-Meta.
         boolean withTools = !prefs.tftMode() && !prefs.isGemini();
-        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), withTools);
+        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate(),
+                withTools);
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
+                timing.answered(SystemClock.elapsedRealtime());
                 if (id != requestId || !running) return; // überholt (neue Frage, neues Gespräch)
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
                 prefs.setMemory(tagged.memory);
@@ -805,9 +861,12 @@ public class JarvisService extends Service {
                 say(message);
             }
         };
+        timing.sent(SystemClock.elapsedRealtime());
+        lastModel = prefs.model();
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
-        // Alltag: ohne Nachdenken antworten (schnellste Antwort), mit Werkzeugen. TFT/Spielmodus: kurz nachdenken, ohne Werkzeuge.
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "low" : null,
+        // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
+        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low",
                 withTools ? tools : null, callback);
     }
 
@@ -848,7 +907,7 @@ public class JarvisService extends Service {
             Voices.apply(tts, prefs, engine);
             appliedVoiceKey = null; // neue Engine → beim nächsten Satz sicher neu einstellen
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) { }
+                @Override public void onStart(String id) { main.post(JarvisService.this::onVoiceStarted); }
                 @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
                 @Override public void onError(String id) { main.post(JarvisService.this::onSpeechFinished); }
             });
@@ -884,7 +943,7 @@ public class JarvisService extends Service {
     private void speakPremium(String clean) {
         setState(State.SPEAKING);
         eleven.speak(prefs.elevenKey(), prefs.elevenVoice(), clean, prefs.rate(), new ElevenTts.Listener() {
-            @Override public void onStart() { }
+            @Override public void onStart() { onVoiceStarted(); }
 
             @Override
             public void onDone() {
@@ -901,6 +960,14 @@ public class JarvisService extends Service {
                 speakDevice(clean);
             }
         });
+    }
+
+    /** Erster Ton einer Antwort: Messung abschließen und auf dem Startbildschirm zeigen. */
+    private void onVoiceStarted() {
+        if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
+            lastTiming = timing.summary() + " (" + lastModel + ")";
+            notifyUi();
+        }
     }
 
     private void stopSpeaking() {
