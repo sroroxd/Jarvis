@@ -1,0 +1,13710 @@
+{
+ "summary": {
+  "neu": {
+   "3": {
+    "schwelle": 0.66,
+    "erkannt": 0.35,
+    "fehlalarme": 2
+   },
+   "4": {
+    "schwelle": 0.58,
+    "erkannt": 0.356,
+    "fehlalarme": 2
+   },
+   "5": {
+    "schwelle": 0.5,
+    "erkannt": 0.375,
+    "fehlalarme": 2
+   },
+   "6": {
+    "schwelle": 0.42,
+    "erkannt": 0.383,
+    "fehlalarme": 2
+   },
+   "7": {
+    "schwelle": 0.34,
+    "erkannt": 0.383,
+    "fehlalarme": 2
+   }
+  },
+  "alt": {
+   "3": {
+    "schwelle": 0.66,
+    "erkannt": 0.281,
+    "fehlalarme": 4
+   },
+   "4": {
+    "schwelle": 0.58,
+    "erkannt": 0.283,
+    "fehlalarme": 4
+   },
+   "5": {
+    "schwelle": 0.5,
+    "erkannt": 0.283,
+    "fehlalarme": 4
+   },
+   "6": {
+    "schwelle": 0.42,
+    "erkannt": 0.314,
+    "fehlalarme": 4
+   },
+   "7": {
+    "schwelle": 0.34,
+    "erkannt": 0.317,
+    "fehlalarme": 4
+   }
+  },
+  "gruppen": {
+   "Text Das Jahr ist fast vorbei.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Davis and Mavis went to Pari|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Der Service war heute wirkli|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Die Kiwis sind noch nicht re|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Harvest season starts in aut|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Harvey ist mein Nachbar.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Hast du die Garage abgeschlo|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Hey Jarvis.|pos|alle": {
+    "neu": 0.944,
+    "alt": 1.0
+   },
+   "Text Hey [[ dʒˈɑːvɪs. ]]|pos|alle": {
+    "neu": 0.528,
+    "alt": 0.083
+   },
+   "Text I'm a bit nervous.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Ich war gestern in Paris.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Ja, was ist denn los?|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Ja, wieso nicht?|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Ja, wir sehen uns morgen wie|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Jarvis, what time is it?|pos|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Jarvis.|pos|alle": {
+    "neu": 0.0,
+    "alt": 0.111
+   },
+   "Text Jarvis?|pos|alle": {
+    "neu": 0.0,
+    "alt": 0.139
+   },
+   "Text Jawohl, das mache ich.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Kauf den zweiten Kämpfer und|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Na, was machst du so?|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Okay Jarvis, buy the second |pos|alle": {
+    "neu": 1.0,
+    "alt": 1.0
+   },
+   "Text Okay [[ dʒˈaʁvɪs, ]] was sol|pos|alle": {
+    "neu": 0.917,
+    "alt": 0.5
+   },
+   "Text Pass me the jar, please.|neg|alle": {
+    "neu": 0.056,
+    "alt": 0.111
+   },
+   "Text Schau mal ins Archiv.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text The service is down again.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Travis kommt später vorbei.|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text Travis, can you pass me the |neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text [[ dʒˈaːvɪs, ]] wie spät ist|pos|alle": {
+    "neu": 0.361,
+    "alt": 0.0
+   },
+   "Text [[ dʒˈaːvɪs. ]]|pos|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "Text [[ dʒˈaːɐvɪs? ]]|pos|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "de|neg|Rauschen 15 dB": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "de|neg|Stimmen 10 dB": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "de|neg|alle": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "de|neg|sauber": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "de|pos|Rauschen 15 dB": {
+    "neu": 0.383,
+    "alt": 0.133
+   },
+   "de|pos|Stimmen 10 dB": {
+    "neu": 0.3,
+    "alt": 0.117
+   },
+   "de|pos|alle": {
+    "neu": 0.361,
+    "alt": 0.117
+   },
+   "de|pos|sauber": {
+    "neu": 0.4,
+    "alt": 0.1
+   },
+   "en|neg|Rauschen 15 dB": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "en|neg|Stimmen 10 dB": {
+    "neu": 0.021,
+    "alt": 0.042
+   },
+   "en|neg|alle": {
+    "neu": 0.007,
+    "alt": 0.014
+   },
+   "en|neg|sauber": {
+    "neu": 0.0,
+    "alt": 0.0
+   },
+   "en|pos|Rauschen 15 dB": {
+    "neu": 0.4,
+    "alt": 0.483
+   },
+   "en|pos|Stimmen 10 dB": {
+    "neu": 0.367,
+    "alt": 0.417
+   },
+   "en|pos|alle": {
+    "neu": 0.389,
+    "alt": 0.45
+   },
+   "en|pos|sauber": {
+    "neu": 0.4,
+    "alt": 0.45
+   }
+  }
+ },
+ "rows": [
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.074,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.128,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.012,
+    "alt": 0.024
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.004,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.14,
+    "alt": 0.108
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.757,
+    "alt": 0.466
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.457,
+    "alt": 0.992
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.506,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.658,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.179,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.97,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.034,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.953,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.822,
+    "alt": 0.095
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.138,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.948,
+    "alt": 0.033
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.986,
+    "alt": 0.992
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.977,
+    "alt": 0.894
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.986,
+    "alt": 0.998
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.986,
+    "alt": 0.897
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.933,
+    "alt": 0.294
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.988,
+    "alt": 0.998
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.985,
+    "alt": 0.844
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.981,
+    "alt": 0.221
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.986,
+    "alt": 0.998
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.092
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.016
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.014
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.023
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.009
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.022
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.006
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.016
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.009
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.98,
+    "alt": 0.333
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.959,
+    "alt": 0.084
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.975,
+    "alt": 0.185
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.978,
+    "alt": 0.096
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.554,
+    "alt": 0.012
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.865,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.975,
+    "alt": 0.045
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.981,
+    "alt": 0.303
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.984,
+    "alt": 0.97
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.986,
+    "alt": 0.168
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.045,
+    "alt": 0.047
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.945,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.936,
+    "alt": 0.012
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.542,
+    "alt": 0.467
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.985,
+    "alt": 0.061
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.99,
+    "alt": 0.467
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.484,
+    "alt": 0.112
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.987,
+    "alt": 0.439
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.012
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.071
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.007,
+    "alt": 0.029
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.036,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.01,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.008,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.004,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.005
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.161
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.011
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.031
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.006,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.041
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.011,
+    "alt": 0.015
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.013,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.017,
+    "alt": 0.016
+   }
+  ],
+  [
+   "de-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.074,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.097,
+    "alt": 0.017
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.013,
+    "alt": 0.038
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.022
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.14,
+    "alt": 0.108
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.824,
+    "alt": 0.982
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.144,
+    "alt": 0.188
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.506,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.43,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.549,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.97,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.959,
+    "alt": 0.113
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.972,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.822,
+    "alt": 0.095
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.072,
+    "alt": 0.009
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.945,
+    "alt": 0.069
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.986,
+    "alt": 0.992
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.988,
+    "alt": 0.936
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.987,
+    "alt": 0.997
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.986,
+    "alt": 0.897
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.918,
+    "alt": 0.861
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.987,
+    "alt": 0.993
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.985,
+    "alt": 0.844
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.98,
+    "alt": 0.997
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.986,
+    "alt": 0.994
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.004,
+    "alt": 0.049
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.005
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.005,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.016
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.007,
+    "alt": 0.051
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-kerstin-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːɐvɪs? ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.98,
+    "alt": 0.333
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.934,
+    "alt": 0.379
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.978,
+    "alt": 0.253
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.978,
+    "alt": 0.096
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.144,
+    "alt": 0.436
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.898,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.975,
+    "alt": 0.045
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.951,
+    "alt": 0.177
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Hey [[ dʒˈɑːvɪs. ]]",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.983,
+    "alt": 0.457
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.079,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "[[ dʒˈaːvɪs, ]] wie spät ist es?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.986,
+    "alt": 0.168
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.983,
+    "alt": 0.639
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.977,
+    "alt": 0.013
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.936,
+    "alt": 0.012
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.169,
+    "alt": 0.031
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.972,
+    "alt": 0.038
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.99,
+    "alt": 0.467
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.571,
+    "alt": 0.678
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "pos",
+   "Okay [[ dʒˈaʁvɪs, ]] was soll ich kaufen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.467
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, was ist denn los?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wieso nicht?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Der Service war heute wirklich gut.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.006
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.005
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.041,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Das Jahr ist fast vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis kommt später vorbei.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Schau mal ins Archiv.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ich war gestern in Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Jawohl, das mache ich.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.007
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Hast du die Garage abgeschlossen?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.01
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Kauf den zweiten Kämpfer und leg ihn auf die Bank.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Harvey ist mein Nachbar.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Ja, wir sehen uns morgen wieder.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Die Kiwis sind noch nicht reif.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Na, was machst du so?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.001
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.004,
+    "alt": 0.029
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.069,
+    "alt": 0.004
+   }
+  ],
+  [
+   "de_DE-pavoque-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.007,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.019
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.063
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.013
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.026
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.002,
+    "alt": 0.26
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.005,
+    "alt": 0.015
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.073,
+    "alt": 0.47
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.016
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.022
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.095
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.075
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.018
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.093
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.974,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.196,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.979,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.965,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.974,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.984,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.985,
+    "alt": 0.996
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.958,
+    "alt": 0.981
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.986,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.006
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.005
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.015
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.021
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.01,
+    "alt": 0.02
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.006
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.988,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.987,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.982,
+    "alt": 0.996
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.737,
+    "alt": 0.9
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.983,
+    "alt": 0.989
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.99,
+    "alt": 0.989
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.919,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.99,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.005,
+    "alt": 0.033
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.011,
+    "alt": 0.029
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.089
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.017
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.007,
+    "alt": 0.122
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.008
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-gb-alan-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.029
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.026
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.246
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.305
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.995
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.93
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.004,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.296
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.012,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.025
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.006
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.017
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.944
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.043
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.99
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.003,
+    "alt": 0.994
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.234
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.981,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.974,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.981,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.987,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.983,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.987,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.985,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.981,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.984,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.024
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.017
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.024
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.988,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 1.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.99,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.009
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.009
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.009
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.958,
+    "alt": 0.932
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.005,
+    "alt": 0.056
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.698
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.012
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.031,
+    "alt": 0.283
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.043
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.035,
+    "alt": 0.008
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.007
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.004,
+    "alt": 0.032
+   }
+  ],
+  [
+   "en-us-amy-low.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.008
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.02
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.087
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.466
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.019,
+    "alt": 0.019
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.014,
+    "alt": 0.102
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.052
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.334
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.231
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.029
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.149
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.228
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.468
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.069
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.99
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.982,
+    "alt": 0.996
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.587,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.984,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.983,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.97,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.984,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.988,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.981,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.142
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.027
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.01
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.107
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.987,
+    "alt": 0.997
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.985,
+    "alt": 0.99
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.988,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.985,
+    "alt": 0.995
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.99,
+    "alt": 0.994
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.987,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.971,
+    "alt": 0.984
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.004
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.007
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.009,
+    "alt": 0.094
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.148
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.183
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.009
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.041,
+    "alt": 0.156
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.009
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.004
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.008
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.01
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.01
+   }
+  ],
+  [
+   "en_GB-alan-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.005
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.005
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.006
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.07
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.015
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.025
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.025
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.015
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.013
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.021
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.029
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.004,
+    "alt": 0.015
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.08
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.983,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.553,
+    "alt": 0.998
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.98,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.984,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.972,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.983,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.983,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.007,
+    "alt": 0.996
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Hey Jarvis.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.98,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Jarvis, what time is it?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.988,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.985,
+    "alt": 1.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.988,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 1.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.988,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "pos",
+   "Okay Jarvis, buy the second unit.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.989,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.015
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.012
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.198,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.084,
+    "alt": 0.031
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.005,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.004,
+    "alt": 0.989
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.015
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.012,
+    "alt": 0.199
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.01
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.72,
+    "alt": 0.999
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Pass me the jar, please.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.012
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.003,
+    "alt": 0.026
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Davis and Mavis went to Paris.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.008
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Harvest season starts in autumn.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.008
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.002
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "I'm a bit nervous.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "Travis, can you pass me the salt?",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.001,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   0.85,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "sauber",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.003
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.0,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.0,
+    "alt": 0.0
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "sauber",
+   {
+    "neu": 0.032,
+    "alt": 0.001
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Stimmen 10 dB",
+   {
+    "neu": 0.002,
+    "alt": 0.081
+   }
+  ],
+  [
+   "en_US-amy-medium.onnx",
+   "neg",
+   "The service is down again.",
+   1.15,
+   "Rauschen 15 dB",
+   {
+    "neu": 0.005,
+    "alt": 0.006
+   }
+  ]
+ ]
+}
