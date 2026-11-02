@@ -167,6 +167,21 @@ public final class Prefs {
         sp.edit().putBoolean("backup_keys", value).apply();
     }
 
+    // ------------------------------------------------------------ TFT-Meta aus dem Internet (täglich)
+
+    public String metaText() {
+        return sp.getString("meta_text", "");
+    }
+
+    /** Datum der letzten Meta-Recherche (yyyy-MM-dd); leer = noch nie. */
+    public String metaDate() {
+        return sp.getString("meta_date", "");
+    }
+
+    public void setMeta(String text, String date) {
+        sp.edit().putString("meta_text", text == null ? "" : text).putString("meta_date", date == null ? "" : date).apply();
+    }
+
     public boolean tftMode() {
         return sp.getBoolean("tft_mode", false);
     }

@@ -54,6 +54,10 @@ Ein reines „Jarvis“ (ohne „Hey“) gibt es nicht als fertiges Modell. Es l
 
 Modelle: `melspectrogram.onnx` und `embedding_model.onnx` (Apache 2.0), `hey_jarvis_v0.1.onnx` von David Scripka (CC BY-NC-SA 4.0 – nur nicht-kommerziell).
 
+## Aktuelle TFT-Meta
+
+Im Spielmodus recherchiert Jarvis **einmal am Tag** mit Claudes Websuche die aktuelle Meta (Set, Patch, stärkste Comps, Augments, Buffs/Nerfs) und nutzt sie den ganzen Tag als Wissensstand. Die Recherche läuft im Hintergrund, Fragen warten nicht darauf. Kosten: wenige Cent pro Tag. Manuell: Einstellungen → Spielmodus → „Meta jetzt aktualisieren“. Braucht einen Claude-Schlüssel.
+
 ## Stimme
 
 **Premium (empfohlen, am nächsten am Film-Jarvis):** ElevenLabs-Schlüssel in den Einstellungen eintragen. Standardstimme ist „Daniel“ (britisch, tief, ruhig), die mit dem Modell *Multilingual v2* Deutsch mit leichtem britischem Einschlag spricht. Alternativ in ElevenLabs unter *Voice Design* eine eigene Stimme beschreiben und deren ID eintragen. Fällt ElevenLabs aus oder ist das Kontingent leer, spricht Jarvis automatisch mit der Handy-Stimme weiter. Der ElevenLabs-Schlüssel wird nicht in die Sicherungsdatei geschrieben.

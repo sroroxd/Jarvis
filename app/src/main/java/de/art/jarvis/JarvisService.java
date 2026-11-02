@@ -328,7 +328,45 @@ public class JarvisService extends Service {
         main.removeCallbacks(retryWake);
         updateWake();
         updateNotification();
+        maybeUpdateMeta();
         notifyUi();
+    }
+
+    // ---------------------------------------------------------------- Tägliche TFT-Meta
+
+    private boolean metaRunning;
+    private long metaLastAttempt;
+
+    /**
+     * Holt im Spielmodus einmal am Tag die aktuelle Meta aus dem Internet (im Hintergrund, die Frage wartet nicht).
+     * Nach einem Fehlschlag frühestens nach 30 Minuten erneut.
+     */
+    private void maybeUpdateMeta() {
+        if (metaRunning || !prefs.tftMode() || prefs.isGemini() || prefs.apiKey().isEmpty()) return;
+        final String today = today();
+        if (Meta.isFresh(prefs.metaDate(), today)) return;
+        long now = SystemClock.elapsedRealtime();
+        if (metaLastAttempt != 0 && now - metaLastAttempt < 30 * 60 * 1000L) return;
+        metaLastAttempt = now;
+        metaRunning = true;
+        claude.sendWithWebSearch(prefs.apiKey(), Meta.MODEL, Meta.system(), Meta.prompt(today), Meta.MAX_SEARCHES,
+                new ClaudeClient.Callback() {
+                    @Override
+                    public void onResult(String text) {
+                        metaRunning = false;
+                        prefs.setMeta(text, today);
+                        notifyUi();
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        metaRunning = false;
+                    }
+                });
+    }
+
+    static String today() {
+        return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.GERMANY).format(new java.util.Date());
     }
 
     private boolean micGranted() {
@@ -386,19 +424,19 @@ public class JarvisService extends Service {
 
     /** Kurzer Zwischenstand („Ich höre …“, Mitschrift). Nur im Alltag – im Spielmodus bleibt der Bildschirm frei. */
     private void status(String text) {
-        if (prefs.tftMode() || !subtitlesWanted()) return;
+        if (prefs.tftMode() || !subtitlesWanted() || ui != null) return; // in der eigenen App steht alles schon da
         subtitles.show(text, false, prefs.subtitlesTop(), 0);
     }
 
     /** Wie {@link #status}, blendet sich aber nach ein paar Sekunden selbst aus. */
     private void statusBriefly(String text) {
-        if (prefs.tftMode() || !subtitlesWanted()) return;
+        if (prefs.tftMode() || !subtitlesWanted() || ui != null) return;
         subtitles.show(text, false, prefs.subtitlesTop(), CAPTION_LINGER_MS);
     }
 
     /** Antworttext als Untertitel (im Spielmodus nur, wenn ausdrücklich eingeschaltet). */
     private void caption(String text) {
-        if (!subtitlesWanted()) return;
+        if (!subtitlesWanted() || ui != null) return;
         subtitles.show(text, prefs.tftMode(), prefs.subtitlesTop(), 0);
     }
 
@@ -721,6 +759,7 @@ public class JarvisService extends Service {
     }
 
     private void handleUtterance(String text) {
+        maybeUpdateMeta();
         // „Spielmodus an/aus“ erledigt die App selbst.
         Boolean game = Commands.gameMode(text);
         if (game != null) {
@@ -794,7 +833,7 @@ public class JarvisService extends Service {
             return;
         }
 
-        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory());
+        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate());
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {

@@ -73,11 +73,52 @@ final class ClaudeClient {
         String text = "";
         String error;
         String detail = "";
+        String stopReason = "";
+        JSONArray content;
+    }
+
+    /**
+     * Anfrage mit Claudes eingebauter Websuche (z. B. für die tägliche TFT-Meta).
+     * Kostet pro Suche etwa 1 Cent plus Tokens; maxUses begrenzt die Zahl der Suchen.
+     */
+    void sendWithWebSearch(String apiKey, String model, String system, String userText, int maxUses, Callback callback) {
+        executor.execute(() -> {
+            Result r;
+            try {
+                JSONArray tools = new JSONArray().put(new JSONObject()
+                        .put("type", "web_search_20250305")
+                        .put("name", "web_search")
+                        .put("max_uses", maxUses));
+                JSONArray messages = new JSONArray()
+                        .put(new JSONObject().put("role", "user").put("content", userText));
+                r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
+                StringBuilder text = new StringBuilder(r.text);
+                // Lange Recherchen pausiert die API („pause_turn“) – dann einfach weitermachen lassen.
+                for (int i = 0; i < 2 && r.error == null && "pause_turn".equals(r.stopReason) && r.content != null; i++) {
+                    messages.put(new JSONObject().put("role", "assistant").put("content", r.content));
+                    r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
+                    text.append(r.text);
+                }
+                if (r.error == null) r.text = text.toString().trim();
+            } catch (Exception e) {
+                r = new Result();
+                r.error = "Recherche fehlgeschlagen: " + e.getMessage();
+            }
+            final Result result = r;
+            if (result.error != null) main.post(() -> callback.onError(result.error));
+            else if (result.text.isEmpty()) main.post(() -> callback.onError("Die Recherche hat nichts ergeben."));
+            else main.post(() -> callback.onResult(result.text));
+        });
     }
 
     /** thinking: "adaptive", "disabled" oder null (Feld weglassen); effort: "low"/"medium"/… oder null. */
     private Result request(String apiKey, String model, String system, JSONArray messages,
                            String thinking, String effort, int maxTokens) {
+        return request(apiKey, model, system, messages, thinking, effort, maxTokens, null);
+    }
+
+    private Result request(String apiKey, String model, String system, JSONArray messages,
+                           String thinking, String effort, int maxTokens, JSONArray tools) {
         Result result = new Result();
         HttpURLConnection conn;
         try {
@@ -89,6 +130,7 @@ final class ClaudeClient {
             // Kein „temperature“: Die aktuellen Claude-Modelle lehnen den Parameter ab (Fehler 400).
             body.put("system", system);
             body.put("messages", messages);
+            if (tools != null) body.put("tools", tools);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
 
             conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
@@ -120,7 +162,10 @@ final class ClaudeClient {
             }
 
             // Nur Textblöcke zählen – Nachdenkblöcke („thinking“) werden übersprungen.
-            JSONArray content = new JSONObject(response).optJSONArray("content");
+            JSONObject json = new JSONObject(response);
+            result.stopReason = json.optString("stop_reason", "");
+            JSONArray content = json.optJSONArray("content");
+            result.content = content;
             StringBuilder sb = new StringBuilder();
             if (content != null) {
                 for (int i = 0; i < content.length(); i++) {

@@ -9,6 +9,10 @@ final class Persona {
     private Persona() {}
 
     static String system(boolean tftMode, boolean hasScreenshot, String memory) {
+        return system(tftMode, hasScreenshot, memory, "", "");
+    }
+
+    static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate) {
         String now = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(new Date());
         StringBuilder sb = new StringBuilder();
         sb.append("Du bist JARVIS, der persönliche KI-Assistent von Art – nach dem Vorbild von Tony Starks JARVIS: ")
@@ -58,6 +62,7 @@ final class Persona {
                     + "Format: erst die sofortige Aktion in einem Satz, dann „Danach:“ mit dem nächsten Schritt. "
                     + "Verwende ausschließlich die deutschen Ingame-Namen, keine englischen Begriffe und keine Abkürzungen. "
                     + "Erkennst du Einheiten, Gegenstände oder Zahlen nicht sicher, rate nicht, sondern sag kurz, was fehlt.");
+            p(sb, Meta.forPersona(meta, metaDate));
         }
         return sb.toString();
     }
