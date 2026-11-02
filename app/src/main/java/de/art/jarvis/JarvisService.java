@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Das Herz von Jarvis: hört auf „Hey Jarvis“ (oder Antippen), sieht den Bildschirm,
+ * Das Herz von Jarvis: hört auf „Jarvis“ (oder Antippen), sieht den Bildschirm,
  * fragt Claude und spricht die Antwort.
  *
  * <p>Sichtbar ist nur, was eingeschaltet ist: das schwebende J (Standard aus) und die
@@ -153,6 +153,8 @@ public class JarvisService extends Service {
     private boolean finishRequested;
     /** Jede Anfrage bekommt eine Nummer; Antworten auf überholte Anfragen werden verworfen. */
     private int requestId;
+    /** Zuletzt angewendeter Modus – wechselt er (Alltag ↔ Spiel), beginnt ein frisches Gespräch. */
+    private boolean appliedGameMode;
 
     private FloatingJ floatingJ;
     private Subtitles subtitles;
@@ -201,6 +203,7 @@ public class JarvisService extends Service {
     public void onCreate() {
         super.onCreate();
         prefs = new Prefs(this);
+        appliedGameMode = prefs.tftMode();
         claude = new ClaudeClient();
         gemini = new GeminiClient();
         eleven = new ElevenTts(this);
@@ -310,6 +313,12 @@ public class JarvisService extends Service {
 
     /** Übernimmt geänderte Einstellungen (J, Untertitel, Wachwort, Spielmodus) sofort. */
     private void applySettings() {
+        // Moduswechsel (per Sprache, Schalter auf dem Startbildschirm oder in den Einstellungen) = neues Gespräch:
+        // Alltagsgespräche gehören nicht ins TFT-Coaching – und Pläne der letzten Partie nicht in die nächste.
+        if (prefs.tftMode() != appliedGameMode) {
+            appliedGameMode = prefs.tftMode();
+            history.clear();
+        }
         boolean showJ = prefs.floatingJ() && !prefs.tftMode() && Settings.canDrawOverlays(this);
         if (showJ && floatingJ == null) {
             floatingJ = new FloatingJ(this, prefs, new FloatingJ.Callbacks() {
@@ -467,7 +476,7 @@ public class JarvisService extends Service {
         if (ui != null) ui.onExchange(lastYou, lastJarvis);
     }
 
-    // ---------------------------------------------------------------- Wachwort „Hey Jarvis“
+    // ---------------------------------------------------------------- Wachwort „Jarvis“
 
     private void updateWake() {
         boolean should = running && prefs.wakeWord() && micGranted() && screenAwake
@@ -499,7 +508,7 @@ public class JarvisService extends Service {
         notifyUi();
         if (!wakeErrorSpoken) {
             wakeErrorSpoken = true;
-            statusBriefly("„Hey Jarvis“ pausiert: " + message);
+            statusBriefly("Wachwort pausiert: " + message);
         }
         main.removeCallbacks(retryWake);
         main.postDelayed(retryWake, wakeRetryMs);
@@ -659,7 +668,7 @@ public class JarvisService extends Service {
                 }
                 setState(State.IDLE);
                 if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                    // Nach „Hey Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
+                    // Nach „Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
                     statusBriefly(heardSomething ? "Ich habe dich nicht verstanden." : "Ich habe nichts gehört.");
                 } else {
                     String msg = "Die Spracherkennung meldet Fehler " + error + ".";
@@ -771,6 +780,19 @@ public class JarvisService extends Service {
                     : "Spielmodus beendet.");
             return;
         }
+        // „Neue Partie“: Verlauf der letzten Partie vergessen (und Spielmodus an, falls noch aus).
+        if (Commands.newGame(text)) {
+            history.clear();
+            boolean wasGame = prefs.tftMode();
+            if (!wasGame) {
+                prefs.setTftMode(true);
+                Backup.autoSave(this, prefs);
+            }
+            setState(State.IDLE);
+            applySettings();
+            speak(wasGame ? "Neue Partie. Viel Erfolg, Sir." : "Neue Partie, Spielmodus aktiv. Viel Erfolg, Sir.");
+            return;
+        }
         // „Merk dir …“ / „Vergiss …“ ebenso – zuverlässig und ohne Kosten.
         Memory.Outcome local = Memory.command(text, prefs.memory());
         if (local != null) {
@@ -800,13 +822,13 @@ public class JarvisService extends Service {
         boolean overlayVisible = floatingJ != null || subtitles.isShowing();
         if (!overlayVisible) {
             // Nichts eingeblendet (z. B. Spielmodus) → sofort fotografieren, keine Wartezeit.
-            ask(id, key, text, grabber.captureJpegBase64());
+            ask(id, key, text, grabber.captureJpegBase64(prefs.tftMode()));
             return;
         }
         // Eingeblendetes kurz verstecken, damit es nicht auf dem Bildschirmfoto landet.
         setCaptureHidden(true);
         main.postDelayed(() -> {
-            String image = grabber == null ? null : grabber.captureJpegBase64();
+            String image = grabber == null ? null : grabber.captureJpegBase64(prefs.tftMode());
             setCaptureHidden(false);
             if (id == requestId) ask(id, key, text, image);
         }, 120); // 120 ms reichen, damit das Bild ohne Einblendung neu gezeichnet ist (vorher 300 ms)
@@ -1024,7 +1046,7 @@ public class JarvisService extends Service {
                 new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
         String title = prefs.tftMode() ? "Jarvis ist aktiv · Spielmodus" : "Jarvis ist aktiv";
         String text = prefs.wakeWord()
-                ? "Sag „Hey Jarvis“ – oder tippe auf „Sprechen“."
+                ? "Sag „Jarvis“ – oder tippe auf „Sprechen“."
                 : "Tippe auf „Sprechen“, um mit Jarvis zu reden.";
         Icon icon = Icon.createWithResource(this, R.drawable.ic_jarvis);
         return new Notification.Builder(this, CHANNEL)

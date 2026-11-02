@@ -24,8 +24,14 @@ final class ClaudeClient {
 
     private static final String ENDPOINT = "https://api.anthropic.com/v1/messages";
 
-    /** Ein gemeinsamer Hintergrund-Thread für alle Anfragen (vorher: pro Client ein neuer, der nie endete). */
+    /** Fragen an Jarvis: ein gemeinsamer Thread, die Reihenfolge bleibt erhalten. */
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /**
+     * Hintergrund-Recherchen (tägliche TFT-Meta) laufen auf einem EIGENEN Thread. Vorher teilten sie sich
+     * den Thread mit den Fragen – eine Frage direkt nach „Spielmodus an“ wartete dann 20–40 Sekunden,
+     * bis die Recherche fertig war.
+     */
+    private static final ExecutorService background = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
     /** Ohne Nachdenken – schnellste Antwort. */
@@ -82,7 +88,7 @@ final class ClaudeClient {
      * Kostet pro Suche etwa 1 Cent plus Tokens; maxUses begrenzt die Zahl der Suchen.
      */
     void sendWithWebSearch(String apiKey, String model, String system, String userText, int maxUses, Callback callback) {
-        executor.execute(() -> {
+        background.execute(() -> {
             Result r;
             try {
                 JSONArray tools = new JSONArray().put(new JSONObject()
@@ -92,14 +98,14 @@ final class ClaudeClient {
                 JSONArray messages = new JSONArray()
                         .put(new JSONObject().put("role", "user").put("content", userText));
                 r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
-                StringBuilder text = new StringBuilder(r.text);
                 // Lange Recherchen pausiert die API („pause_turn“) – dann einfach weitermachen lassen.
                 for (int i = 0; i < 2 && r.error == null && "pause_turn".equals(r.stopReason) && r.content != null; i++) {
                     messages.put(new JSONObject().put("role", "assistant").put("content", r.content));
                     r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
-                    text.append(r.text);
                 }
-                if (r.error == null) r.text = text.toString().trim();
+                // Nur der Text nach der letzten Suche ist das Ergebnis – Zwischenansagen wie
+                // „Ich recherchiere …“ landeten sonst im Meta-Text, den Jarvis den ganzen Tag mitschickt.
+                if (r.error == null) r.text = spokenText(r.content);
             } catch (Exception e) {
                 r = new Result();
                 r.error = "Recherche fehlgeschlagen: " + e.getMessage();
@@ -109,6 +115,33 @@ final class ClaudeClient {
             else if (result.text.isEmpty()) main.post(() -> callback.onError("Die Recherche hat nichts ergeben."));
             else main.post(() -> callback.onResult(result.text));
         });
+    }
+
+    /**
+     * Der Antworttext: nur die Textblöcke NACH dem letzten Werkzeugblock (z. B. nach der Websuche).
+     * Nachdenkblöcke („thinking“) werden übersprungen.
+     */
+    static String spokenText(JSONArray content) {
+        if (content == null) return "";
+        int start = 0;
+        for (int i = 0; i < content.length(); i++) {
+            JSONObject block = content.optJSONObject(i);
+            String type = block == null ? "" : block.optString("type");
+            if (!type.equals("text") && !type.equals("thinking") && !type.equals("redacted_thinking")) start = i + 1;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = start; i < content.length(); i++) {
+            JSONObject block = content.optJSONObject(i);
+            if (block != null && "text".equals(block.optString("type"))) sb.append(block.optString("text"));
+        }
+        if (sb.length() == 0 && start > 0) {
+            // Kein Text nach dem Werkzeug – dann lieber alles, was an Text da ist.
+            for (int i = 0; i < content.length(); i++) {
+                JSONObject block = content.optJSONObject(i);
+                if (block != null && "text".equals(block.optString("type"))) sb.append(block.optString("text"));
+            }
+        }
+        return sb.toString().trim();
     }
 
     /** thinking: "adaptive", "disabled" oder null (Feld weglassen); effort: "low"/"medium"/… oder null. */

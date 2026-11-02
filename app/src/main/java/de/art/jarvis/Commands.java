@@ -18,6 +18,30 @@ final class Commands {
     private static final Pattern OFF = Pattern.compile(
             "\\b(aus|ausschalten|abschalten|deaktivieren|deaktiviere|deaktiviert|beenden|beende|stopp|stop|verlassen)\\b");
 
+    /** „Neue Partie“, „neues Spiel“, „nächste Partie“ … – bewusst NICHT „neue Runde“ (Runden gibt es in jeder Partie). */
+    private static final Pattern NEW_GAME = Pattern.compile(
+            "^(ok(ay)?\\s+)?(also\\s+)?(eine\\s+)?(neue|neues|nächste|nächstes)\\s+(partie|spiel|match|game)"
+                    + "(\\s+(beginnt|fängt an|geht los|startet|starten|anfangen|los))?(\\s+(bitte|jarvis|sir))*$");
+
+    /**
+     * Erkennt „Neue Partie“ (und Varianten): Jarvis vergisst dann den Verlauf der letzten Partie,
+     * damit alte Pläne („Danach: …“) nicht in die neue Partie hineinwirken.
+     */
+    static boolean newGame(String utterance) {
+        String t = normalize(utterance);
+        if (t.isEmpty() || t.split(" ").length > 6) return false;
+        return NEW_GAME.matcher(t).matches();
+    }
+
+    private static String normalize(String utterance) {
+        if (utterance == null) return "";
+        return utterance.toLowerCase(Locale.GERMANY)
+                .replaceAll("[^a-zäöüß0-9 -]", " ")
+                .replaceAll("^\\s*((hey|okay|ok)\\s+)?(jarvis\\s+)?(bitte\\s+)?", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
     /**
      * Erkennt „Spielmodus an/aus“ (und Varianten). Liefert {@code TRUE} = einschalten,
      * {@code FALSE} = ausschalten, {@code null} = kein solcher Befehl.
@@ -25,11 +49,7 @@ final class Commands {
      */
     static Boolean gameMode(String utterance) {
         if (utterance == null) return null;
-        String t = utterance.toLowerCase(Locale.GERMANY)
-                .replaceAll("[^a-zäöüß0-9 -]", " ")
-                .replaceAll("^\\s*((hey|okay|ok)\\s+)?(jarvis\\s+)?(bitte\\s+)?", "")
-                .replaceAll("\\s+", " ")
-                .trim();
+        String t = normalize(utterance);
         if (t.isEmpty() || t.split(" ").length > 6) return null;
         if (EVERYDAY.matcher(t).find()) {
             if (OFF.matcher(t).find()) return Boolean.TRUE; // „Alltagsmodus aus“ = Spielmodus an
