@@ -21,6 +21,8 @@ on:
   # Neu trainieren: training/wakeword/start.txt ändern (z. B. Datum eintragen) und pushen – oder „Run workflow“.
   push:
     paths: [ 'training/wakeword/start.txt' ]
+    # Nie auf main: das Ergebnis wird in den Zweig committet, und main bekommt keine Bot-Commits.
+    branches-ignore: [ 'main' ]
 
 # Fertige Merkmale eines früheren Laufs wiederverwenden: Lauf-ID in training/wakeword/daten_lauf.txt
 # (oder als Eingabe). Datei löschen, sobald sich Stimmen, Texte oder Verrauschen ändern.
@@ -44,6 +46,10 @@ env:
 
 jobs:
   plan:
+    # Nur auf ausdrücklichen Wunsch: von Hand gestartet oder start.txt in einem bestehenden Zweig geändert.
+    # Beim Anlegen eines Zweigs zählt jede Datei als geändert – das hat schon einmal ein ungewolltes,
+    # stundenlanges Training ausgelöst. Alle anderen Jobs hängen an „plan“ und fallen dann mit weg.
+    if: github.event_name == 'workflow_dispatch' || (github.event.created == false && github.ref_name != 'main')
     runs-on: ubuntu-24.04
     outputs:
       reuse: ${{ steps.p.outputs.reuse }}
