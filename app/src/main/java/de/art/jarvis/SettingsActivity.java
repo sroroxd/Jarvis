@@ -62,6 +62,7 @@ public class SettingsActivity extends AppCompatActivity {
         setupVoice();
         setupDisplay();
         setupGame();
+        setupAgent();
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
         hideTicks(b.sliderSensitivity, b.sliderPause, b.sliderRate, b.sliderPitch);
@@ -291,6 +292,39 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+    // ---------------------------------------------------------------- Agent-Rückgrat
+
+    private void setupAgent() {
+        b.agentTokenField.setText(prefs.agentToken());
+        b.switchAgent.setChecked(prefs.agentEnabled());
+        b.switchAgent.setOnCheckedChangeListener((v, on) -> {
+            prefs.setAgentEnabled(on);
+            updateAgentInfo();
+            refreshService();
+        });
+        b.agentTest.setOnClickListener(v -> testAgent());
+        updateAgentInfo();
+    }
+
+    private void updateAgentInfo() {
+        if (!prefs.agentEnabled()) {
+            b.agentInfo.setText("Aus – Aufträge gehen an die Claude-API wie bisher.");
+        } else if (prefs.agentToken().isEmpty()) {
+            b.agentInfo.setText("An, aber ohne Token. Trag das Token ein, sonst weist der Agent jeden Auftrag ab.");
+        } else {
+            b.agentInfo.setText("An, Port " + prefs.agentPort() + ", Token " + prefs.agentTokenPreview() + ".");
+        }
+    }
+
+    /** Fragt den Agenten, ob er läuft. Antwort steht direkt unter dem Knopf. */
+    private void testAgent() {
+        prefs.setAgentToken(text(b.agentTokenField));
+        updateAgentInfo();
+        showResult(b.agentInfo, "Prüfe …");
+        new AgentClient().pruefen(prefs.agentPort(), prefs.agentToken(),
+                reply -> showResult(b.agentInfo, reply.ok() ? "✓ " + reply.antwort : "✗ " + reply.fehler));
+    }
+
     // ---------------------------------------------------------------- Gedächtnis und Sicherung
 
     private void setupBackup() {
@@ -348,6 +382,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
     private void refreshFromPrefs() {
+        updateAgentInfo();
         b.switchBackupKeys.setChecked(prefs.backupKeys());
         b.memoryField.setText(prefs.memory());
         b.modelField.setText(prefs.rawModel());
@@ -407,6 +442,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
         prefs.setModel(model);
         prefs.setMemory(text(b.memoryField));
+        prefs.setAgentToken(text(b.agentTokenField));
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
         Backup.autoSave(this, prefs);

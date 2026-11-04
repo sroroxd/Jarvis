@@ -36,4 +36,48 @@ public class CommandsTest {
         assertNull(Commands.gameMode(""));
         assertNull(Commands.gameMode(null));
     }
+
+    // ------------------------------------------------- Aufträge an den Agenten
+
+    @Test
+    public void auftragWirdErkannt() {
+        assertEquals("sortier meine Downloads nach Datum",
+                Commands.agentTask("Übernimm das: sortier meine Downloads nach Datum"));
+        assertEquals("sortier meine Downloads",
+                Commands.agentTask("Jarvis, übernimm das, sortier meine Downloads"));
+        assertEquals("schreib mir eine Einkaufsliste",
+                Commands.agentTask("Auftrag: schreib mir eine Einkaufsliste"));
+        assertEquals("die Rechnungen vom Oktober",
+                Commands.agentTask("Kümmere dich um die Rechnungen vom Oktober"));
+        assertEquals("das Backup",
+                Commands.agentTask("Hey Jarvis erledige das Backup"));
+        assertEquals("such mir die PDF raus",
+                Commands.agentTask("Agent: such mir die PDF raus"));
+        assertEquals("räum den Ordner auf",
+                Commands.agentTask("Arbeite daran, räum den Ordner auf"));
+    }
+
+    @Test
+    public void grossUndKleinschreibungBleibtImAuftrag() {
+        assertEquals("Lies die Datei Rechnung_Oktober.PDF",
+                Commands.agentTask("Übernimm das: Lies die Datei Rechnung_Oktober.PDF"));
+    }
+
+    @Test
+    public void keinAuftragOhneInhalt() {
+        assertNull(Commands.agentTask("Übernimm das."));
+        assertNull(Commands.agentTask("Auftrag"));
+        assertNull(Commands.agentTask("Kümmere dich bitte darum"));
+    }
+
+    @Test
+    public void normaleFragenSindKeineAuftraege() {
+        assertNull(Commands.agentTask("Wie wird das Wetter morgen?"));
+        assertNull(Commands.agentTask("Agenten gibt es viele"));
+        assertNull(Commands.agentTask("Aufträge sind ein gutes Thema"));
+        assertNull(Commands.agentTask("Was kostet ein Auftrag bei dir?"));
+        assertNull(Commands.agentTask("Spielmodus an"));
+        assertNull(Commands.agentTask(""));
+        assertNull(Commands.agentTask(null));
+    }
 }
