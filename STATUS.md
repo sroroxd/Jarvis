@@ -36,7 +36,7 @@ Paket-ID `de.art.jarvis.test`).
 | `wachwort-jarvis` | #2 | Wachwort „Jarvis“ statt „Hey Jarvis“ (selbst trainiertes Modell) |
 | `jarvis-haende` | #1 | Websuche für Alltag und TFT-Meta, Kalender |
 | `tft-coach` | #3 | Fragen warten nie auf die Meta, „Neue Partie“, schärferes Spielbild |
-| `gespraech-modus` | #5 | Gesprächsmodus über Gemini Live – in `sammeltest` zusätzlich angeschlossen (Sprachbefehl, Einstellungen, Live-Bild im Spielmodus) |
+| `gespraech-modus` | #5 | Gemini-Live-Baustein (Protokoll, Mikrofon, Kosten). Art nutzt Gemini nicht – in `sammeltest` ist er nicht angeschlossen; das Dauergespräch läuft über Claude. |
 | `agent-ruckgrat` | #6 | Aufträge an Claude Code in Termux (Abo statt Guthaben) |
 
 **Zusammenführen:** Nach Arts Test geht `sammeltest` als Ganzes nach `main` –
@@ -53,11 +53,11 @@ zusammengeführt. `main` bekommt damit genau den Stand, den Art getestet hat.
    Training ein“, eine Frage, die eine Websuche braucht.
 3. **TFT:** „Spielmodus an“ – antwortet er sofort? In einer Partie fragen,
    „Neue Partie“ sagen.
-4. **Gesprächsmodus:** Google-Schlüssel eintragen (aistudio.google.com, kostenlose
-   Stufe reicht). Dann **einmal auf den Kern tippen** – Ton kommt, ab da frei reden
-   und unterbrechen, ohne erneut zu tippen. Mit geteiltem Bildschirm sieht Jarvis
-   live mit (ein Bild pro Sekunde). Nochmal tippen beendet, Dauer und Kosten
-   erscheinen im Verlauf. Redet er sich selbst ins Wort (Echo)?
+4. **Dauergespräch (Claude):** einmal auf den Kern tippen – ab dann nach jeder
+   Antwort von selbst weiter zuhören, ohne erneut zu tippen. Nochmal tippen oder
+   „Gespräch beenden“ beendet es; nach 15 Minuten ohne Wort endet es von selbst.
+   Auch per Sprache: „Hör durchgehend zu“ oder in eigenen Worten (Claude schaltet
+   dann selbst). Mit geteiltem Bildschirm bekommt jede Frage ein frisches Bild.
    Bildschirm nachträglich freigeben: oben auf „Bildschirm“ tippen.
 5. **Agent:** Termux einrichten (`agent/README.md`), Token eintragen, „Übernimm
    das: leg mir eine Datei einkaufsliste.txt mit Milch und Brot an“.

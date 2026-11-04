@@ -63,9 +63,13 @@ final class Commands {
     }
 
     private static final Pattern TALK = Pattern.compile(
-            "\\b(gespr(ä|ae)chs?[- ]?modus|unterhaltungs?[- ]?modus|live[- ]?modus|dauer[- ]?gespr(ä|ae)ch)\\b");
+            "\\b(gespr(ä|ae)chs?[- ]?modus|unterhaltungs?[- ]?modus|live[- ]?modus|dauer[- ]?gespr(ä|ae)ch"
+                    + "|dauer[- ]?modus|dauer[- ]?zuh(ö|oe)ren)\\b");
     private static final Pattern TALK_START = Pattern.compile(
-            "^(lass uns (mal )?(reden|quatschen|unterhalten|sprechen)|wir (reden|quatschen) (jetzt )?(ein bisschen|mal)?)$");
+            "^(lass uns (mal )?(reden|quatschen|unterhalten|sprechen)|wir (reden|quatschen) (jetzt )?(ein bisschen|mal)?"
+                    + "|h(ö|oe)re? (mir )?(ab jetzt |jetzt |einfach )*(durchgehend|dauerhaft|st(ä|ae)ndig|die ganze zeit|immer) zu)$");
+    private static final Pattern QUESTION = Pattern.compile(
+            "^(was|wie|wann|warum|wieso|weshalb|wo|wer|welche[rsnm]?|kannst|kann|soll|sollte|gibt|ist|hast|h(ö|oe)rst|bist|funktioniert)\\b");
     private static final Pattern TALK_END = Pattern.compile(
             "^((das )?gespr(ä|ae)ch (beenden|beende|ende|aus|vorbei)|ende (des )?gespr(ä|ae)chs?|(okay |ok )?danke,? das (wars|war's|war es))$");
 
@@ -83,6 +87,8 @@ final class Commands {
                 .replaceAll("\\s+", " ")
                 .trim();
         if (t.isEmpty() || t.split(" ").length > 6) return null;
+        // Fragen über den Modus schalten nichts („Was ist ein Dauergespräch?“ – „ein“ wäre sonst „an“).
+        if (QUESTION.matcher(t).find()) return null;
         if (TALK_END.matcher(t).find()) return Boolean.FALSE;
         if (TALK_START.matcher(t).find()) return Boolean.TRUE;
         if (!TALK.matcher(t).find()) return null;
@@ -110,6 +116,26 @@ final class Commands {
             if (Boolean.FALSE.equals(conversationMode(tail.toString()))) return true;
         }
         return false;
+    }
+
+    /** Steuerzeile, mit der Claude das Dauergespräch schaltet, wenn Art es in eigenen Worten will. */
+    private static final Pattern CONTINUOUS_TAG = Pattern.compile(
+            "\\[\\s*DAUERGESPR(Ä|AE)CH\\s*:\\s*(AN|AUS)\\s*\\]",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+    /** {@code TRUE}/{@code FALSE}, wenn die Antwort die Steuerzeile enthält – sonst {@code null}. Die letzte zählt. */
+    static Boolean continuousTag(String answer) {
+        if (answer == null) return null;
+        java.util.regex.Matcher m = CONTINUOUS_TAG.matcher(answer);
+        Boolean result = null;
+        while (m.find()) result = "AN".equalsIgnoreCase(m.group(2));
+        return result;
+    }
+
+    /** Antwort ohne Steuerzeilen – die werden nicht vorgelesen. */
+    static String stripControlTags(String answer) {
+        if (answer == null) return "";
+        return CONTINUOUS_TAG.matcher(answer).replaceAll("").replaceAll("[ \\t]+\n", "\n").trim();
     }
 
     /**

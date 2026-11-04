@@ -295,8 +295,6 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Agent-Rückgrat
 
     private void setupAgent() {
-        b.liveKeyField.setText(prefs.liveKey());
-        b.liveKeyLayout.setHelperText(prefs.liveKeyPreview());
         b.agentTokenField.setText(prefs.agentToken());
         b.switchAgent.setChecked(prefs.agentEnabled());
         b.switchAgent.setOnCheckedChangeListener((v, on) -> {
@@ -448,8 +446,6 @@ public class SettingsActivity extends AppCompatActivity {
         prefs.setModel(model);
         prefs.setMemory(text(b.memoryField));
         prefs.setAgentToken(text(b.agentTokenField));
-        prefs.setLiveKey(text(b.liveKeyField));
-        b.liveKeyLayout.setHelperText(prefs.liveKeyPreview());
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
         Backup.autoSave(this, prefs);

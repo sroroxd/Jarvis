@@ -578,57 +578,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ===================================================== Gesprächsmodus -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Jarvis.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        style="@style/Jarvis.SectionTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Gesprächsmodus" />
-
-                    <TextView
-                        style="@style/Jarvis.Hint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Mit eingetragenem Schlüssel startet ein Tipp auf den Kern das Gespräch (oder „Gesprächsmodus an“): Jarvis hört ab dann durchgehend zu und antwortet, du kannst ihn jederzeit unterbrechen. Ist der Bildschirm geteilt, sieht er live mit. Beenden: nochmal antippen oder „Gesprächsmodus aus“. Ohne Schlüssel bleibt Antippen bei einer Frage pro Tipp." />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/liveKeyLayout"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:hint="Google-Schlüssel (Gemini)"
-                        app:endIconMode="password_toggle">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/liveKeyField"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textPassword"
-                            android:singleLine="true" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <TextView
-                        style="@style/Jarvis.Hint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Kostenlos bei aistudio.google.com unter „Get API key“. In der kostenlosen Stufe fallen keine Kosten an (Google darf die Gespräche dann zur Verbesserung nutzen). Bezahlt: etwa 1,4 Cent pro Gesprächsminute." />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- ===================================================== Agent-Rückgrat -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Jarvis.Card"

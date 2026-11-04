@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         rendering = true;
         boolean running = JarvisService.isRunning() || demo != null;
         JarvisService.State s = demo != null ? demo : JarvisService.currentState();
-        boolean live = demo == null && JarvisService.isLive();
+        boolean live = demo == null && JarvisService.isContinuous();
         ReactorView.Mode mode;
         String label;
         String status;
@@ -163,10 +163,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                 case LISTENING:
                     mode = ReactorView.Mode.LISTENING;
                     label = "HÖRE ZU";
-                    status = live ? "Gespräch läuft" : "Ich höre zu …";
+                    status = live ? "Dauergespräch · ich höre zu" : "Ich höre zu …";
                     detail = live
-                            ? (JarvisService.isScreenShared() ? "Ich höre zu und sehe live mit. Antippen beendet."
-                                    : "Ich höre durchgehend zu. Antippen beendet.")
+                            ? (JarvisService.isScreenShared() ? "Sprich einfach – jede Frage bekommt ein frisches Bild. Antippen beendet."
+                                    : "Sprich einfach, ich höre durchgehend zu. Antippen beendet.")
                             : "Sprich einfach. Antippen schickt sofort ab.";
                     break;
                 case THINKING:
@@ -179,7 +179,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     mode = ReactorView.Mode.SPEAKING;
                     label = "SPRICHT";
                     status = "Spreche …";
-                    detail = live ? "Einfach dazwischenreden unterbricht. Antippen beendet das Gespräch."
+                    detail = live ? (prefs.wakeWord() ? "„Jarvis“ unterbricht · Antippen beendet das Dauergespräch."
+                                    : "Antippen beendet das Dauergespräch.")
                             : prefs.wakeWord() ? "Antippen oder „Jarvis“ unterbricht." : "Antippen unterbricht.";
                     break;
                 default:
@@ -201,12 +202,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
         b.hint.setVisibility(running ? View.VISIBLE : View.GONE);
         String timing = JarvisService.lastTiming();
-        boolean talk = !prefs.liveKeyEffective().isEmpty();
         if (live) {
-            b.hint.setText("Gesprächsmodus · Tippen: beenden");
+            b.hint.setText("Dauergespräch · Tippen: beenden");
         } else if (timing.isEmpty() || s != JarvisService.State.IDLE) {
-            b.hint.setText(talk ? "Tippen: Gespräch starten · Lang drücken: neues Gespräch"
-                    : "Tippen: sprechen · Lang drücken: neues Gespräch");
+            b.hint.setText("Tippen: Dauergespräch · Lang drücken: neues Gespräch");
         } else {
             b.hint.setText("Letzte Antwort: " + timing);
         }
@@ -225,12 +224,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     private String idleDetail() {
-        boolean talk = !prefs.liveKeyEffective().isEmpty();
-        if (!prefs.wakeWord()) return talk ? "Tippe auf den Kern für ein Gespräch." : "Tippe auf den Kern, um zu sprechen.";
+        if (!prefs.wakeWord()) return "Tippe auf den Kern – ich höre dann durchgehend zu.";
         String problem = JarvisService.wakeProblem();
         if (problem != null) return "Wachwort pausiert: " + problem;
-        return talk ? "Tippe auf den Kern für ein Gespräch – oder sag „Jarvis“ für eine Frage."
-                : "Sag „Jarvis“ – oder tippe auf den Kern.";
+        return "Tippe auf den Kern für ein Dauergespräch – oder sag „Jarvis“ für eine Frage.";
     }
 
     /** Bisher gezeichnete Einträge – so wird bei jedem Zwischenergebnis nur der letzte erneuert. */

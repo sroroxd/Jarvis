@@ -147,4 +147,30 @@ public class CommandsTest {
         assertFalse(Commands.endsConversation(""));
         assertFalse(Commands.endsConversation(null));
     }
+
+    // ------------------------------------------------- Dauergespräch (Claude)
+
+    @Test
+    public void dauergespraechPerSprache() {
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Hör durchgehend zu"));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Jarvis, hör mir ab jetzt durchgehend zu"));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Hör einfach die ganze Zeit zu"));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Dauergespräch an"));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Dauermodus starten"));
+        assertEquals(Boolean.FALSE, Commands.conversationMode("Dauergespräch beenden"));
+        assertEquals(Boolean.FALSE, Commands.conversationMode("Dauermodus aus"));
+        assertNull(Commands.conversationMode("Hörst du mich?"));
+        assertNull(Commands.conversationMode("Was ist ein Dauergespräch?"));
+    }
+
+    @Test
+    public void steuerzeileVonClaude() {
+        assertEquals(Boolean.TRUE, Commands.continuousTag("Verstanden, Sir, ich höre ab jetzt durchgehend zu.\n[DAUERGESPRÄCH: AN]"));
+        assertEquals(Boolean.FALSE, Commands.continuousTag("Gut.\n[dauergespraech:aus]"));
+        assertNull(Commands.continuousTag("Ganz normale Antwort ohne Steuerzeile."));
+        assertNull(Commands.continuousTag(null));
+        assertEquals("Verstanden, Sir, ich höre ab jetzt durchgehend zu.",
+                Commands.stripControlTags("Verstanden, Sir, ich höre ab jetzt durchgehend zu.\n[DAUERGESPRÄCH: AN]"));
+        assertEquals("Ohne Zeile.", Commands.stripControlTags("Ohne Zeile."));
+    }
 }
