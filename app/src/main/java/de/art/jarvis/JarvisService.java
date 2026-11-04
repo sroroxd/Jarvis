@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Das Herz von Jarvis: hört auf „Hey Jarvis“ (oder Antippen), sieht den Bildschirm,
+ * Das Herz von Jarvis: hört auf „Jarvis“ (oder Antippen), sieht den Bildschirm,
  * fragt Claude und spricht die Antwort.
  *
  * <p>Sichtbar ist nur, was eingeschaltet ist: das schwebende J (Standard aus) und die
@@ -467,7 +467,7 @@ public class JarvisService extends Service {
         if (ui != null) ui.onExchange(lastYou, lastJarvis);
     }
 
-    // ---------------------------------------------------------------- Wachwort „Hey Jarvis“
+    // ---------------------------------------------------------------- Wachwort „Jarvis“
 
     private void updateWake() {
         boolean should = running && prefs.wakeWord() && micGranted() && screenAwake
@@ -499,7 +499,7 @@ public class JarvisService extends Service {
         notifyUi();
         if (!wakeErrorSpoken) {
             wakeErrorSpoken = true;
-            statusBriefly("„Hey Jarvis“ pausiert: " + message);
+            statusBriefly("Wachwort pausiert: " + message);
         }
         main.removeCallbacks(retryWake);
         main.postDelayed(retryWake, wakeRetryMs);
@@ -659,7 +659,7 @@ public class JarvisService extends Service {
                 }
                 setState(State.IDLE);
                 if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                    // Nach „Hey Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
+                    // Nach „Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
                     statusBriefly(heardSomething ? "Ich habe dich nicht verstanden." : "Ich habe nichts gehört.");
                 } else {
                     String msg = "Die Spracherkennung meldet Fehler " + error + ".";
@@ -1024,7 +1024,7 @@ public class JarvisService extends Service {
                 new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
         String title = prefs.tftMode() ? "Jarvis ist aktiv · Spielmodus" : "Jarvis ist aktiv";
         String text = prefs.wakeWord()
-                ? "Sag „Hey Jarvis“ – oder tippe auf „Sprechen“."
+                ? "Sag „Jarvis“ – oder tippe auf „Sprechen“."
                 : "Tippe auf „Sprechen“, um mit Jarvis zu reden.";
         Icon icon = Icon.createWithResource(this, R.drawable.ic_jarvis);
         return new Notification.Builder(this, CHANNEL)

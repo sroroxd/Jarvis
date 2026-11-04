@@ -18,7 +18,7 @@ import java.util.List;
 import de.art.jarvis.wake.WakeWordDetector;
 
 /**
- * Hört offline auf „Hey Jarvis“: eigenes Mikrofon (16 kHz) → {@link WakeWordDetector}.
+ * Hört offline auf „Jarvis“: eigenes Mikrofon (16 kHz) → {@link WakeWordDetector}.
  *
  * <p>Nach einem Treffer gibt die Engine das Mikrofon sofort frei, damit die Spracherkennung
  * ohne Verzögerung übernehmen kann. Alle öffentlichen Methoden laufen auf dem Haupt-Thread.
@@ -31,7 +31,7 @@ final class WakeWordEngine {
     }
 
     private static final String DIR = "wakeword/";
-    /** Nach einem Treffer kurz nichts melden, falls dasselbe „Hey Jarvis“ noch nachhallt. */
+    /** Nach einem Treffer kurz nichts melden, falls dasselbe „Jarvis“ noch nachhallt. */
     private static final long COOLDOWN_MS = 1500;
 
     private final Context context;
@@ -181,7 +181,10 @@ final class WakeWordEngine {
         return new WakeWordDetector(
                 read(assets, DIR + "melspectrogram.onnx"),
                 read(assets, DIR + "embedding_model.onnx"),
-                read(assets, DIR + "hey_jarvis_v0.1.onnx"));
+                // Eigenes Modell (training/wakeword): erkennt „Jarvis“ allein, englisch und deutsch ausgesprochen,
+                // und „Hey/Okay Jarvis“. Das alte hey_jarvis-Modell zusätzlich brachte in Messungen keinen Treffer mehr,
+                // nur mehr Fehlalarme – deshalb nur dieses eine.
+                read(assets, DIR + "jarvis.onnx"));
     }
 
     private static byte[] read(AssetManager assets, String name) throws IOException {

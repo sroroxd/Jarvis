@@ -13,12 +13,12 @@ public final class Prefs {
 
     /**
      * Standard-Stimmen für die Handy-Sprachausgabe, in dieser Reihenfolge gesucht:
-     * Thorsten (deutsch, männlich) → Miro (deutsch, männlich) → Alan (britisch, Notlösung).
+     * Miro (deutsch, männlich – Arts Wahl) → Thorsten (deutsch, männlich) → Alan (britisch, Notlösung).
      * Premium (ElevenLabs „Daniel“) hat Vorrang, sobald ein ElevenLabs-Schlüssel eingetragen ist.
      */
-    public static final String[] DEFAULT_VOICE_HINTS = {"thorsten", "miro", "alan"};
-    public static final float DEFAULT_RATE = 0.9f;
-    public static final float DEFAULT_PITCH = 1.0f;
+    public static final String[] DEFAULT_VOICE_HINTS = {"miro", "thorsten", "alan"};
+    public static final float DEFAULT_RATE = 0.95f;
+    public static final float DEFAULT_PITCH = 0.9f;
     /** Wartezeit nach einer Sprechpause, bevor Jarvis die Frage abschickt. */
     public static final int DEFAULT_PAUSE_MS = 1200;
 
@@ -190,10 +190,10 @@ public final class Prefs {
         sp.edit().putBoolean("tft_mode", value).apply();
     }
 
-    // ------------------------------------------------------------ Freihändig („Hey Jarvis“)
+    // ------------------------------------------------------------ Freihändig (Wachwort „Jarvis“)
 
     public static final boolean DEFAULT_WAKE_WORD = true;
-    /** 1 = reagiert nur auf sehr deutliches „Hey Jarvis“, 10 = reagiert auf fast alles. */
+    /** 1 = reagiert nur auf sehr deutliches „Jarvis“, 10 = reagiert auf fast alles. */
     public static final int DEFAULT_SENSITIVITY = 5;
 
     public boolean wakeWord() {

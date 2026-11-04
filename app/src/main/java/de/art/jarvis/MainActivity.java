@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     mode = ReactorView.Mode.SPEAKING;
                     label = "SPRICHT";
                     status = "Spreche …";
-                    detail = prefs.wakeWord() ? "Antippen oder „Hey Jarvis“ unterbricht." : "Antippen unterbricht.";
+                    detail = prefs.wakeWord() ? "Antippen oder „Jarvis“ unterbricht." : "Antippen unterbricht.";
                     break;
                 default:
                     mode = ReactorView.Mode.IDLE;
@@ -200,8 +200,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private String idleDetail() {
         if (!prefs.wakeWord()) return "Tippe auf den Kern, um zu sprechen.";
         String problem = JarvisService.wakeProblem();
-        if (problem != null) return "„Hey Jarvis“ pausiert: " + problem;
-        return "Sag „Hey Jarvis“ – oder tippe auf den Kern.";
+        if (problem != null) return "Wachwort pausiert: " + problem;
+        return "Sag „Jarvis“ – oder tippe auf den Kern.";
     }
 
     private void renderExchange(String you, String jarvis) {
