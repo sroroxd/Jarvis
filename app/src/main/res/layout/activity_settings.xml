@@ -601,7 +601,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Sag „Gesprächsmodus an“ oder „Lass uns reden“ – danach redet ihr ohne Wachwort hin und her, du kannst Jarvis jederzeit unterbrechen. Beenden: „Gesprächsmodus aus“ oder antippen. Im Spielmodus mit Bildschirmfreigabe sieht Jarvis das Spiel live und antwortet auf jede Frage." />
+                        android:text="Mit eingetragenem Schlüssel startet ein Tipp auf den Kern das Gespräch (oder „Gesprächsmodus an“): Jarvis hört ab dann durchgehend zu und antwortet, du kannst ihn jederzeit unterbrechen. Ist der Bildschirm geteilt, sieht er live mit. Beenden: nochmal antippen oder „Gesprächsmodus aus“. Ohne Schlüssel bleibt Antippen bei einer Frage pro Tipp." />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/liveKeyLayout"

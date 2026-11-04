@@ -54,10 +54,11 @@ zusammengeführt. `main` bekommt damit genau den Stand, den Art getestet hat.
 3. **TFT:** „Spielmodus an“ – antwortet er sofort? In einer Partie fragen,
    „Neue Partie“ sagen.
 4. **Gesprächsmodus:** Google-Schlüssel eintragen (aistudio.google.com, kostenlose
-   Stufe reicht), „Gesprächsmodus an“ – Ton kommt, dann frei reden und
-   unterbrechen. Redet er sich selbst ins Wort (Echo)? „Gesprächsmodus aus“ –
-   Dauer und Kosten erscheinen. Im Spielmodus mit Bildschirmfreigabe nach dem
-   Brett fragen.
+   Stufe reicht). Dann **einmal auf den Kern tippen** – Ton kommt, ab da frei reden
+   und unterbrechen, ohne erneut zu tippen. Mit geteiltem Bildschirm sieht Jarvis
+   live mit (ein Bild pro Sekunde). Nochmal tippen beendet, Dauer und Kosten
+   erscheinen im Verlauf. Redet er sich selbst ins Wort (Echo)?
+   Bildschirm nachträglich freigeben: oben auf „Bildschirm“ tippen.
 5. **Agent:** Termux einrichten (`agent/README.md`), Token eintragen, „Übernimm
    das: leg mir eine Datei einkaufsliste.txt mit Milch und Brot an“.
 

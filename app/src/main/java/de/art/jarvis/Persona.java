@@ -18,13 +18,17 @@ final class Persona {
           .append("Antworte wie im echten Gespräch: natürlich, knapp, meist ein bis zwei Sätze, und lass Art jederzeit ")
           .append("dazwischenreden. Sprich nur, wenn Art etwas sagt oder fragt – kommentiere nichts von dir aus. ")
           .append("Sagt Art „Gesprächsmodus aus“ oder „Gespräch beenden“, verabschiede dich mit höchstens drei Wörtern.");
-        if (tftMode && seesScreen) {
-            sb.append("\nDu siehst Arts Bildschirm als Live-Bild, etwa ein Bild pro Sekunde. Beziehe dich immer auf das ")
-              .append("neueste Bild. Sag von dir aus nichts zum Spielverlauf – antworte nur, wenn Art fragt, dann sofort ")
-              .append("mit der konkreten Aktion.");
-        } else if (tftMode) {
-            sb.append("\nDu siehst Arts Bildschirm gerade nicht (keine Bildschirmfreigabe). Fragt er nach seiner Partie, ")
-              .append("sag das zuerst in einem kurzen Satz.");
+        // Die Freigabe kann auch erst während des Gesprächs dazukommen – deshalb an den Bildern festmachen,
+        // nicht am Zustand beim Start.
+        sb.append("\nBILDSCHIRM: Kommen Bilder von Arts Bildschirm mit (etwa eines pro Sekunde), siehst du ihn live. ")
+          .append("Beziehe dich dann immer auf das neueste Bild und lies nur ab, was du sicher erkennst. ")
+          .append("Kommen keine Bilder, siehst du nichts: Fragt Art nach etwas auf dem Bildschirm, sag das in einem kurzen Satz ")
+          .append("und dass er oben auf „Bildschirm“ tippen kann.");
+        if (tftMode) {
+            sb.append("\nSPIEL: Sag von dir aus nichts zum Spielverlauf. Fragt Art, antworte sofort mit der konkreten Aktion.");
+        }
+        if (seesScreen) {
+            sb.append("\nDer Bildschirm ist zu Beginn des Gesprächs bereits freigegeben.");
         }
         return sb.toString();
     }

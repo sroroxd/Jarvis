@@ -83,6 +83,10 @@ public class JarvisService extends Service {
     private static String lastYou = "";
     private static String lastJarvis = "";
     private static volatile String lastTiming = "";
+    /** Ganzer Gesprächsverlauf für den Startbildschirm (überlebt das Schließen der App, solange Jarvis läuft). */
+    private static final ChatLog chatLog = new ChatLog();
+    /** Läuft gerade der Gesprächsmodus? Für die Anzeige auf dem Startbildschirm. */
+    private static volatile boolean liveRunning;
     private static String lastModel = "";
     private final Timing timing = new Timing();
     private static boolean screenShared;
@@ -106,6 +110,14 @@ public class JarvisService extends Service {
     }
 
     /** Zeitmessung der letzten Antwort, z. B. „Zuhören 0,4 s · KI 1,8 s · Stimme 0,6 s · gesamt 2,8 s“. */
+    static java.util.List<ChatLog.Entry> log() {
+        return chatLog.snapshot();
+    }
+
+    static boolean isLive() {
+        return liveRunning;
+    }
+
     static String lastTiming() {
         return lastTiming;
     }
@@ -146,7 +158,7 @@ public class JarvisService extends Service {
     private final StringBuilder liveHeard = new StringBuilder();
     private final StringBuilder liveSaid = new StringBuilder();
     private boolean liveLastWasArt;
-    /** Im Spielmodus schickt der Gesprächsmodus jede Sekunde ein Bildschirmbild – Googles Höchstrate für Video. */
+    /** Ist der Bildschirm geteilt, schickt der Gesprächsmodus jede Sekunde ein Bild – Googles Höchstrate für Video. */
     private static final long LIVE_FRAME_MS = 1000;
     private final Runnable liveFrame = this::sendLiveFrame;
     /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
@@ -294,6 +306,7 @@ public class JarvisService extends Service {
         if (live != null) {
             LiveSession s = live;
             live = null;
+            liveRunning = false;
             s.stop();
         }
         screenShared = false;
@@ -434,6 +447,12 @@ public class JarvisService extends Service {
         grabber = new ScreenGrabber(projection);
         grabber.start(b.width(), b.height(), getResources().getDisplayMetrics().densityDpi);
         screenShared = true;
+        notifyUi();
+        // Läuft gerade ein Gespräch, sieht Jarvis ab jetzt live mit.
+        if (live != null) {
+            main.removeCallbacks(liveFrame);
+            main.postDelayed(liveFrame, LIVE_FRAME_MS);
+        }
     }
 
     @Override
@@ -494,6 +513,10 @@ public class JarvisService extends Service {
     private void publishExchange(String you, String jarvis) {
         if (you != null) lastYou = you;
         if (jarvis != null) lastJarvis = jarvis;
+        // ("", "") = neues Gespräch → Verlauf leeren. Sonst mitschreiben.
+        if (you != null && you.isEmpty() && jarvis != null && jarvis.isEmpty()) chatLog.clear();
+        if (you != null && !you.isEmpty()) chatLog.art(you);
+        if (jarvis != null && !jarvis.isEmpty()) chatLog.jarvis(jarvis);
         if (ui != null) ui.onExchange(lastYou, lastJarvis);
     }
 
@@ -561,11 +584,22 @@ public class JarvisService extends Service {
                 break;
             case SPEAKING:
                 stopSpeaking();
-                startListening();
+                if (!startLiveIfPossible()) startListening();
                 break;
             default:
-                startListening();
+                if (!startLiveIfPossible()) startListening();
         }
+    }
+
+    /**
+     * Einmal antippen = Dauergespräch: Jarvis hört ab dann ohne weiteres Antippen zu und
+     * antwortet, bis Art erneut antippt. Geht nur mit Google-Schlüssel (Gemini Live) –
+     * ohne ihn bleibt Antippen beim bisherigen „eine Frage, eine Antwort“.
+     */
+    private boolean startLiveIfPossible() {
+        if (prefs.liveKeyEffective().isEmpty()) return false;
+        startLive();
+        return true;
     }
 
     private void resetConversation() {
@@ -995,7 +1029,7 @@ public class JarvisService extends Service {
         setState(State.THINKING);
         status("Gesprächsmodus startet …");
 
-        boolean sees = grabber != null && prefs.tftMode();
+        boolean sees = grabber != null;
         String system = Persona.system(prefs.tftMode(), sees, prefs.memory(), prefs.metaText(), prefs.metaDate())
                 + "\n\n" + Persona.live(prefs.tftMode(), sees);
         final LiveSession[] holder = new LiveSession[1];
@@ -1015,12 +1049,14 @@ public class JarvisService extends Service {
         });
         final LiveSession session = holder[0];
         live = session;
+        liveRunning = true;
         // Erst das Wachwort-Mikrofon freigeben, dann übernimmt der Gesprächsmodus.
         wake.stop(() -> {
             if (live != session) return;
             if (!session.start()) {
                 // start() hat den Grund schon über onProblem gemeldet.
                 live = null;
+                liveRunning = false;
                 setState(State.IDLE);
                 updateWake();
             }
@@ -1038,7 +1074,7 @@ public class JarvisService extends Service {
         earcon.play(); // hörbares Zeichen, auch ohne Blick aufs Handy
         status("Gesprächsmodus an – sprich einfach. Beenden: „Gesprächsmodus aus“ oder antippen.");
         main.removeCallbacks(liveFrame);
-        if (grabber != null && prefs.tftMode()) main.postDelayed(liveFrame, LIVE_FRAME_MS);
+        if (grabber != null) main.postDelayed(liveFrame, LIVE_FRAME_MS);
     }
 
     private void onLiveUser(LiveSession s, String text) {
@@ -1069,6 +1105,7 @@ public class JarvisService extends Service {
     private void onLiveEnded(LiveSession s) {
         if (live != s) return;
         live = null;
+        liveRunning = false;
         main.removeCallbacks(liveFrame);
         String cost = s.costLine();
         setState(State.IDLE);
@@ -1078,11 +1115,14 @@ public class JarvisService extends Service {
         speak("Gesprächsmodus beendet.");
     }
 
-    /** Ein Bildschirmbild an den Gesprächsmodus, dann das nächste einplanen. */
+    /**
+     * Ein Bildschirmbild an den Gesprächsmodus, dann das nächste einplanen. Im Spielmodus in
+     * der schärferen TFT-Auflösung, sonst in der normalen.
+     */
     private void sendLiveFrame() {
         LiveSession s = live;
-        if (s == null || grabber == null || !prefs.tftMode()) return;
-        s.sendScreen(grabber.captureJpeg(true));
+        if (s == null || grabber == null) return;
+        s.sendScreen(grabber.captureJpeg(prefs.tftMode()));
         main.postDelayed(liveFrame, LIVE_FRAME_MS);
     }
 

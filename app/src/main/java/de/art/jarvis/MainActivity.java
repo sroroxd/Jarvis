@@ -78,6 +78,17 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             sendToService(JarvisService.ACTION_REFRESH);
             render();
         });
+        b.chipScreen.setOnClickListener(v -> {
+            render(); // Haken zeigt immer den echten Zustand, nicht den Klick
+            if (!JarvisService.isRunning()) {
+                proceed(); // Start fragt die Freigabe ohnehin ab
+            } else if (JarvisService.isScreenShared()) {
+                Snackbar.make(b.getRoot(), "Der Bildschirm wird schon geteilt – Jarvis sieht mit.",
+                        Snackbar.LENGTH_SHORT).show();
+            } else {
+                projectionLauncher.launch(screenCaptureIntent());
+            }
+        });
         b.chipGame.setOnCheckedChangeListener((chip, checked) -> {
             if (rendering) return;
             prefs.setTftMode(checked);
@@ -135,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         rendering = true;
         boolean running = JarvisService.isRunning() || demo != null;
         JarvisService.State s = demo != null ? demo : JarvisService.currentState();
+        boolean live = demo == null && JarvisService.isLive();
         ReactorView.Mode mode;
         String label;
         String status;
@@ -151,8 +163,11 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                 case LISTENING:
                     mode = ReactorView.Mode.LISTENING;
                     label = "HÖRE ZU";
-                    status = "Ich höre zu …";
-                    detail = "Sprich einfach. Antippen schickt sofort ab.";
+                    status = live ? "Gespräch läuft" : "Ich höre zu …";
+                    detail = live
+                            ? (JarvisService.isScreenShared() ? "Ich höre zu und sehe live mit. Antippen beendet."
+                                    : "Ich höre durchgehend zu. Antippen beendet.")
+                            : "Sprich einfach. Antippen schickt sofort ab.";
                     break;
                 case THINKING:
                     mode = ReactorView.Mode.THINKING;
@@ -164,7 +179,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     mode = ReactorView.Mode.SPEAKING;
                     label = "SPRICHT";
                     status = "Spreche …";
-                    detail = prefs.wakeWord() ? "Antippen oder „Jarvis“ unterbricht." : "Antippen unterbricht.";
+                    detail = live ? "Einfach dazwischenreden unterbricht. Antippen beendet das Gespräch."
+                            : prefs.wakeWord() ? "Antippen oder „Jarvis“ unterbricht." : "Antippen unterbricht.";
                     break;
                 default:
                     mode = ReactorView.Mode.IDLE;
@@ -185,33 +201,74 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
         b.hint.setVisibility(running ? View.VISIBLE : View.GONE);
         String timing = JarvisService.lastTiming();
-        b.hint.setText(timing.isEmpty() || s != JarvisService.State.IDLE
-                ? "Tippen: sprechen · Lang drücken: neues Gespräch"
-                : "Letzte Antwort: " + timing);
+        boolean talk = !prefs.liveKeyEffective().isEmpty();
+        if (live) {
+            b.hint.setText("Gesprächsmodus · Tippen: beenden");
+        } else if (timing.isEmpty() || s != JarvisService.State.IDLE) {
+            b.hint.setText(talk ? "Tippen: Gespräch starten · Lang drücken: neues Gespräch"
+                    : "Tippen: sprechen · Lang drücken: neues Gespräch");
+        } else {
+            b.hint.setText("Letzte Antwort: " + timing);
+        }
         b.stopButton.setVisibility(running ? View.VISIBLE : View.INVISIBLE);
         if (demo != null) {
-            renderExchange("Was soll ich in dieser Runde kaufen?",
-                    "Kauf den zweiten Kämpfer und leg ihn auf die Bank. Danach: auf Stufe sechs gehen.");
+            ChatLog d = new ChatLog();
+            d.art("Wie stehe ich gerade?");
+            d.jarvis("Vierzig Gold, Stufe sechs, dein Brett ist stabil. Danach: Zinsen halten.");
+            d.art("Was soll ich in dieser Runde kaufen?");
+            d.jarvis("Kauf den zweiten Kämpfer und leg ihn auf die Bank. Danach: auf Stufe sechs gehen.");
+            renderLog(d.snapshot());
         } else {
-            renderExchange(JarvisService.lastYou(), JarvisService.lastJarvis());
+            renderLog(JarvisService.log());
         }
         rendering = false;
     }
 
     private String idleDetail() {
-        if (!prefs.wakeWord()) return "Tippe auf den Kern, um zu sprechen.";
+        boolean talk = !prefs.liveKeyEffective().isEmpty();
+        if (!prefs.wakeWord()) return talk ? "Tippe auf den Kern für ein Gespräch." : "Tippe auf den Kern, um zu sprechen.";
         String problem = JarvisService.wakeProblem();
         if (problem != null) return "Wachwort pausiert: " + problem;
-        return "Sag „Jarvis“ – oder tippe auf den Kern.";
+        return talk ? "Tippe auf den Kern für ein Gespräch – oder sag „Jarvis“ für eine Frage."
+                : "Sag „Jarvis“ – oder tippe auf den Kern.";
     }
 
-    private void renderExchange(String you, String jarvis) {
-        boolean hasYou = you != null && !you.isEmpty();
-        boolean hasJarvis = jarvis != null && !jarvis.isEmpty();
-        b.lastYou.setVisibility(hasYou ? View.VISIBLE : View.GONE);
-        b.lastJarvis.setVisibility(hasJarvis ? View.VISIBLE : View.GONE);
-        if (hasYou) b.lastYou.setText("Du: " + you);
-        if (hasJarvis) b.lastJarvis.setText(jarvis);
+    /** Bisher gezeichnete Einträge – so wird bei jedem Zwischenergebnis nur der letzte erneuert. */
+    private int renderedEntries;
+    private ChatLog.Entry firstRendered;
+
+    /**
+     * Zeichnet den Gesprächsverlauf. Neue Einträge werden angehängt, der letzte wird
+     * aktualisiert (wachsende Texte), und nur wenn vorne etwas herausgefallen ist oder das
+     * Gespräch neu beginnt, wird alles neu aufgebaut. Steht Art beim Lesen weiter oben,
+     * springt die Ansicht nicht nach unten.
+     */
+    private void renderLog(List<ChatLog.Entry> entries) {
+        android.widget.LinearLayout list = b.logList;
+        boolean atBottom = !b.logScroll.canScrollVertically(1);
+        boolean shifted = renderedEntries > 1 && !entries.isEmpty() && entries.get(0) != firstRendered;
+        if (entries.size() < renderedEntries || shifted || list.getChildCount() != renderedEntries) {
+            list.removeAllViews();
+            renderedEntries = 0;
+        }
+        if (renderedEntries > 0) {
+            bindEntry((android.widget.TextView) list.getChildAt(renderedEntries - 1), entries.get(renderedEntries - 1));
+        }
+        android.view.LayoutInflater inflater = getLayoutInflater();
+        for (int i = renderedEntries; i < entries.size(); i++) {
+            ChatLog.Entry e = entries.get(i);
+            android.widget.TextView tv = (android.widget.TextView) inflater.inflate(
+                    e.art ? R.layout.item_log_you : R.layout.item_log_jarvis, list, false);
+            bindEntry(tv, e);
+            list.addView(tv);
+        }
+        renderedEntries = entries.size();
+        firstRendered = entries.isEmpty() ? null : entries.get(0);
+        if (atBottom) b.logScroll.post(() -> b.logScroll.fullScroll(View.FOCUS_DOWN));
+    }
+
+    private static void bindEntry(android.widget.TextView tv, ChatLog.Entry e) {
+        tv.setText(e.art ? "Du: " + e.text : e.text);
     }
 
     @Override
@@ -226,7 +283,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
     @Override
     public void onExchange(String you, String jarvis) {
-        renderExchange(you, jarvis);
+        renderLog(JarvisService.log());
     }
 
     @Override
@@ -272,8 +329,20 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     Uri.parse("package:" + getPackageName())));
             return;
         }
+        projectionLauncher.launch(screenCaptureIntent());
+    }
+
+    /**
+     * Ab Android 14 bietet der Freigabe-Dialog „Eine App teilen“ als Vorauswahl an – dann sieht
+     * Jarvis nur diese eine App. Mit dieser Einstellung fragt Android nur nach dem ganzen Bildschirm.
+     */
+    private Intent screenCaptureIntent() {
         MediaProjectionManager mpm = getSystemService(MediaProjectionManager.class);
-        projectionLauncher.launch(mpm.createScreenCaptureIntent());
+        if (Build.VERSION.SDK_INT >= 34) {
+            return mpm.createScreenCaptureIntent(
+                    android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay());
+        }
+        return mpm.createScreenCaptureIntent();
     }
 
     private void onPermissions(Map<String, Boolean> result) {
@@ -293,7 +362,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         }
         startForegroundService(svc);
         if (!withScreen) {
-            Snackbar.make(b.getRoot(), "Jarvis läuft ohne Bildschirm. Für Tipps zum Bildschirm neu starten und „Gesamter Bildschirm“ wählen.",
+            Snackbar.make(b.getRoot(), "Ohne Freigabe sieht Jarvis nichts. Tippe oben auf „Bildschirm“, um sie nachzuholen.",
                     Snackbar.LENGTH_LONG).show();
         }
         b.getRoot().postDelayed(this::render, 300);
