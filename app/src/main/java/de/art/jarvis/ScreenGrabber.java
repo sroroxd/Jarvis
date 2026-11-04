@@ -98,7 +98,7 @@ final class ScreenGrabber {
         return jpeg == null ? null : Base64.encodeToString(jpeg, Base64.NO_WRAP);
     }
 
-    /** Wie {@link #captureJpegBase64}, aber als rohe JPEG-Bytes (Gesprächsmodus schickt sie selbst kodiert). */
+    /** Wie {@link #captureJpegBase64}, aber als rohe JPEG-Bytes. */
     byte[] captureJpeg(boolean game) {
         Bitmap bitmap;
         synchronized (lock) {

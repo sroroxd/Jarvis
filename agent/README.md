@@ -16,10 +16,10 @@ In Termux eine Zeile:
 curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/main/agent/einrichten.sh | bash
 ```
 
-Solange der Zweig noch nicht in `main` ist:
+Solange der Sammelstand (PR #7) noch nicht in `main` ist:
 
 ```sh
-JARVIS_REF=agent-ruckgrat bash -c "$(curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/agent-ruckgrat/agent/einrichten.sh)"
+JARVIS_REF=sammeltest bash -c "$(curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/sammeltest/agent/einrichten.sh)"
 ```
 
 Das Skript legt Ubuntu über `proot-distro` an, installiert Node und Claude Code,

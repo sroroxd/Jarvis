@@ -74,8 +74,8 @@ final class Commands {
             "^((das )?gespr(ä|ae)ch (beenden|beende|ende|aus|vorbei)|ende (des )?gespr(ä|ae)chs?|(okay |ok )?danke,? das (wars|war's|war es))$");
 
     /**
-     * Erkennt „Gesprächsmodus an/aus“ (und Varianten wie „Lass uns reden“ oder
-     * „Gespräch beenden“). {@code TRUE} = starten, {@code FALSE} = beenden,
+     * Erkennt das Ein- und Ausschalten des Dauergesprächs: „Gesprächsmodus an/aus“,
+     * „Dauergespräch an“, „Hör durchgehend zu“, „Lass uns reden“, „Gespräch beenden“. {@code TRUE} = starten, {@code FALSE} = beenden,
      * {@code null} = kein solcher Befehl. Wie beim Spielmodus zählen nur kurze
      * Sätze, damit eine Frage über den Gesprächsmodus ihn nicht umschaltet.
      */
@@ -99,10 +99,9 @@ final class Commands {
     }
 
     /**
-     * Für das laufende Gespräch: Endet das, was Art gerade gesagt hat, mit einem
-     * Schlussbefehl? Geprüft werden die letzten zwei bis fünf Wörter, denn im
-     * Gesprächsmodus kommt das Transkript als ganzer Satz an („Okay, das reicht,
-     * Gesprächsmodus aus“).
+     * Für das laufende Dauergespräch: Endet das, was Art gerade gesagt hat, mit einem
+     * Schlussbefehl? Geprüft werden die letzten zwei bis fünf Wörter, denn oft hängt
+     * der Befehl hinten an einem Satz („Okay, das reicht, Gespräch beenden“).
      */
     static boolean endsConversation(String transcript) {
         if (transcript == null) return false;

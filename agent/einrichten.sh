@@ -5,8 +5,8 @@
 # Start in Termux (eine Zeile):
 #   curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/main/agent/einrichten.sh | bash
 #
-# Solange der Zweig noch nicht in main ist, mit Zweig davor:
-#   JARVIS_REF=agent-ruckgrat bash -c "$(curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/agent-ruckgrat/agent/einrichten.sh)"
+# Solange der Sammelstand noch nicht in main ist, mit Zweig davor:
+#   JARVIS_REF=sammeltest bash -c "$(curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/sammeltest/agent/einrichten.sh)"
 #
 # Was das Skript tut:
 #   1. Termux-Pakete nachziehen (proot-distro, curl)

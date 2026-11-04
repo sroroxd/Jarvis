@@ -1,6 +1,6 @@
 # Jarvis
 
-Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude (oder Gemini) als Gehirn. Freihändig per „Jarvis“, sieht den Bildschirm und antwortet mit Stimme.
+Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude als Gehirn. Freihändig per „Jarvis“ oder als Dauergespräch, sieht den Bildschirm und antwortet mit Stimme. Lange Aufgaben übernimmt ein Agent auf dem Handy (Claude Code in Termux).
 
 ## Herunterladen
 
@@ -8,24 +8,30 @@ Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude (oder G
 
 Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentlicht. Sie lässt sich direkt über die alte installieren; Schlüssel, Gedächtnis und Einstellungen bleiben erhalten.
 
-**Test-Apps von Arbeitszweigen:** Jeder andere Zweig baut die separate App **„Jarvis Test“** (Vorab-Version `test-<Zweig>`, z. B. https://github.com/sroroxd/Jarvis/releases/download/test-wachwort-jarvis/JarvisTest.apk). Sie installiert sich neben der normalen App, hat eigene Einstellungen und überschreibt nichts. Immer nur eine der beiden Apps einschalten, sonst reagieren beide auf das Wachwort.
+**Test-Apps von Arbeitszweigen:** Jeder andere Zweig baut die separate App **„Jarvis Test“** (Vorab-Version `test-<Zweig>`, z. B. https://github.com/sroroxd/Jarvis/releases/download/test-sammeltest/JarvisTest.apk). Sie installiert sich neben der normalen App, hat eigene Einstellungen und überschreibt nichts. Immer nur eine der beiden Apps einschalten, sonst reagieren beide auf das Wachwort.
+
+**Welche Version läuft?** Steht oben auf dem Startbildschirm („Build N“ bzw. „Test-Build N“). Liegt auf GitHub eine neuere, meldet die App das beim Öffnen und bietet „Laden“ an.
 
 ## Einrichten
 
 1. APK installieren („Aus dieser Quelle erlauben“ bestätigen).
 2. Jarvis öffnen → **Zahnrad** (Einstellungen) → API-Schlüssel einfügen → **Schlüssel testen**. Jarvis erkennt den Anbieter selbst:
    - **Claude:** platform.claude.com → API Keys (beginnt mit `sk-ant-`)
-   - **Gemini (kostenlos, mit Limit):** aistudio.google.com → Get API key (beginnt mit `AIza`)
+   - Ein Gemini-Schlüssel (`AIza…`) funktioniert als Notlösung ebenfalls, ist aber nicht der vorgesehene Weg.
 3. Das Feld **Modell** leer lassen: Claude Sonnet 5.5 – im Alltag ohne Nachdenken (schnell), im Spielmodus mit kurzem Nachdenken. Sparvariante: `claude-haiku-5-5` eintragen.
 4. Zurück zum Startbildschirm, auf den **Kern** tippen → Mikrofon, Mitteilungen und „Über anderen Apps anzeigen“ (für Untertitel) erlauben → **Gesamter Bildschirm** teilen.
 5. Optional: Seitentaste → Zweimal drücken → App öffnen → **Jarvis sprechen**.
 
 ## Bedienung
 
-- **„Jarvis“** sagen und lossprechen – der kurze Ton zeigt, dass er zuhört. „Hey Jarvis“ geht auch. Pausen sind erlaubt – abgeschickt wird nach der eingestellten Sprechpause.
-- Ohne Wachwort: Kern auf dem Startbildschirm antippen, **„Sprechen“** in der Benachrichtigung, Seitentaste oder (falls eingeschaltet) das schwebende J.
-- **Während Jarvis spricht:** „Jarvis“ oder Antippen unterbricht und hört neu zu.
-- **Kern lange drücken:** neues Gespräch.
+- **Dauergespräch:** einmal auf den **Kern** tippen (oder „Sprechen“ in der Benachrichtigung, Seitentaste, schwebendes J). Danach hört Jarvis nach jeder Antwort von selbst weiter zu – kein erneutes Tippen. Beenden: nochmal tippen oder „Gespräch beenden“; nach 15 Minuten ohne ein Wort endet es von selbst. Auch per Sprache: „Hör durchgehend zu“ oder „Dauergespräch an/aus“ – sagt man es in eigenen Worten, schaltet Claude selbst um.
+- **„Jarvis“** sagen und lossprechen – für eine einzelne Frage. „Hey Jarvis“ geht auch. Pausen sind erlaubt – abgeschickt wird nach der eingestellten Sprechpause.
+- **Während Jarvis spricht:** „Jarvis“ unterbricht und hört neu zu.
+- **Kern lange drücken:** neues Gespräch (Verlauf und Zusammenhang werden geleert).
+- **Bildschirm:** Chip „Bildschirm“ oben gibt den Bildschirm frei, ohne Neustart; ab Android 14 wird nur „Gesamter Bildschirm“ angeboten. Jede Frage bekommt ein frisches Bild vom Moment der Frage. Eine Bildschirmaufnahme des Handys kann die Freigabe beenden – das steht dann im Verlauf.
+- **Verlauf:** unter dem Kern steht das ganze Gespräch, scrollbar.
+- **Lange Aufgaben:** „Übernimm das: …“, „Auftrag: …“, „Kümmere dich um …“ gibt sie an den Agenten auf dem Handy (siehe `agent/README.md`).
+- **Termine und Websuche:** „Was steht morgen an?“, „Trag mir Freitag 18 Uhr Training ein“; aktuelle Fragen beantwortet Claude mit Websuche.
 - **„Spielmodus an“ / „Spielmodus aus“** schaltet per Sprache um – oder der Schalter auf dem Startbildschirm. Jeder Moduswechsel beginnt ein frisches Gespräch.
 - **„Neue Partie“** (oder „neues Spiel“): Jarvis vergisst den Verlauf der letzten Partie, damit alte Pläne nicht weiterwirken; der Spielmodus geht dabei an.
 - **„Merk dir …“** speichert dauerhaft, **„Vergiss …“** löscht. Alles einsehbar unter Einstellungen → Gedächtnis.
@@ -59,7 +65,7 @@ Für „Jarvis“ allein gibt es kein fertiges Modell, deshalb ist es selbst tra
 - **Negativ:** ähnlich klingende Wörter („Ja, was …“, „Ja, wieso“, Travis, Service, Jahr …), Alltagssätze und rund 370 Stunden echtes Alltagsaudio (ACAV100M-Merkmale aus dem openWakeWord-Projekt).
 - **Prüfung:** mit Stimmen, die im Training nie vorkamen, und mit 11 Stunden Validierungsaudio (Fehlalarme pro Stunde).
 
-Neu trainieren: `training/wakeword/start.txt` ändern und pushen (oder GitHub → *Actions* → **Wachwort „Jarvis“ trainieren** → *Run workflow*). Drei Varianten laufen parallel; Modelle und Messwerte landen in `training/wakeword/ergebnis/` im Zweig.
+Neu trainieren: in einem **bestehenden Arbeitszweig** `training/wakeword/start.txt` ändern und pushen (oder GitHub → *Actions* → **Wachwort „Jarvis“ trainieren** → *Run workflow*). Nie auf `main` und nicht beim Anlegen eines Zweigs – das Training läuft stundenlang und committet sein Ergebnis in den Zweig. Drei Varianten laufen parallel; Modelle und Messwerte landen in `training/wakeword/ergebnis/`.
 
 Reagiert Jarvis zu selten, die Empfindlichkeit in den Einstellungen auf 6 stellen; springt er grundlos an, auf 4.
 
@@ -91,9 +97,12 @@ Im Spielmodus recherchiert Jarvis **einmal am Tag** mit Claudes Websuche die akt
 | `Subtitles` | Nicht anklickbare Untertitelleiste |
 | `FloatingJ` | Optionales schwebendes J |
 | `Earcon` | Signalton beim Zuhören |
-| `Commands` | Sprachbefehle der App („Spielmodus an/aus“) |
+| `Commands` | Sprachbefehle der App („Spielmodus an/aus“, Dauergespräch, Aufträge an den Agenten) |
+| `ChatLog` | Gesprächsverlauf auf dem Startbildschirm |
+| `AgentClient`, `AgentReply` | Brücke zum Agenten in Termux (`127.0.0.1`, Token) |
+| `UpdateCheck` | Fragt GitHub nach einer neueren Version |
 | `ListenActivity` | Schnellstart „Jarvis sprechen“ (Seitentaste) |
-| `ClaudeClient`, `GeminiClient` | Anbindung der KI-Anbieter; `ClaudeClient` mit Werkzeug-Schleife |
+| `ClaudeClient`, `GeminiClient` | Anbindung der KI; `ClaudeClient` mit Werkzeug-Schleife (Gemini nur als Notlösung) |
 | `Tools`, `Agenda` | Jarvis' „Hände“: Kalender lesen und Termine eintragen (Websuche läuft direkt bei Anthropic) |
 | `Persona` | Anweisungen: Ton, Kürze, Ehrlichkeit, Spielmodus |
 | `Memory` | Dauerhaftes Gedächtnis („Merk dir“ / „Vergiss“) |
@@ -111,5 +120,6 @@ Automatische Tests liegen in `app/src/test` und `wakeword/src/test` und laufen b
 
 - [x] **Stufe 1:** Sprechen, Bildschirm sehen, natürliche Antwort, TFT-Modus, Gedächtnis, Stimmwahl
 - [x] Aktivierungswort „Jarvis“ ohne Antippen, Spielmodus ohne Einblendungen, neues Design
-- [ ] **Stufe 2:** Nachrichten vorlesen und beantworten, Erinnerungen, Wecker, Termine
+- [x] Dauergespräch, Termine und Websuche, Agent für lange Aufgaben (im Test)
+- [ ] **Stufe 2:** Nachrichten vorlesen und beantworten, Erinnerungen, Wecker
 - [ ] **Stufe 3:** Apps per Sprache steuern

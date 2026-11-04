@@ -36,7 +36,7 @@ Paket-ID `de.art.jarvis.test`).
 | `wachwort-jarvis` | #2 | Wachwort „Jarvis“ statt „Hey Jarvis“ (selbst trainiertes Modell) |
 | `jarvis-haende` | #1 | Websuche für Alltag und TFT-Meta, Kalender |
 | `tft-coach` | #3 | Fragen warten nie auf die Meta, „Neue Partie“, schärferes Spielbild |
-| `gespraech-modus` | #5 | Gemini-Live-Baustein (Protokoll, Mikrofon, Kosten). Art nutzt Gemini nicht – in `sammeltest` ist er nicht angeschlossen; das Dauergespräch läuft über Claude. |
+| `gespraech-modus` | #5 | Gemini-Live-Baustein. Art nutzt Gemini nicht (4. Nov.) – in `sammeltest` wieder entfernt, steht nur noch in der Git-Historie. Das Dauergespräch läuft über Claude. |
 | `agent-ruckgrat` | #6 | Aufträge an Claude Code in Termux (Abo statt Guthaben) |
 
 **Zusammenführen:** Nach Arts Test geht `sammeltest` als Ganzes nach `main` –
@@ -61,6 +61,23 @@ zusammengeführt. `main` bekommt damit genau den Stand, den Art getestet hat.
    Bildschirm nachträglich freigeben: oben auf „Bildschirm“ tippen.
 5. **Agent:** Termux einrichten (`agent/README.md`), Token eintragen, „Übernimm
    das: leg mir eine Datei einkaufsliste.txt mit Milch und Brot an“.
+
+## Aufräumen (geprüft am 4. November)
+
+Repo geprüft: keine fremden Pushes, keine echten Schlüssel im Code, keine
+fehlgeschlagenen Builds (nur zwei absichtlich abgebrochene Trainingsläufe).
+Aus der Entwicklungsumgebung lässt sich nichts löschen – das macht Art im Browser:
+
+- **Zweig** `claude-md-doku-regeln` – ist in `main` (#4).
+- **Vorab-Versionen** `test`, `test-wachwort-jarvis`, `test-tft-coach`,
+  `test-jarvis-haende` – ersetzt durch `test-sammeltest`.
+- **Alte App-Versionen** `v1.0.1` bis `v1.0.26` – als Rückfall genügen
+  `v1.0.43`, `v1.0.32`, `v1.0.29`.
+- **Nicht löschen:** `vorschau` (Design-Vorschau schreibt dorthin), `test-sammeltest`.
+
+Nach dem Zusammenführen von #7 können die Zweige `wachwort-jarvis`,
+`jarvis-haende`, `tft-coach`, `gespraech-modus`, `agent-ruckgrat` und
+`sammeltest` weg.
 
 ## Was als Nächstes kommt
 

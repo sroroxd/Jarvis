@@ -11,8 +11,8 @@ import java.util.List;
  * Regeln, damit wachsende Texte nicht als viele Einträge erscheinen:
  * - Art: Folgt ein Art-Text direkt auf einen Art-Text, ist es dieselbe Äußerung, die die
  *   Spracherkennung gerade verfeinert (Zwischenergebnisse) – der Eintrag wird ersetzt.
- * - Jarvis: Beginnt der neue Text mit dem bisherigen, wächst dieselbe Antwort (Gesprächsmodus
- *   liefert sie stückweise) – der Eintrag wird ersetzt. Ein anderer Text ist eine neue Meldung.
+ * - Jarvis: Beginnt der neue Text mit dem bisherigen, wächst dieselbe Antwort (stückweise
+ *   geliefert) – der Eintrag wird ersetzt. Ein anderer Text ist eine neue Meldung.
  */
 final class ChatLog {
     /** Mehr behält der Startbildschirm nicht – ältere Einträge fallen vorne heraus. */
