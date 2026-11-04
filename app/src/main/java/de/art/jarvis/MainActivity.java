@@ -51,6 +51,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         setContentView(b.getRoot());
         prefs = new Prefs(this);
         readDemo(getIntent());
+        // Build-Nummer sichtbar – so sieht man auf jedem Bildschirmfoto, welche Version läuft.
+        b.subtitle.setText("Dein persönlicher Assistent · " + (BuildConfig.TEST_APP ? "Test-Build " : "Build ")
+                + BuildConfig.VERSION_CODE);
 
         b.settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
 
@@ -127,6 +130,41 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         super.onStart();
         JarvisService.setUiListener(this);
         render();
+        checkForUpdate();
+    }
+
+    /** Höchstens alle 30 Minuten bei GitHub nachfragen (ohne Anmeldung: 60 Abfragen pro Stunde). */
+    private static long lastUpdateCheck;
+
+    /**
+     * Liegt auf GitHub eine neuere Version, sagt die App es – mit Knopf zum Herunterladen.
+     * Nicht in Debug-Builds: Die Vorschaubilder entstehen aus einem anderen Workflow mit eigener
+     * Nummerierung und würden sonst immer einen Hinweis zeigen.
+     */
+    private void checkForUpdate() {
+        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        if (debuggable || demo != null) return;
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (lastUpdateCheck != 0 && now - lastUpdateCheck < 30 * 60 * 1000L) return;
+        lastUpdateCheck = now;
+        new Thread(() -> {
+            UpdateCheck.Result r = UpdateCheck.fetchNewer(BuildConfig.TEST_APP, BuildConfig.BRANCH, BuildConfig.VERSION_CODE);
+            if (r == null) return;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                Snackbar.make(b.getRoot(), "Neuere " + (BuildConfig.TEST_APP ? "Test-Version" : "Version")
+                                + " liegt bereit: Build " + r.build + " (installiert: " + BuildConfig.VERSION_CODE + ").",
+                                Snackbar.LENGTH_INDEFINITE)
+                        .setAction("Laden", v -> {
+                            try {
+                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(r.url)));
+                            } catch (Exception ignored) {
+                                // kein Browser – sehr unwahrscheinlich
+                            }
+                        })
+                        .show();
+            });
+        }, "Jarvis-UpdateCheck").start();
     }
 
     @Override

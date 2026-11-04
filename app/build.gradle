@@ -3,6 +3,8 @@ plugins {
 }
 
 def runNumber = Integer.parseInt(System.getenv('GITHUB_RUN_NUMBER') ?: '1')
+// Zweig, aus dem gebaut wurde – die Test-App fragt damit auf GitHub nach einer neueren Version.
+def branchName = (System.getenv('GITHUB_REF_NAME') ?: '').replaceAll('[^A-Za-z0-9._/-]', '')
 
 // Arbeitszweige bauen mit „-PtestApp“ eine eigene Test-App („Jarvis Test“). Sie hat eine andere
 // Paket-ID, installiert sich NEBEN die normale Jarvis-App und hat eigene Einstellungen und eigenes
@@ -22,6 +24,7 @@ android {
         resValue 'string', 'app_name', testApp ? 'Jarvis Test' : 'Jarvis'
         resValue 'string', 'listen_name', testApp ? 'Jarvis Test sprechen' : 'Jarvis sprechen'
         buildConfigField 'boolean', 'TEST_APP', testApp ? 'true' : 'false'
+        buildConfigField 'String', 'BRANCH', "\"${branchName}\""
     }
 
     // Fester Schlüssel, damit jede neue APK sich über die alte installieren lässt.

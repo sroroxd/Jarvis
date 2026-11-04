@@ -70,7 +70,8 @@ jobs:
         with:
           tag_name: test-${{ github.ref_name }}
           target_commitish: ${{ github.sha }}
-          name: Jarvis Test (Zweig ${{ github.ref_name }})
+          # Die Build-Nummer im Namen liest die App, um auf eine neuere Version hinzuweisen (UpdateCheck).
+          name: Jarvis Test (Zweig ${{ github.ref_name }}, Build ${{ github.run_number }})
           prerelease: true
           make_latest: false
           files: JarvisTest.apk
