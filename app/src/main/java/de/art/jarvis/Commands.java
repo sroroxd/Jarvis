@@ -62,6 +62,56 @@ final class Commands {
         return on;
     }
 
+    private static final Pattern TALK = Pattern.compile(
+            "\\b(gespr(ä|ae)chs?[- ]?modus|unterhaltungs?[- ]?modus|live[- ]?modus|dauer[- ]?gespr(ä|ae)ch)\\b");
+    private static final Pattern TALK_START = Pattern.compile(
+            "^(lass uns (mal )?(reden|quatschen|unterhalten|sprechen)|wir (reden|quatschen) (jetzt )?(ein bisschen|mal)?)$");
+    private static final Pattern TALK_END = Pattern.compile(
+            "^((das )?gespr(ä|ae)ch (beenden|beende|ende|aus|vorbei)|ende (des )?gespr(ä|ae)chs?|(okay |ok )?danke,? das (wars|war's|war es))$");
+
+    /**
+     * Erkennt „Gesprächsmodus an/aus“ (und Varianten wie „Lass uns reden“ oder
+     * „Gespräch beenden“). {@code TRUE} = starten, {@code FALSE} = beenden,
+     * {@code null} = kein solcher Befehl. Wie beim Spielmodus zählen nur kurze
+     * Sätze, damit eine Frage über den Gesprächsmodus ihn nicht umschaltet.
+     */
+    static Boolean conversationMode(String utterance) {
+        if (utterance == null) return null;
+        String t = utterance.toLowerCase(Locale.GERMANY)
+                .replaceAll("[^a-zäöüß0-9 '-]", " ")
+                .replaceAll("^\\s*((hey|okay|ok)\\s+)?(jarvis\\s+)?(bitte\\s+)?", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (t.isEmpty() || t.split(" ").length > 6) return null;
+        if (TALK_END.matcher(t).find()) return Boolean.FALSE;
+        if (TALK_START.matcher(t).find()) return Boolean.TRUE;
+        if (!TALK.matcher(t).find()) return null;
+        boolean off = OFF.matcher(t).find();
+        boolean on = ON.matcher(t).find();
+        if (off == on) return null; // unklar
+        return on;
+    }
+
+    /**
+     * Für das laufende Gespräch: Endet das, was Art gerade gesagt hat, mit einem
+     * Schlussbefehl? Geprüft werden die letzten zwei bis fünf Wörter, denn im
+     * Gesprächsmodus kommt das Transkript als ganzer Satz an („Okay, das reicht,
+     * Gesprächsmodus aus“).
+     */
+    static boolean endsConversation(String transcript) {
+        if (transcript == null) return false;
+        String[] w = transcript.trim().split("\\s+");
+        // Der Befehl muss am Satzende stehen. „Wie beende ich den Gesprächsmodus?“ ist eine Frage, kein Schluss.
+        String last = w[w.length - 1].toLowerCase(Locale.GERMANY).replaceAll("[^a-zäöüß']", "");
+        if (!last.matches("aus|beenden|beende|ende|stopp|stop|vorbei|wars|war's|es")) return false;
+        for (int n = Math.min(5, w.length); n >= 2; n--) {
+            StringBuilder tail = new StringBuilder();
+            for (int i = w.length - n; i < w.length; i++) tail.append(w[i]).append(' ');
+            if (Boolean.FALSE.equals(conversationMode(tail.toString()))) return true;
+        }
+        return false;
+    }
+
     /**
      * Auslöser für das Agenten-Rückgrat: Sätze, mit denen Art eine längere
      * Aufgabe abgibt. Der Agent (Claude Code in Termux) braucht Sekunden bis

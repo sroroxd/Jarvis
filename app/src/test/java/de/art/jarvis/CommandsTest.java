@@ -105,4 +105,46 @@ public class CommandsTest {
         assertNull(Commands.agentTask(""));
         assertNull(Commands.agentTask(null));
     }
+
+    // ------------------------------------------------- Gesprächsmodus
+
+    @Test
+    public void gespraechsmodusStarten() {
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Gesprächsmodus an"));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Jarvis, Gesprächsmodus starten."));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Hey Jarvis aktiviere den Gesprächsmodus"));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Lass uns reden"));
+        assertEquals(Boolean.TRUE, Commands.conversationMode("Jarvis, lass uns mal quatschen"));
+    }
+
+    @Test
+    public void gespraechsmodusBeenden() {
+        assertEquals(Boolean.FALSE, Commands.conversationMode("Gesprächsmodus aus"));
+        assertEquals(Boolean.FALSE, Commands.conversationMode("Gesprächsmodus beenden"));
+        assertEquals(Boolean.FALSE, Commands.conversationMode("Gespräch beenden"));
+        assertEquals(Boolean.FALSE, Commands.conversationMode("Okay danke, das war's"));
+    }
+
+    @Test
+    public void fragenUeberDenGespraechsmodusSchaltenNichts() {
+        assertNull(Commands.conversationMode("Was kostet der Gesprächsmodus eigentlich pro Stunde?"));
+        assertNull(Commands.conversationMode("Gesprächsmodus an oder aus"));
+        assertNull(Commands.conversationMode("Spielmodus an"));
+        assertNull(Commands.conversationMode("Wie wird das Wetter morgen?"));
+        assertNull(Commands.conversationMode(""));
+        assertNull(Commands.conversationMode(null));
+        // und umgekehrt schaltet der Gesprächsmodus nicht den Spielmodus
+        assertNull(Commands.gameMode("Gesprächsmodus an"));
+    }
+
+    @Test
+    public void schlussbefehlAmEndeEinesSatzes() {
+        assertTrue(Commands.endsConversation("Okay, das reicht für heute, Gesprächsmodus aus"));
+        assertTrue(Commands.endsConversation("Danke dir. Gespräch beenden."));
+        assertTrue(Commands.endsConversation("Gesprächsmodus beenden"));
+        assertFalse(Commands.endsConversation("Wie beende ich eigentlich den Gesprächsmodus?"));
+        assertFalse(Commands.endsConversation("Soll ich das Item kaufen oder aus der Bank nehmen"));
+        assertFalse(Commands.endsConversation(""));
+        assertFalse(Commands.endsConversation(null));
+    }
 }

@@ -140,6 +140,15 @@ public class JarvisService extends Service {
     /** Websuche und Kalender – nur im Alltag mit Claude (der Spielmodus bleibt unverändert schnell). */
     private Tools tools;
     private AgentClient agent;
+    /** Laufender Gesprächsmodus (Gemini Live) oder null. */
+    private LiveSession live;
+    /** Bruchstücke dessen, was Art in der laufenden Runde gesagt hat (Transkripte kommen stückweise). */
+    private final StringBuilder liveHeard = new StringBuilder();
+    private final StringBuilder liveSaid = new StringBuilder();
+    private boolean liveLastWasArt;
+    /** Im Spielmodus schickt der Gesprächsmodus jede Sekunde ein Bildschirmbild – Googles Höchstrate für Video. */
+    private static final long LIVE_FRAME_MS = 1000;
+    private final Runnable liveFrame = this::sendLiveFrame;
     /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
     private int agentJobId;
     private ElevenTts eleven;
@@ -282,6 +291,11 @@ public class JarvisService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        if (live != null) {
+            LiveSession s = live;
+            live = null;
+            s.stop();
+        }
         screenShared = false;
         main.removeCallbacksAndMessages(null);
         if (receiverRegistered) {
@@ -487,7 +501,7 @@ public class JarvisService extends Service {
 
     private void updateWake() {
         boolean should = running && prefs.wakeWord() && micGranted() && screenAwake
-                && state != State.LISTENING && wakeProblem == null;
+                && state != State.LISTENING && wakeProblem == null && live == null;
         if (should) wake.start();
         else wake.stop(null);
     }
@@ -526,6 +540,10 @@ public class JarvisService extends Service {
 
     /** Antippen (Reaktor, J, Benachrichtigung, Seitentaste). */
     private void onTap() {
+        if (live != null) {
+            stopLive();
+            return;
+        }
         switch (state) {
             case LISTENING:
                 // Antippen beim Zuhören = „fertig, abschicken“.
@@ -551,6 +569,7 @@ public class JarvisService extends Service {
     }
 
     private void resetConversation() {
+        if (live != null) stopLive();
         history.clear();
         requestId++;
         // Auch der Agent fängt neu an, sonst zieht er den alten Zusammenhang mit.
@@ -803,6 +822,17 @@ public class JarvisService extends Service {
             speak(wasGame ? "Neue Partie. Viel Erfolg, Sir." : "Neue Partie, Spielmodus aktiv. Viel Erfolg, Sir.");
             return;
         }
+        // „Gesprächsmodus an“: ab dann ohne Wachwort hin und her reden (Gemini Live).
+        Boolean talk = Commands.conversationMode(text);
+        if (talk != null) {
+            if (talk) {
+                startLive();
+            } else {
+                setState(State.IDLE);
+                speak("Der Gesprächsmodus ist gerade nicht an.");
+            }
+            return;
+        }
         // „Merk dir …“ / „Vergiss …“ ebenso – zuverlässig und ohne Kosten.
         Memory.Outcome local = Memory.command(text, prefs.memory());
         if (local != null) {
@@ -933,6 +963,127 @@ public class JarvisService extends Service {
         });
         // Sofort eine kurze Rückmeldung, damit Art nicht minutenlang ins Leere wartet.
         speak("Ich kümmere mich darum, Sir.");
+    }
+
+    // ---------------------------------------------------------------- Gesprächsmodus
+
+    /**
+     * Startet den Gesprächsmodus: Mikrofon → Gemini Live → Lautsprecher, ohne
+     * Wachwort, bis Art „Gesprächsmodus aus“ sagt oder antippt. Im Spielmodus mit
+     * Bildschirmfreigabe sieht Jarvis das Spiel als Live-Bild.
+     */
+    private void startLive() {
+        if (live != null) return;
+        String key = prefs.liveKeyEffective();
+        if (key.isEmpty()) {
+            setState(State.IDLE);
+            say("Für den Gesprächsmodus brauche ich einen Google-Schlüssel. "
+                    + "Trag ihn in den Einstellungen unter Gesprächsmodus ein.");
+            return;
+        }
+        if (!micGranted()) {
+            say("Mir fehlt die Mikrofon-Berechtigung. Bitte öffne die Jarvis-App.");
+            return;
+        }
+        stopSpeaking();
+        main.removeCallbacks(pauseElapsed);
+        releaseRecognizer();
+        utterance.setLength(0);
+        liveHeard.setLength(0);
+        liveSaid.setLength(0);
+        liveLastWasArt = false;
+        setState(State.THINKING);
+        status("Gesprächsmodus startet …");
+
+        boolean sees = grabber != null && prefs.tftMode();
+        String system = Persona.system(prefs.tftMode(), sees, prefs.memory(), prefs.metaText(), prefs.metaDate())
+                + "\n\n" + Persona.live(prefs.tftMode(), sees);
+        final LiveSession[] holder = new LiveSession[1];
+        holder[0] = new LiveSession(this, key, null, null, system, new LiveSession.Listener() {
+            @Override public void onReady() { main.post(() -> onLiveReady(holder[0])); }
+            @Override public void onUserText(String text) { main.post(() -> onLiveUser(holder[0], text)); }
+            @Override public void onJarvisText(String text) { main.post(() -> onLiveJarvis(holder[0], text)); }
+            @Override public void onSpeaking(boolean speaking) { main.post(() -> onLiveSpeaking(holder[0], speaking)); }
+            @Override public void onProblem(String german) {
+                // Auch in der App sichtbar – im Spielmodus blendet statusBriefly nichts ein.
+                main.post(() -> {
+                    statusBriefly("Gesprächsmodus: " + german);
+                    publishExchange(null, "Gesprächsmodus: " + german);
+                });
+            }
+            @Override public void onEnded() { main.post(() -> onLiveEnded(holder[0])); }
+        });
+        final LiveSession session = holder[0];
+        live = session;
+        // Erst das Wachwort-Mikrofon freigeben, dann übernimmt der Gesprächsmodus.
+        wake.stop(() -> {
+            if (live != session) return;
+            if (!session.start()) {
+                // start() hat den Grund schon über onProblem gemeldet.
+                live = null;
+                setState(State.IDLE);
+                updateWake();
+            }
+        });
+    }
+
+    private void stopLive() {
+        LiveSession s = live;
+        if (s != null) s.stop(); // meldet sich über onEnded zurück
+    }
+
+    private void onLiveReady(LiveSession s) {
+        if (live != s) return;
+        setState(State.LISTENING);
+        earcon.play(); // hörbares Zeichen, auch ohne Blick aufs Handy
+        status("Gesprächsmodus an – sprich einfach. Beenden: „Gesprächsmodus aus“ oder antippen.");
+        main.removeCallbacks(liveFrame);
+        if (grabber != null && prefs.tftMode()) main.postDelayed(liveFrame, LIVE_FRAME_MS);
+    }
+
+    private void onLiveUser(LiveSession s, String text) {
+        if (live != s) return;
+        if (!liveLastWasArt) liveHeard.setLength(0); // neue Runde
+        liveLastWasArt = true;
+        liveHeard.append(text);
+        String heard = liveHeard.toString().trim();
+        publishExchange(heard, null);
+        if (Commands.endsConversation(heard)) stopLive();
+    }
+
+    private void onLiveJarvis(LiveSession s, String text) {
+        if (live != s) return;
+        if (liveLastWasArt) liveSaid.setLength(0); // neue Antwort
+        liveLastWasArt = false;
+        liveSaid.append(text);
+        String said = liveSaid.toString().trim();
+        publishExchange(null, said);
+        caption(said);
+    }
+
+    private void onLiveSpeaking(LiveSession s, boolean speaking) {
+        if (live != s) return;
+        setState(speaking ? State.SPEAKING : State.LISTENING);
+    }
+
+    private void onLiveEnded(LiveSession s) {
+        if (live != s) return;
+        live = null;
+        main.removeCallbacks(liveFrame);
+        String cost = s.costLine();
+        setState(State.IDLE);
+        updateWake();
+        publishExchange(null, "Gesprächsmodus beendet. " + cost);
+        statusBriefly(cost);
+        speak("Gesprächsmodus beendet.");
+    }
+
+    /** Ein Bildschirmbild an den Gesprächsmodus, dann das nächste einplanen. */
+    private void sendLiveFrame() {
+        LiveSession s = live;
+        if (s == null || grabber == null || !prefs.tftMode()) return;
+        s.sendScreen(grabber.captureJpeg(true));
+        main.postDelayed(liveFrame, LIVE_FRAME_MS);
     }
 
     private void remember(String role, String text) {

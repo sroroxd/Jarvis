@@ -94,6 +94,12 @@ final class ScreenGrabber {
      * game = Spielmodus: schärfer (größer, weniger Kompression), damit TFT-Details lesbar bleiben.
      */
     String captureJpegBase64(boolean game) {
+        byte[] jpeg = captureJpeg(game);
+        return jpeg == null ? null : Base64.encodeToString(jpeg, Base64.NO_WRAP);
+    }
+
+    /** Wie {@link #captureJpegBase64}, aber als rohe JPEG-Bytes (Gesprächsmodus schickt sie selbst kodiert). */
+    byte[] captureJpeg(boolean game) {
         Bitmap bitmap;
         synchronized (lock) {
             if (latest == null) return null;
@@ -108,7 +114,7 @@ final class ScreenGrabber {
         scaled.compress(Bitmap.CompressFormat.JPEG, CaptureSize.quality(game), out);
         if (scaled != bitmap) scaled.recycle();
         bitmap.recycle();
-        return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+        return out.toByteArray();
     }
 
     private static Bitmap toBitmap(Image img) {

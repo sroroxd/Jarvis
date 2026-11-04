@@ -41,7 +41,10 @@ final class Backup {
         if (p.backupKeys()) { // nur auf ausdrücklichen Wunsch
             o.put("apiKey", p.apiKey());
             o.put("elevenKey", p.elevenKey());
+            o.put("liveKey", p.liveKey());
+            o.put("agentToken", p.agentToken());
         }
+        o.put("agent", p.agentEnabled());
         o.put("wakeWord", p.wakeWord());
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
@@ -71,6 +74,11 @@ final class Backup {
         }
         String elevenKey = o.optString("elevenKey", "");
         if (!elevenKey.isEmpty()) p.setElevenKey(elevenKey);
+        String liveKey = o.optString("liveKey", "");
+        if (!liveKey.isEmpty()) p.setLiveKey(liveKey);
+        String agentToken = o.optString("agentToken", "");
+        if (!agentToken.isEmpty()) p.setAgentToken(agentToken);
+        p.setAgentEnabled(o.optBoolean("agent", false));
         p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));

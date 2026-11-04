@@ -276,6 +276,31 @@ public final class Prefs {
         sp.edit().putBoolean("subtitles_top", value).apply();
     }
 
+    // ---------------------------------------------------------------- Gesprächsmodus
+
+    /** Google-Schlüssel für den Gesprächsmodus (Gemini Live). Getrennt vom Claude-Schlüssel. */
+    public String liveKey() {
+        return sp.getString("live_key", "").trim();
+    }
+
+    public void setLiveKey(String value) {
+        sp.edit().putString("live_key", Text.cleanKey(value)).apply();
+    }
+
+    public String liveKeyPreview() {
+        return Text.keyPreview(liveKey());
+    }
+
+    /**
+     * Schlüssel, der für den Gesprächsmodus tatsächlich benutzt wird: der eigene
+     * Google-Schlüssel – oder, falls das Gehirn ohnehin Gemini ist, dessen Schlüssel.
+     */
+    public String liveKeyEffective() {
+        String own = liveKey();
+        if (!own.isEmpty()) return own;
+        return isGemini() ? apiKey() : "";
+    }
+
     // ---------------------------------------------------------------- Agent-Rückgrat
 
     /** Standard-Port des Agenten in Termux (siehe {@code agent/jarvis-agent.mjs}). */

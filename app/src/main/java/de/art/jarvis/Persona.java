@@ -8,6 +8,27 @@ import java.util.Locale;
 final class Persona {
     private Persona() {}
 
+    /**
+     * Zusatz für den Gesprächsmodus (Gemini Live): frei hin und her reden, ohne
+     * Wachwort. Art will Antworten auf seine Fragen – keinen Dauerkommentar.
+     */
+    static String live(boolean tftMode, boolean seesScreen) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("GESPRÄCHSMODUS: Ihr redet gerade frei miteinander, ohne Wachwort und ohne Antippen. ")
+          .append("Antworte wie im echten Gespräch: natürlich, knapp, meist ein bis zwei Sätze, und lass Art jederzeit ")
+          .append("dazwischenreden. Sprich nur, wenn Art etwas sagt oder fragt – kommentiere nichts von dir aus. ")
+          .append("Sagt Art „Gesprächsmodus aus“ oder „Gespräch beenden“, verabschiede dich mit höchstens drei Wörtern.");
+        if (tftMode && seesScreen) {
+            sb.append("\nDu siehst Arts Bildschirm als Live-Bild, etwa ein Bild pro Sekunde. Beziehe dich immer auf das ")
+              .append("neueste Bild. Sag von dir aus nichts zum Spielverlauf – antworte nur, wenn Art fragt, dann sofort ")
+              .append("mit der konkreten Aktion.");
+        } else if (tftMode) {
+            sb.append("\nDu siehst Arts Bildschirm gerade nicht (keine Bildschirmfreigabe). Fragt er nach seiner Partie, ")
+              .append("sag das zuerst in einem kurzen Satz.");
+        }
+        return sb.toString();
+    }
+
     static String system(boolean tftMode, boolean hasScreenshot, String memory) {
         return system(tftMode, hasScreenshot, memory, "", "", false);
     }
