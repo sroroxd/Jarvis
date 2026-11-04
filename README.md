@@ -90,7 +90,8 @@ Im Spielmodus recherchiert Jarvis **einmal am Tag** mit Claudes Websuche die akt
 | `Earcon` | Signalton beim Zuhören |
 | `Commands` | Sprachbefehle der App („Spielmodus an/aus“) |
 | `ListenActivity` | Schnellstart „Jarvis sprechen“ (Seitentaste) |
-| `ClaudeClient`, `GeminiClient` | Anbindung der KI-Anbieter |
+| `ClaudeClient`, `GeminiClient` | Anbindung der KI-Anbieter; `ClaudeClient` mit Werkzeug-Schleife |
+| `Tools`, `Agenda` | Jarvis' „Hände“: Kalender lesen und Termine eintragen (Websuche läuft direkt bei Anthropic) |
 | `Persona` | Anweisungen: Ton, Kürze, Ehrlichkeit, Spielmodus |
 | `Memory` | Dauerhaftes Gedächtnis („Merk dir“ / „Vergiss“) |
 | `Text` | Textbereinigung, Schlüssel-/Modellprüfung, Fehlermeldungen |

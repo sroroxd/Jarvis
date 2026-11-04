@@ -77,4 +77,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.13.0'
     testImplementation 'junit:junit:4.13.2'
+    // Echte JSON-Klassen für die Tests – Android liefert dort sonst nur leere Platzhalter.
+    testImplementation 'org.json:json:20240303'
 }

@@ -320,9 +320,12 @@ public class SettingsActivity extends AppCompatActivity {
         if (uri == null) return;
         try {
             int count = Backup.apply(prefs, Backup.read(this, uri));
-            useAsBackupTarget(uri); // künftig in dieselbe Datei sichern
+            // Die Test-App liest eine Sicherung nur – sie schreibt nie zurück, damit die Sicherung
+            // der normalen Jarvis-App unverändert bleibt.
+            if (!BuildConfig.TEST_APP) useAsBackupTarget(uri); // künftig in dieselbe Datei sichern
             refreshFromPrefs();
-            b.backupInfo.setText("✓ Wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen.");
+            b.backupInfo.setText("✓ Wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen."
+                    + (BuildConfig.TEST_APP ? " Die Test-App ändert diese Datei nicht." : ""));
             refreshService();
         } catch (Exception e) {
             b.backupInfo.setText("✗ Das ist keine gültige Jarvis-Sicherung.");

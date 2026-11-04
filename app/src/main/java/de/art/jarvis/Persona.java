@@ -9,10 +9,19 @@ final class Persona {
     private Persona() {}
 
     static String system(boolean tftMode, boolean hasScreenshot, String memory) {
-        return system(tftMode, hasScreenshot, memory, "", "");
+        return system(tftMode, hasScreenshot, memory, "", "", false);
     }
 
     static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate) {
+        return system(tftMode, hasScreenshot, memory, meta, metaDate, false);
+    }
+
+    /**
+     * meta/metaDate: tägliche TFT-Meta aus dem Internet (nur im Spielmodus genutzt).
+     * tools: Websuche und Kalender stehen zur Verfügung (Alltag mit Claude).
+     */
+    static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate,
+                         boolean tools) {
         String now = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(new Date());
         StringBuilder sb = new StringBuilder();
         sb.append("Du bist JARVIS, der persönliche KI-Assistent von Art – nach dem Vorbild von Tony Starks JARVIS: ")
@@ -50,8 +59,19 @@ final class Persona {
             p(sb, "Das hat Art dir dauerhaft mitgegeben („ich“ meint Art) – halte dich daran:\n" + memory);
         }
 
-        p(sb, "Grenzen dieser Version: Du kannst noch keine Apps bedienen, keine Nachrichten lesen oder senden und keine Erinnerungen "
-                + "oder Wecker stellen. Wenn Art so etwas verlangt, sag ehrlich und knapp, dass diese Fähigkeit mit einem späteren Update kommt.");
+        if (tools) {
+            p(sb, "DEINE WERKZEUGE:\n"
+                    + "- Websuche: für alles Aktuelle (Wetter, Nachrichten, Öffnungszeiten, Preise, Ergebnisse). Nur suchen, wenn die Frage "
+                    + "aktuelle Daten braucht – Allgemeinwissen beantwortest du direkt. Fasse das Ergebnis in ein bis drei gesprochenen Sätzen "
+                    + "zusammen, ohne Links, Quellenangaben oder Webadressen vorzulesen. Sag vor der Suche nichts an.\n"
+                    + "- Kalender: Termine lesen (kalender_lesen) und eintragen (termin_anlegen). Nach dem Eintragen bestätige kurz Tag, "
+                    + "Uhrzeit und Titel. Meldet ein Werkzeug einen Fehler, sag Art in einem Satz, was fehlt.\n"
+                    + "Noch nicht möglich: Apps bedienen, Nachrichten oder E-Mails lesen oder senden, Wecker stellen. Wenn Art so etwas "
+                    + "verlangt, sag ehrlich und knapp, dass diese Fähigkeit mit einem späteren Update kommt.");
+        } else {
+            p(sb, "Grenzen dieser Version: Du kannst noch keine Apps bedienen, keine Nachrichten lesen oder senden und keine Erinnerungen "
+                    + "oder Wecker stellen. Wenn Art so etwas verlangt, sag ehrlich und knapp, dass diese Fähigkeit mit einem späteren Update kommt.");
+        }
 
         if (tftMode) {
             p(sb, "SPIELMODUS IST AKTIV: Art sieht während der Partie keinen Text, er hört dich nur. "
