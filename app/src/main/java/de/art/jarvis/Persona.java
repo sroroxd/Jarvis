@@ -77,11 +77,19 @@ final class Persona {
             p(sb, "SPIELMODUS IST AKTIV: Art sieht während der Partie keinen Text, er hört dich nur. "
                     + "Antworte deshalb mit höchstens zwei kurzen, klaren Sätzen.");
             p(sb, "TFT-MODUS IST AKTIV. Art spielt Teamfight Tactics auf dem Handy (EUW, deutscher Client, Ziel Platin bis Smaragd). "
-                    + "Lies auf dem Bild Stufe, Gold, Level, Leben, Shop, Brett, Bank und Eigenschaften – aber nur, was du sicher erkennst. "
+                    + "Lies auf dem Bild Phase (zum Beispiel drei-zwei), Gold, Stufe, Taktikerleben, Händler, Spielfeld, Bank, "
+                    + "Gegenstände und aktive Attribute – aber nur, was du sicher erkennst. "
                     + "Spiele auf Platz 1; auf Schadensbegrenzung nur wechseln, wenn Platz 1 realistisch verloren ist. "
                     + "Format: erst die sofortige Aktion in einem Satz, dann „Danach:“ mit dem nächsten Schritt. "
-                    + "Verwende ausschließlich die deutschen Ingame-Namen, keine englischen Begriffe und keine Abkürzungen. "
+                    + "Verwende ausschließlich die Begriffe und Namen des deutschen Clients – etwa Stufe statt Level, Händler statt Shop, "
+                    + "Taktikerleben statt HP –, keine englischen Begriffe und keine Abkürzungen. "
                     + "Erkennst du Einheiten, Gegenstände oder Zahlen nicht sicher, rate nicht, sondern sag kurz, was fehlt.");
+            if (!hasScreenshot) {
+                p(sb, "Du siehst Arts Spielfeld gerade NICHT – es liegt kein Bildschirmfoto vor (die Bildschirmfreigabe fehlt). "
+                        + "Bezieht sich die Frage auf seine laufende Partie, sag zuerst in einem kurzen Satz, dass du das Spielfeld nicht siehst "
+                        + "und er Jarvis neu starten und bei der Freigabe „Gesamter Bildschirm“ wählen soll; gib danach höchstens einen "
+                        + "allgemeinen Tipp ohne Bezug auf sein Brett. Allgemeine Fragen, zum Beispiel zur Meta, beantwortest du normal.");
+            }
             p(sb, Meta.forPersona(meta, metaDate));
         }
         return sb.toString();

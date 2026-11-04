@@ -155,6 +155,8 @@ public class JarvisService extends Service {
     private boolean finishRequested;
     /** Jede Anfrage bekommt eine Nummer; Antworten auf überholte Anfragen werden verworfen. */
     private int requestId;
+    /** Zuletzt angewendeter Modus – wechselt er (Alltag ↔ Spiel), beginnt ein frisches Gespräch. */
+    private boolean appliedGameMode;
 
     private FloatingJ floatingJ;
     private Subtitles subtitles;
@@ -203,6 +205,7 @@ public class JarvisService extends Service {
     public void onCreate() {
         super.onCreate();
         prefs = new Prefs(this);
+        appliedGameMode = prefs.tftMode();
         claude = new ClaudeClient();
         gemini = new GeminiClient();
         tools = new Tools(this);
@@ -313,6 +316,12 @@ public class JarvisService extends Service {
 
     /** Übernimmt geänderte Einstellungen (J, Untertitel, Wachwort, Spielmodus) sofort. */
     private void applySettings() {
+        // Moduswechsel (per Sprache, Schalter auf dem Startbildschirm oder in den Einstellungen) = neues Gespräch:
+        // Alltagsgespräche gehören nicht ins TFT-Coaching – und Pläne der letzten Partie nicht in die nächste.
+        if (prefs.tftMode() != appliedGameMode) {
+            appliedGameMode = prefs.tftMode();
+            history.clear();
+        }
         boolean showJ = prefs.floatingJ() && !prefs.tftMode() && Settings.canDrawOverlays(this);
         if (showJ && floatingJ == null) {
             floatingJ = new FloatingJ(this, prefs, new FloatingJ.Callbacks() {
@@ -774,6 +783,19 @@ public class JarvisService extends Service {
                     : "Spielmodus beendet.");
             return;
         }
+        // „Neue Partie“: Verlauf der letzten Partie vergessen (und Spielmodus an, falls noch aus).
+        if (Commands.newGame(text)) {
+            history.clear();
+            boolean wasGame = prefs.tftMode();
+            if (!wasGame) {
+                prefs.setTftMode(true);
+                Backup.autoSave(this, prefs);
+            }
+            setState(State.IDLE);
+            applySettings();
+            speak(wasGame ? "Neue Partie. Viel Erfolg, Sir." : "Neue Partie, Spielmodus aktiv. Viel Erfolg, Sir.");
+            return;
+        }
         // „Merk dir …“ / „Vergiss …“ ebenso – zuverlässig und ohne Kosten.
         Memory.Outcome local = Memory.command(text, prefs.memory());
         if (local != null) {
@@ -803,13 +825,13 @@ public class JarvisService extends Service {
         boolean overlayVisible = floatingJ != null || subtitles.isShowing();
         if (!overlayVisible) {
             // Nichts eingeblendet (z. B. Spielmodus) → sofort fotografieren, keine Wartezeit.
-            ask(id, key, text, grabber.captureJpegBase64());
+            ask(id, key, text, grabber.captureJpegBase64(prefs.tftMode()));
             return;
         }
         // Eingeblendetes kurz verstecken, damit es nicht auf dem Bildschirmfoto landet.
         setCaptureHidden(true);
         main.postDelayed(() -> {
-            String image = grabber == null ? null : grabber.captureJpegBase64();
+            String image = grabber == null ? null : grabber.captureJpegBase64(prefs.tftMode());
             setCaptureHidden(false);
             if (id == requestId) ask(id, key, text, image);
         }, 120); // 120 ms reichen, damit das Bild ohne Einblendung neu gezeichnet ist (vorher 300 ms)
