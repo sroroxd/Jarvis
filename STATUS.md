@@ -66,14 +66,14 @@ zusammengeführt. `main` bekommt damit genau den Stand, den Art getestet hat.
 
 Repo geprüft: keine fremden Pushes, keine echten Schlüssel im Code, keine
 fehlgeschlagenen Builds (nur zwei absichtlich abgebrochene Trainingsläufe).
-Aus der Entwicklungsumgebung lässt sich nichts löschen – das macht Art im Browser:
+Erledigt von Art: Zweig `claude-md-doku-regeln` gelöscht, „Automatically delete
+head branches“ eingeschaltet (zusammengeführte Zweige verschwinden jetzt von selbst).
 
-- **Zweig** `claude-md-doku-regeln` – ist in `main` (#4).
-- **Vorab-Versionen** `test`, `test-wachwort-jarvis`, `test-tft-coach`,
-  `test-jarvis-haende` – ersetzt durch `test-sammeltest`.
-- **Alte App-Versionen** `v1.0.1` bis `v1.0.26` – als Rückfall genügen
-  `v1.0.43`, `v1.0.32`, `v1.0.29`.
-- **Nicht löschen:** `vorschau` (Design-Vorschau schreibt dorthin), `test-sammeltest`.
+Alte Releases: **GitHub → Actions → „Alte Releases aufräumen“ → Run workflow**
+(PR #8, auf `main`). Löscht `test`, `test-wachwort-jarvis`, `test-tft-coach`,
+`test-jarvis-haende` und `v1.0.1` bis `v1.0.26` samt Git-Tags. Geschützt:
+`v1.0.43`, `v1.0.32`, `v1.0.29`, `vorschau`, `test-sammeltest`. Starten muss Art
+selbst – Löschen ist aus der Entwicklungsumgebung gesperrt.
 
 Nach dem Zusammenführen von #7 können die Zweige `wachwort-jarvis`,
 `jarvis-haende`, `tft-coach`, `gespraech-modus`, `agent-ruckgrat` und
