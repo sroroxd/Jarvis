@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Das Herz von Jarvis: hört auf „Hey Jarvis“ (oder Antippen), sieht den Bildschirm,
+ * Das Herz von Jarvis: hört auf „Jarvis“ (oder Antippen), sieht den Bildschirm,
  * fragt Claude und spricht die Antwort.
  *
  * <p>Sichtbar ist nur, was eingeschaltet ist: das schwebende J (Standard aus) und die
@@ -83,6 +83,10 @@ public class JarvisService extends Service {
     private static String lastYou = "";
     private static String lastJarvis = "";
     private static volatile String lastTiming = "";
+    /** Ganzer Gesprächsverlauf für den Startbildschirm (überlebt das Schließen der App, solange Jarvis läuft). */
+    private static final ChatLog chatLog = new ChatLog();
+    /** Läuft gerade das Dauergespräch? Für die Anzeige auf dem Startbildschirm. */
+    private static volatile boolean continuous;
     private static String lastModel = "";
     private final Timing timing = new Timing();
     private static boolean screenShared;
@@ -106,6 +110,14 @@ public class JarvisService extends Service {
     }
 
     /** Zeitmessung der letzten Antwort, z. B. „Zuhören 0,4 s · KI 1,8 s · Stimme 0,6 s · gesamt 2,8 s“. */
+    static java.util.List<ChatLog.Entry> log() {
+        return chatLog.snapshot();
+    }
+
+    static boolean isContinuous() {
+        return continuous;
+    }
+
     static String lastTiming() {
         return lastTiming;
     }
@@ -137,6 +149,23 @@ public class JarvisService extends Service {
     private Prefs prefs;
     private ClaudeClient claude;
     private GeminiClient gemini;
+    /** Websuche und Kalender – nur im Alltag mit Claude (der Spielmodus bleibt unverändert schnell). */
+    private Tools tools;
+    private AgentClient agent;
+    /**
+     * Dauergespräch: Ohne Wort endet es nach dieser Zeit von selbst – sonst liefe das
+     * Mikrofon unbemerkt stundenlang (Akku, Privatsphäre). Eine TFT-Partie mit Pausen passt hinein.
+     */
+    private static final long CONTINUOUS_IDLE_MS = 15 * 60 * 1000L;
+    /** Kurze Pause nach dem Sprechen, damit der Nachhall der Stimme nicht als Frage erkannt wird. */
+    private static final long RELISTEN_DELAY_MS = 350;
+    /** Zeitpunkt, an dem Art im Dauergespräch zuletzt etwas gesagt hat. */
+    private long continuousLastSpeech;
+    /** Aufeinanderfolgende Erkennungsfehler im Dauergespräch – für das Zurückweichen. */
+    private int continuousErrors;
+    private final Runnable relisten = this::relistenIfContinuous;
+    /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
+    private int agentJobId;
     private ElevenTts eleven;
     private boolean elevenWarned;
     private WindowManager wm;
@@ -153,6 +182,8 @@ public class JarvisService extends Service {
     private boolean finishRequested;
     /** Jede Anfrage bekommt eine Nummer; Antworten auf überholte Anfragen werden verworfen. */
     private int requestId;
+    /** Zuletzt angewendeter Modus – wechselt er (Alltag ↔ Spiel), beginnt ein frisches Gespräch. */
+    private boolean appliedGameMode;
 
     private FloatingJ floatingJ;
     private Subtitles subtitles;
@@ -201,8 +232,11 @@ public class JarvisService extends Service {
     public void onCreate() {
         super.onCreate();
         prefs = new Prefs(this);
+        appliedGameMode = prefs.tftMode();
         claude = new ClaudeClient();
         gemini = new GeminiClient();
+        tools = new Tools(this);
+        agent = new AgentClient();
         eleven = new ElevenTts(this);
         earcon = new Earcon();
         subtitles = new Subtitles(this);
@@ -272,6 +306,7 @@ public class JarvisService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        continuous = false;
         screenShared = false;
         main.removeCallbacksAndMessages(null);
         if (receiverRegistered) {
@@ -310,6 +345,12 @@ public class JarvisService extends Service {
 
     /** Übernimmt geänderte Einstellungen (J, Untertitel, Wachwort, Spielmodus) sofort. */
     private void applySettings() {
+        // Moduswechsel (per Sprache, Schalter auf dem Startbildschirm oder in den Einstellungen) = neues Gespräch:
+        // Alltagsgespräche gehören nicht ins TFT-Coaching – und Pläne der letzten Partie nicht in die nächste.
+        if (prefs.tftMode() != appliedGameMode) {
+            appliedGameMode = prefs.tftMode();
+            history.clear();
+        }
         boolean showJ = prefs.floatingJ() && !prefs.tftMode() && Settings.canDrawOverlays(this);
         if (showJ && floatingJ == null) {
             floatingJ = new FloatingJ(this, prefs, new FloatingJ.Callbacks() {
@@ -395,8 +436,16 @@ public class JarvisService extends Service {
                         grabber = null;
                     }
                     projection = null;
+                    boolean was = screenShared;
                     screenShared = false;
                     notifyUi();
+                    // Android beendet die Freigabe z. B., wenn eine Bildschirmaufnahme startet.
+                    if (was && running) {
+                        String msg = "Die Bildschirmfreigabe wurde beendet – ich sehe nichts mehr. "
+                                + "Tippen Sie oben auf „Bildschirm“, um sie neu zu starten.";
+                        statusBriefly(msg);
+                        publishExchange(null, msg);
+                    }
                 });
             }
         }, main);
@@ -404,6 +453,7 @@ public class JarvisService extends Service {
         grabber = new ScreenGrabber(projection);
         grabber.start(b.width(), b.height(), getResources().getDisplayMetrics().densityDpi);
         screenShared = true;
+        notifyUi();
     }
 
     @Override
@@ -464,10 +514,14 @@ public class JarvisService extends Service {
     private void publishExchange(String you, String jarvis) {
         if (you != null) lastYou = you;
         if (jarvis != null) lastJarvis = jarvis;
+        // ("", "") = neues Gespräch → Verlauf leeren. Sonst mitschreiben.
+        if (you != null && you.isEmpty() && jarvis != null && jarvis.isEmpty()) chatLog.clear();
+        if (you != null && !you.isEmpty()) chatLog.art(you);
+        if (jarvis != null && !jarvis.isEmpty()) chatLog.jarvis(jarvis);
         if (ui != null) ui.onExchange(lastYou, lastJarvis);
     }
 
-    // ---------------------------------------------------------------- Wachwort „Hey Jarvis“
+    // ---------------------------------------------------------------- Wachwort „Jarvis“
 
     private void updateWake() {
         boolean should = running && prefs.wakeWord() && micGranted() && screenAwake
@@ -499,7 +553,7 @@ public class JarvisService extends Service {
         notifyUi();
         if (!wakeErrorSpoken) {
             wakeErrorSpoken = true;
-            statusBriefly("„Hey Jarvis“ pausiert: " + message);
+            statusBriefly("Wachwort pausiert: " + message);
         }
         main.removeCallbacks(retryWake);
         main.postDelayed(retryWake, wakeRetryMs);
@@ -510,6 +564,11 @@ public class JarvisService extends Service {
 
     /** Antippen (Reaktor, J, Benachrichtigung, Seitentaste). */
     private void onTap() {
+        // Läuft das Dauergespräch, beendet Antippen es – egal in welchem Zustand.
+        if (continuous) {
+            stopContinuous(true);
+            return;
+        }
         switch (state) {
             case LISTENING:
                 // Antippen beim Zuhören = „fertig, abschicken“.
@@ -527,16 +586,19 @@ public class JarvisService extends Service {
                 break;
             case SPEAKING:
                 stopSpeaking();
-                startListening();
+                startContinuous();
                 break;
             default:
-                startListening();
+                startContinuous();
         }
     }
 
     private void resetConversation() {
         history.clear();
         requestId++;
+        // Auch der Agent fängt neu an, sonst zieht er den alten Zusammenhang mit.
+        agentJobId++;
+        if (prefs.agentReady()) agent.neueSitzung(prefs.agentPort(), prefs.agentToken());
         stopSpeaking();
         if (state == State.LISTENING) {
             main.removeCallbacks(pauseElapsed);
@@ -549,6 +611,11 @@ public class JarvisService extends Service {
     }
 
     private void startListening() {
+        startListening(false);
+    }
+
+    /** @param quiet ohne Signalton – im Dauergespräch soll nicht nach jeder Antwort ein Ton kommen. */
+    private void startListening(boolean quiet) {
         if (!micGranted()) {
             say("Mir fehlt die Mikrofon-Berechtigung. Bitte öffne die Jarvis-App.");
             return;
@@ -562,7 +629,7 @@ public class JarvisService extends Service {
         heardSomething = false;
         timing.reset();
         setState(State.LISTENING);
-        if (prefs.earcon()) earcon.play();
+        if (prefs.earcon() && !quiet) earcon.play();
         if (prefs.tftMode()) subtitles.hide(); // alte Antwort weg, Spielbild frei
         status("Ich höre …");
         // Erst das Wachwort-Mikrofon freigeben, dann übernimmt die Spracherkennung.
@@ -658,8 +725,24 @@ public class JarvisService extends Service {
                     return;
                 }
                 setState(State.IDLE);
+                if (continuous) {
+                    // Dauergespräch: Stille ist normal – einfach weiter zuhören. Echte Fehler (Erkenner
+                    // belegt, Netz weg) mit wachsender Pause wiederholen, nach fünf in Folge aufgeben.
+                    boolean silence = error == SpeechRecognizer.ERROR_NO_MATCH
+                            || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT;
+                    if (silence) {
+                        continuousErrors = 0;
+                        scheduleRelisten(150);
+                    } else if (++continuousErrors > 5) {
+                        stopContinuous(false);
+                        say("Die Spracherkennung meldet immer wieder Fehler " + error + ". Ich beende das Dauergespräch.");
+                    } else {
+                        scheduleRelisten(Math.min(8000, 500L << continuousErrors));
+                    }
+                    return;
+                }
                 if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                    // Nach „Hey Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
+                    // Nach „Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
                     statusBriefly(heardSomething ? "Ich habe dich nicht verstanden." : "Ich habe nichts gehört.");
                 } else {
                     String msg = "Die Spracherkennung meldet Fehler " + error + ".";
@@ -686,6 +769,12 @@ public class JarvisService extends Service {
                 finishListening();
             } else {
                 setState(State.IDLE);
+                if (continuous && ++continuousErrors <= 5) {
+                    // Im Dauergespräch nicht jedes Mal ansagen – sonst Endlosschleife aus Ansage und Neustart.
+                    scheduleRelisten(Math.min(8000, 500L << continuousErrors));
+                    return;
+                }
+                if (continuous) stopContinuous(false);
                 say("Die Spracherkennung konnte nicht starten.");
             }
         }
@@ -706,8 +795,13 @@ public class JarvisService extends Service {
         finishRequested = false;
         if (text.isEmpty()) {
             setState(State.IDLE);
-            statusBriefly("Ich habe nichts verstanden.");
+            if (continuous) scheduleRelisten(150);
+            else statusBriefly("Ich habe nichts verstanden.");
             return;
+        }
+        if (continuous) {
+            continuousLastSpeech = SystemClock.elapsedRealtime();
+            continuousErrors = 0;
         }
         publishExchange(text, "");
         handleUtterance(text);
@@ -771,6 +865,42 @@ public class JarvisService extends Service {
                     : "Spielmodus beendet.");
             return;
         }
+        // „Neue Partie“: Verlauf der letzten Partie vergessen (und Spielmodus an, falls noch aus).
+        if (Commands.newGame(text)) {
+            history.clear();
+            boolean wasGame = prefs.tftMode();
+            if (!wasGame) {
+                prefs.setTftMode(true);
+                Backup.autoSave(this, prefs);
+            }
+            setState(State.IDLE);
+            applySettings();
+            speak(wasGame ? "Neue Partie. Viel Erfolg, Sir." : "Neue Partie, Spielmodus aktiv. Viel Erfolg, Sir.");
+            return;
+        }
+        // „Gesprächsmodus an“, „Hör durchgehend zu“ / „Gespräch beenden“ – Dauergespräch an oder aus.
+        Boolean talk = Commands.conversationMode(text);
+        if (talk == null && continuous && Commands.endsConversation(text)) talk = Boolean.FALSE;
+        if (talk != null) {
+            if (talk) {
+                setState(State.IDLE);
+                if (continuous) {
+                    speak("Ich höre schon durchgehend zu, Sir.");
+                } else {
+                    continuous = true;
+                    continuousLastSpeech = SystemClock.elapsedRealtime();
+                    continuousErrors = 0;
+                    notifyUi();
+                    speak("Dauergespräch an. Ich höre ab jetzt durchgehend zu.");
+                }
+            } else if (continuous) {
+                stopContinuous(true);
+            } else {
+                setState(State.IDLE);
+                speak("Das Dauergespräch ist gerade nicht an.");
+            }
+            return;
+        }
         // „Merk dir …“ / „Vergiss …“ ebenso – zuverlässig und ohne Kosten.
         Memory.Outcome local = Memory.command(text, prefs.memory());
         if (local != null) {
@@ -779,6 +909,16 @@ public class JarvisService extends Service {
             setState(State.IDLE);
             speak(local.reply);
             return;
+        }
+        // Lange Aufgaben gibt Art ausdrücklich ab („Übernimm das: …“). Die macht der
+        // Agent in Termux über Claude Code – das zählt gegen das Abo, nicht gegen das
+        // API-Guthaben. Im Spielmodus nie: der Agent braucht Sekunden bis Minuten.
+        if (prefs.agentReady() && !prefs.tftMode()) {
+            String auftrag = Commands.agentTask(text);
+            if (auftrag != null) {
+                beauftrageAgenten(auftrag);
+                return;
+            }
         }
         String key = prefs.apiKey();
         if (key.isEmpty()) {
@@ -800,13 +940,13 @@ public class JarvisService extends Service {
         boolean overlayVisible = floatingJ != null || subtitles.isShowing();
         if (!overlayVisible) {
             // Nichts eingeblendet (z. B. Spielmodus) → sofort fotografieren, keine Wartezeit.
-            ask(id, key, text, grabber.captureJpegBase64());
+            ask(id, key, text, grabber.captureJpegBase64(prefs.tftMode()));
             return;
         }
         // Eingeblendetes kurz verstecken, damit es nicht auf dem Bildschirmfoto landet.
         setCaptureHidden(true);
         main.postDelayed(() -> {
-            String image = grabber == null ? null : grabber.captureJpegBase64();
+            String image = grabber == null ? null : grabber.captureJpegBase64(prefs.tftMode());
             setCaptureHidden(false);
             if (id == requestId) ask(id, key, text, image);
         }, 120); // 120 ms reichen, damit das Bild ohne Einblendung neu gezeichnet ist (vorher 300 ms)
@@ -833,12 +973,19 @@ public class JarvisService extends Service {
             return;
         }
 
-        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate());
+        // Werkzeuge (Websuche, Kalender) nur im Alltag mit Claude – der Spielmodus bleibt schnell und nutzt die Tages-Meta.
+        boolean withTools = !prefs.tftMode() && !prefs.isGemini();
+        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate(),
+                withTools);
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
                 timing.answered(SystemClock.elapsedRealtime());
                 if (id != requestId || !running) return; // überholt (neue Frage, neues Gespräch)
+                // Art hat in eigenen Worten um Dauerzuhören gebeten (oder es beendet) – Claude meldet das per Steuerzeile.
+                Boolean dauer = Commands.continuousTag(answer);
+                answer = Commands.stripControlTags(answer);
+                if (dauer != null) setContinuousFromAnswer(dauer);
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
                 prefs.setMemory(tagged.memory);
                 Backup.autoSave(JarvisService.this, prefs);
@@ -858,10 +1005,101 @@ public class JarvisService extends Service {
         timing.sent(SystemClock.elapsedRealtime());
         lastModel = prefs.model();
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
-        // Alltag: ohne Nachdenken antworten (schnellste Antwort). TFT/Spielmodus: kurz nachdenken.
         // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
-        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher.
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low", callback);
+        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low",
+                withTools ? tools : null, callback);
+    }
+
+    /**
+     * Gibt einen Auftrag an den Agenten in Termux.
+     *
+     * Eigener Zähler statt {@link #requestId}: Ein Auftrag kann Minuten dauern, und
+     * in der Zeit darf Art ruhig etwas anderes fragen – die Antwort des Agenten geht
+     * dadurch nicht verloren. Nur ein neuerer Auftrag überholt einen älteren.
+     */
+    private void beauftrageAgenten(String auftrag) {
+        final int job = ++agentJobId;
+        setState(State.THINKING);
+        status("Auftrag an den Agenten: „" + auftrag + "“");
+        agent.auftrag(prefs.agentPort(), prefs.agentToken(), auftrag, false, reply -> {
+            if (job != agentJobId || !running) return;
+            if (state == State.LISTENING && utterance.length() == 0) {
+                // Dauergespräch hört gerade (noch ohne Worte) zu – kurz unterbrechen, damit die
+                // Antwort nicht von der Spracherkennung mitgehört wird. Danach geht es weiter.
+                main.removeCallbacks(pauseElapsed);
+                releaseRecognizer();
+                setState(State.IDLE);
+            }
+            if (reply.ok()) {
+                remember("user", "[Auftrag an den Agenten] " + auftrag);
+                remember("assistant", reply.antwort);
+                speak(reply.antwort);
+            } else {
+                setState(State.IDLE);
+                say(reply.fehler);
+            }
+        });
+        // Sofort eine kurze Rückmeldung, damit Art nicht minutenlang ins Leere wartet.
+        speak("Ich kümmere mich darum, Sir.");
+    }
+
+    // ---------------------------------------------------------------- Dauergespräch
+
+    /**
+     * Dauergespräch mit Claude: Einmal antippen, dann hört Jarvis nach jeder Antwort von
+     * selbst weiter zu – bis Art erneut antippt, „Gespräch beenden“ sagt oder 15 Minuten
+     * lang nichts sagt. Ist der Bildschirm geteilt, bekommt jede Frage ein frisches Bild.
+     */
+    private void startContinuous() {
+        continuous = true;
+        continuousLastSpeech = SystemClock.elapsedRealtime();
+        continuousErrors = 0;
+        notifyUi();
+        startListening();
+    }
+
+    /** @param announce kurz ansagen, dass es vorbei ist (bei Antippen und Sprachbefehl). */
+    private void stopContinuous(boolean announce) {
+        if (!continuous) return;
+        continuous = false;
+        main.removeCallbacks(relisten);
+        if (state == State.THINKING) requestId++; // Art hat beendet – die ausstehende Antwort nicht mehr vorlesen
+        stopSpeaking();
+        if (state == State.LISTENING) {
+            main.removeCallbacks(pauseElapsed);
+            releaseRecognizer();
+            utterance.setLength(0);
+        }
+        setState(State.IDLE);
+        notifyUi();
+        if (announce) speak("Dauergespräch beendet.");
+    }
+
+    /** Nach einer Antwort (oder nach Stille) wieder zuhören, solange das Dauergespräch läuft. */
+    private void scheduleRelisten(long delayMs) {
+        main.removeCallbacks(relisten);
+        if (continuous && running) main.postDelayed(relisten, delayMs);
+    }
+
+    /** Claude hat das Dauergespräch per Steuerzeile ein- oder ausgeschaltet. Die Antwort spricht er selbst. */
+    private void setContinuousFromAnswer(boolean on) {
+        if (on == continuous) return;
+        continuous = on;
+        continuousLastSpeech = SystemClock.elapsedRealtime();
+        continuousErrors = 0;
+        if (!on) main.removeCallbacks(relisten);
+        notifyUi();
+    }
+
+    private void relistenIfContinuous() {
+        if (!continuous || !running || state != State.IDLE) return;
+        if (SystemClock.elapsedRealtime() - continuousLastSpeech > CONTINUOUS_IDLE_MS) {
+            stopContinuous(false);
+            speak("Ich habe eine Viertelstunde nichts gehört und höre nicht mehr durchgehend zu. Tippen Sie, wenn Sie mich brauchen.");
+            return;
+        }
+        startListening(true);
     }
 
     private void remember(String role, String text) {
@@ -1006,6 +1244,7 @@ public class JarvisService extends Service {
     private void onSpeechFinished() {
         if (state == State.SPEAKING) setState(State.IDLE);
         subtitles.hideAfter(CAPTION_LINGER_MS);
+        scheduleRelisten(RELISTEN_DELAY_MS);
     }
 
     // ---------------------------------------------------------------- Benachrichtigung
@@ -1022,9 +1261,10 @@ public class JarvisService extends Service {
                 new Intent(this, JarvisService.class).setAction(ACTION_LISTEN), PendingIntent.FLAG_IMMUTABLE);
         PendingIntent open = PendingIntent.getActivity(this, 2,
                 new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
-        String title = prefs.tftMode() ? "Jarvis ist aktiv · Spielmodus" : "Jarvis ist aktiv";
+        String name = BuildConfig.TEST_APP ? "Jarvis Test" : "Jarvis";
+        String title = prefs.tftMode() ? name + " ist aktiv · Spielmodus" : name + " ist aktiv";
         String text = prefs.wakeWord()
-                ? "Sag „Hey Jarvis“ – oder tippe auf „Sprechen“."
+                ? "Sag „Jarvis“ – oder tippe auf „Sprechen“."
                 : "Tippe auf „Sprechen“, um mit Jarvis zu reden.";
         Icon icon = Icon.createWithResource(this, R.drawable.ic_jarvis);
         return new Notification.Builder(this, CHANNEL)

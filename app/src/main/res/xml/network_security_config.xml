@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Jarvis spricht nach außen nur über HTTPS. Die einzige Ausnahme ist der eigene
+  Agent, der auf demselben Handy in Termux läuft und über 127.0.0.1 erreichbar
+  ist: Dort gibt es keine Strecke, auf der mitgelesen werden könnte, und ein
+  Zertifikat für localhost lässt sich nicht sinnvoll ausstellen.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

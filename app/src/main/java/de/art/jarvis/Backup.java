@@ -20,7 +20,8 @@ import java.util.Locale;
  * API-Schlüssel (Claude/Gemini und ElevenLabs) werden bewusst NICHT gespeichert – die Datei soll gefahrlos herumliegen können.
  */
 final class Backup {
-    static final String FILE_NAME = "jarvis-sicherung.json";
+    /** Die Test-App sichert in eine eigene Datei, damit sie die Sicherung der normalen App nie überschreibt. */
+    static final String FILE_NAME = BuildConfig.TEST_APP ? "jarvis-test-sicherung.json" : "jarvis-sicherung.json";
 
     private Backup() {}
 
@@ -40,7 +41,9 @@ final class Backup {
         if (p.backupKeys()) { // nur auf ausdrücklichen Wunsch
             o.put("apiKey", p.apiKey());
             o.put("elevenKey", p.elevenKey());
+            o.put("agentToken", p.agentToken());
         }
+        o.put("agent", p.agentEnabled());
         o.put("wakeWord", p.wakeWord());
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
@@ -70,6 +73,9 @@ final class Backup {
         }
         String elevenKey = o.optString("elevenKey", "");
         if (!elevenKey.isEmpty()) p.setElevenKey(elevenKey);
+        String agentToken = o.optString("agentToken", "");
+        if (!agentToken.isEmpty()) p.setAgentToken(agentToken);
+        p.setAgentEnabled(o.optBoolean("agent", false));
         p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));

@@ -13,12 +13,12 @@ public final class Prefs {
 
     /**
      * Standard-Stimmen für die Handy-Sprachausgabe, in dieser Reihenfolge gesucht:
-     * Thorsten (deutsch, männlich) → Miro (deutsch, männlich) → Alan (britisch, Notlösung).
+     * Miro (deutsch, männlich – Arts Wahl) → Thorsten (deutsch, männlich) → Alan (britisch, Notlösung).
      * Premium (ElevenLabs „Daniel“) hat Vorrang, sobald ein ElevenLabs-Schlüssel eingetragen ist.
      */
-    public static final String[] DEFAULT_VOICE_HINTS = {"thorsten", "miro", "alan"};
-    public static final float DEFAULT_RATE = 0.9f;
-    public static final float DEFAULT_PITCH = 1.0f;
+    public static final String[] DEFAULT_VOICE_HINTS = {"miro", "thorsten", "alan"};
+    public static final float DEFAULT_RATE = 0.95f;
+    public static final float DEFAULT_PITCH = 0.9f;
     /** Wartezeit nach einer Sprechpause, bevor Jarvis die Frage abschickt. */
     public static final int DEFAULT_PAUSE_MS = 1200;
 
@@ -190,10 +190,10 @@ public final class Prefs {
         sp.edit().putBoolean("tft_mode", value).apply();
     }
 
-    // ------------------------------------------------------------ Freihändig („Hey Jarvis“)
+    // ------------------------------------------------------------ Freihändig (Wachwort „Jarvis“)
 
     public static final boolean DEFAULT_WAKE_WORD = true;
-    /** 1 = reagiert nur auf sehr deutliches „Hey Jarvis“, 10 = reagiert auf fast alles. */
+    /** 1 = reagiert nur auf sehr deutliches „Jarvis“, 10 = reagiert auf fast alles. */
     public static final int DEFAULT_SENSITIVITY = 5;
 
     public boolean wakeWord() {
@@ -274,6 +274,50 @@ public final class Prefs {
 
     public void setSubtitlesTop(boolean value) {
         sp.edit().putBoolean("subtitles_top", value).apply();
+    }
+
+    // ---------------------------------------------------------------- Agent-Rückgrat
+
+    /** Standard-Port des Agenten in Termux (siehe {@code agent/jarvis-agent.mjs}). */
+    public static final int DEFAULT_AGENT_PORT = 8777;
+
+    /**
+     * Aufträge an den Agenten in Termux weitergeben. Aus, solange Art den Agenten
+     * nicht eingerichtet hat – sonst liefe jeder Auftrag in einen Verbindungsfehler.
+     */
+    public boolean agentEnabled() {
+        return sp.getBoolean("agent_enabled", false);
+    }
+
+    public void setAgentEnabled(boolean value) {
+        sp.edit().putBoolean("agent_enabled", value).apply();
+    }
+
+    public int agentPort() {
+        return clamp(sp.getInt("agent_port", DEFAULT_AGENT_PORT), 1024, 65535);
+    }
+
+    public void setAgentPort(int value) {
+        sp.edit().putInt("agent_port", clamp(value, 1024, 65535)).apply();
+    }
+
+    /** Token des Agenten – steht auf dem Handy in {@code ~/.jarvis-agent/token}. */
+    public String agentToken() {
+        return sp.getString("agent_token", "").trim();
+    }
+
+    public void setAgentToken(String value) {
+        sp.edit().putString("agent_token", value == null ? "" : value.trim()).apply();
+    }
+
+    /** Vorschau fürs Anzeigen, ohne das ganze Token zu zeigen. */
+    public String agentTokenPreview() {
+        return Text.keyPreview(agentToken());
+    }
+
+    /** Der Agent ist nur nutzbar, wenn er eingeschaltet ist und ein Token vorliegt. */
+    public boolean agentReady() {
+        return agentEnabled() && !agentToken().isEmpty();
     }
 
     private static int clamp(int v, int min, int max) {

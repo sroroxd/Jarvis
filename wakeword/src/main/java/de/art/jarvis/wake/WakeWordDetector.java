@@ -19,6 +19,9 @@ import ai.onnxruntime.TensorInfo;
  * Audio → Mel-Spektrogramm → Sprach-Merkmale (Googles „speech_embedding“) → Wahrscheinlichkeit für das Wachwort.
  * Die Logik entspricht Schritt für Schritt der Python-Vorlage (geprüft mit Testaufnahmen, siehe Tests).
  *
+ * <p>Es lassen sich mehrere Wachwort-Modelle gleichzeitig auswerten (z. B. „Jarvis“ und „Hey Jarvis“).
+ * Mel-Spektrogramm und Merkmale – der teure Teil – werden dabei nur einmal berechnet; geliefert wird der höchste Wert.
+ *
  * <p>Nicht threadsicher: nur von einem Thread aus benutzen.
  */
 public final class WakeWordDetector implements AutoCloseable {
@@ -38,10 +41,11 @@ public final class WakeWordDetector implements AutoCloseable {
     private final OrtSession.SessionOptions options;
     private final OrtSession mel;
     private final OrtSession embedding;
-    private final OrtSession wakeWord;
+    private final OrtSession[] wakeWords;
     private final String melInput;
     private final String embeddingInput;
-    private final String wakeWordInput;
+    private final String[] wakeWordInputs;
+    private final int[] headFrames;
     private final int featureFrames;
 
     private final float[] window = new float[CONTEXT];
@@ -50,7 +54,10 @@ public final class WakeWordDetector implements AutoCloseable {
     private final ArrayDeque<float[]> features = new ArrayDeque<>();
     private int predictions;
 
-    public WakeWordDetector(byte[] melModel, byte[] embeddingModel, byte[] wakeWordModel) throws OrtException {
+    public WakeWordDetector(byte[] melModel, byte[] embeddingModel, byte[]... wakeWordModels) throws OrtException {
+        if (wakeWordModels == null || wakeWordModels.length == 0) {
+            throw new IllegalArgumentException("Mindestens ein Wachwort-Modell nötig");
+        }
         env = OrtEnvironment.getEnvironment();
         options = new OrtSession.SessionOptions();
         // Ein Rechenkern reicht völlig und schont den Akku.
@@ -58,15 +65,23 @@ public final class WakeWordDetector implements AutoCloseable {
         options.setInterOpNumThreads(1);
         mel = env.createSession(melModel, options);
         embedding = env.createSession(embeddingModel, options);
-        wakeWord = env.createSession(wakeWordModel, options);
+        wakeWords = new OrtSession[wakeWordModels.length];
+        wakeWordInputs = new String[wakeWordModels.length];
+        headFrames = new int[wakeWordModels.length];
+        int frames = 0;
+        for (int i = 0; i < wakeWordModels.length; i++) {
+            wakeWords[i] = env.createSession(wakeWordModels[i], options);
+            wakeWordInputs[i] = wakeWords[i].getInputNames().iterator().next();
+            headFrames[i] = inputFrames(wakeWords[i], wakeWordInputs[i]);
+            frames = Math.max(frames, headFrames[i]);
+        }
         melInput = mel.getInputNames().iterator().next();
         embeddingInput = embedding.getInputNames().iterator().next();
-        wakeWordInput = wakeWord.getInputNames().iterator().next();
-        featureFrames = inputFrames(wakeWord, wakeWordInput);
+        featureFrames = frames;
         reset();
     }
 
-    /** Anzahl der Merkmal-Frames, die das Wachwort-Modell erwartet (bei „Hey Jarvis“: 16). */
+    /** Anzahl der Merkmal-Frames, die ein Wachwort-Modell erwartet (bei „Jarvis“ und „Hey Jarvis“: 16). */
     private static int inputFrames(OrtSession session, String input) throws OrtException {
         NodeInfo info = session.getInputInfo().get(input);
         if (info != null && info.getInfo() instanceof TensorInfo) {
@@ -126,17 +141,21 @@ public final class WakeWordDetector implements AutoCloseable {
         while (features.size() > featureFrames) features.removeFirst();
         if (features.size() < featureFrames) return 0f;
 
-        // 4. Wachwort-Modell über die letzten Merkmal-Frames.
-        float[] featureData = new float[featureFrames * EMBEDDING];
-        k = 0;
-        for (float[] f : features) {
-            System.arraycopy(f, 0, featureData, k, EMBEDDING);
-            k += EMBEDDING;
-        }
-        float[] out = run(wakeWord, wakeWordInput, featureData, new long[]{1, featureFrames, EMBEDDING});
+        // 4. Jedes Wachwort-Modell über seine letzten Merkmal-Frames; der höchste Wert zählt.
         predictions++;
-        if (predictions <= WARMUP || out.length == 0) return 0f;
-        return out[0];
+        float best = 0f;
+        float[][] all = features.toArray(new float[0][]);
+        for (int h = 0; h < wakeWords.length; h++) {
+            int n = headFrames[h];
+            float[] featureData = new float[n * EMBEDDING];
+            for (int f = 0; f < n; f++) {
+                System.arraycopy(all[all.length - n + f], 0, featureData, f * EMBEDDING, EMBEDDING);
+            }
+            float[] out = run(wakeWords[h], wakeWordInputs[h], featureData, new long[]{1, n, EMBEDDING});
+            if (out.length > 0) best = Math.max(best, out[0]);
+        }
+        if (predictions <= WARMUP) return 0f;
+        return best;
     }
 
     private float[] run(OrtSession session, String input, float[] data, long[] shape) throws OrtException {
@@ -153,7 +172,7 @@ public final class WakeWordDetector implements AutoCloseable {
     public void close() {
         closeQuietly(mel);
         closeQuietly(embedding);
-        closeQuietly(wakeWord);
+        for (OrtSession w : wakeWords) closeQuietly(w);
         options.close();
     }
 
