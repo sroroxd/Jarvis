@@ -139,6 +139,9 @@ public class JarvisService extends Service {
     private GeminiClient gemini;
     /** Websuche und Kalender – nur im Alltag mit Claude (der Spielmodus bleibt unverändert schnell). */
     private Tools tools;
+    private AgentClient agent;
+    /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
+    private int agentJobId;
     private ElevenTts eleven;
     private boolean elevenWarned;
     private WindowManager wm;
@@ -209,6 +212,7 @@ public class JarvisService extends Service {
         claude = new ClaudeClient();
         gemini = new GeminiClient();
         tools = new Tools(this);
+        agent = new AgentClient();
         eleven = new ElevenTts(this);
         earcon = new Earcon();
         subtitles = new Subtitles(this);
@@ -549,6 +553,9 @@ public class JarvisService extends Service {
     private void resetConversation() {
         history.clear();
         requestId++;
+        // Auch der Agent fängt neu an, sonst zieht er den alten Zusammenhang mit.
+        agentJobId++;
+        if (prefs.agentReady()) agent.neueSitzung(prefs.agentPort(), prefs.agentToken());
         stopSpeaking();
         if (state == State.LISTENING) {
             main.removeCallbacks(pauseElapsed);
@@ -805,6 +812,16 @@ public class JarvisService extends Service {
             speak(local.reply);
             return;
         }
+        // Lange Aufgaben gibt Art ausdrücklich ab („Übernimm das: …“). Die macht der
+        // Agent in Termux über Claude Code – das zählt gegen das Abo, nicht gegen das
+        // API-Guthaben. Im Spielmodus nie: der Agent braucht Sekunden bis Minuten.
+        if (prefs.agentReady() && !prefs.tftMode()) {
+            String auftrag = Commands.agentTask(text);
+            if (auftrag != null) {
+                beauftrageAgenten(auftrag);
+                return;
+            }
+        }
         String key = prefs.apiKey();
         if (key.isEmpty()) {
             setState(State.IDLE);
@@ -890,6 +907,32 @@ public class JarvisService extends Service {
         // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
         else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low",
                 withTools ? tools : null, callback);
+    }
+
+    /**
+     * Gibt einen Auftrag an den Agenten in Termux.
+     *
+     * Eigener Zähler statt {@link #requestId}: Ein Auftrag kann Minuten dauern, und
+     * in der Zeit darf Art ruhig etwas anderes fragen – die Antwort des Agenten geht
+     * dadurch nicht verloren. Nur ein neuerer Auftrag überholt einen älteren.
+     */
+    private void beauftrageAgenten(String auftrag) {
+        final int job = ++agentJobId;
+        setState(State.THINKING);
+        status("Auftrag an den Agenten: „" + auftrag + "“");
+        agent.auftrag(prefs.agentPort(), prefs.agentToken(), auftrag, false, reply -> {
+            if (job != agentJobId || !running) return;
+            if (reply.ok()) {
+                remember("user", "[Auftrag an den Agenten] " + auftrag);
+                remember("assistant", reply.antwort);
+                speak(reply.antwort);
+            } else {
+                setState(State.IDLE);
+                say(reply.fehler);
+            }
+        });
+        // Sofort eine kurze Rückmeldung, damit Art nicht minutenlang ins Leere wartet.
+        speak("Ich kümmere mich darum, Sir.");
     }
 
     private void remember(String role, String text) {

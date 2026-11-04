@@ -578,6 +578,87 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- ===================================================== Agent-Rückgrat -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Jarvis.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Jarvis.SectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Agent-Rückgrat" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Lange Aufgaben übernimmt ein Agent, der auf diesem Handy in Termux läuft (Claude Code). Dateien, Recherche, Zeitpläne – über dein Abo statt über das API-Guthaben. Sag „Übernimm das: …“, „Auftrag: …“, „Kümmere dich um …“ oder „Erledige …“. Im Spielmodus bleibt alles beim schnellen Weg." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAgent"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Aufträge an den Agenten geben" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Token des Agenten"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/agentTokenField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Steht auf dem Handy in ~/.jarvis-agent/token (zeigt das Einrichtungsskript am Ende an)." />
+
+                    <TextView
+                        android:id="@+id/agentInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary" />
+
+                    <Button
+                        android:id="@+id/agentTest"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Verbindung prüfen" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Einrichtung: Termux öffnen und einmal das Skript aus agent/einrichten.sh im Repo starten. Danach läuft der Agent mit dem Befehl „jarvis-agent“ – solange er nicht läuft, meldet Jarvis den Auftrag als nicht zustellbar." />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- ===================================================== Gedächtnis -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Jarvis.Card"

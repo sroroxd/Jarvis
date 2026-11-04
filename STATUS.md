@@ -36,21 +36,18 @@ vorher deinstallieren.
 | `tft-coach` | #3 | Fragen warten nie auf die Meta, Erkennung „neue Partie", schärferes Spielbild | Coaching während einer echten Partie |
 | `wachwort-jarvis` | #2 | Wachwort „Jarvis" statt „Hey Jarvis" (selbst trainiertes Modell) | Löst es im Alltag falsch aus? Wird „Jarvis" sicher erkannt? |
 | `jarvis-haende` | #1 | Erste „Hände": gemeinsame Websuche für Alltag und TFT-Meta, Kalender | Findet Jarvis Termine? Stimmen Suchergebnisse? |
-| `claude-md-doku-regeln` | #4 | Nur Textdateien: `CLAUDE.md` und diese `STATUS.md` | Nichts – reine Doku, kann ohne Test zusammengeführt werden |
+| `agent-ruckgrat` | #6 | Agent-Rückgrat: Aufträge gehen an Claude Code in Termux (Abo statt Guthaben), Brücke über `127.0.0.1`, Einstellungen, Einrichtungsskript | Termux einrichten (`agent/README.md`), dann „Übernimm das: …“ sagen: kommt eine Antwort? Bleibt der Dienst im Hintergrund stehen? |
 
-Reihenfolge der Empfehlung: erst #4 (kostet nichts), dann #2 und #1, dann #3,
-zuletzt #5.
+Reihenfolge der Empfehlung: erst #2 und #1, dann #3, dann #5, zuletzt #6.
+#4 (Doku) ist am 4. November in `main` zusammengeführt.
 
 ## Was als Nächstes kommt
 
-1. **Agenten-Rückgrat über das Claude-Abo.** Statt jede Fähigkeit einzeln in die
-   App zu bauen, läuft ein Agent auf dem Handy (Termux, Ubuntu über
-   `proot-distro`, Claude Code mit dem offiziellen Installer – es gibt keinen
-   Android-Build, auf reinem Termux bricht es ab) und übernimmt die langen
-   Aufgaben: Dateien, Suche, Kalender, Mails, Zeitpläne, erweiterbar über
-   Skill-Ordner. Die App bleibt die Oberfläche. Kostet Abo statt Guthaben.
-   Stimme, Gesprächsmodus und TFT bleiben auf dem schnellen API-Weg, weil der
-   Agent für Sprachtempo und Spielbilder zu träge ist.
+1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 liegt im Zweig `agent-ruckgrat`
+   (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
+   Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
+   Skill-Ordner im Arbeitsordner, und das automatische Erkennen von Aufgaben, die
+   zum Agenten gehören – bisher muss Art sie ausdrücklich abgeben.
 2. **Design und Bedienung.** Die Oberfläche wirkt billig und soll überarbeitet
    werden.
 3. **Stimmklon Deutsch,** näher an der Jarvis-Stimme aus den Iron-Man-Filmen.
@@ -67,3 +64,11 @@ Ausführlich in `CLAUDE.md`. Das Wichtigste:
   der Entwicklungsumgebung nicht prüfen lässt (Mikrofon, Echo, Akku,
   Erkennungsqualität), wird ausdrücklich als ungeprüft benannt.
 - Zweige und Releases löscht Art im Browser.
+
+## Agent-Rückgrat, kurz
+
+Lange Aufgaben macht nicht die App, sondern ein Agent auf demselben Handy:
+Claude Code in Termux (Ubuntu über `proot-distro`), erreichbar über
+`127.0.0.1:8777` mit Token. Das kostet Abo statt API-Guthaben. Die schnellen
+Wege (Stimme, Gespräch, Spielmodus) bleiben bei der Claude-API, weil der Agent
+dafür zu träge ist. Einrichtung und Fehlersuche: `agent/README.md`.

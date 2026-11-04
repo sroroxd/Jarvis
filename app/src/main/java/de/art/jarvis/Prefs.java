@@ -276,6 +276,50 @@ public final class Prefs {
         sp.edit().putBoolean("subtitles_top", value).apply();
     }
 
+    // ---------------------------------------------------------------- Agent-Rückgrat
+
+    /** Standard-Port des Agenten in Termux (siehe {@code agent/jarvis-agent.mjs}). */
+    public static final int DEFAULT_AGENT_PORT = 8777;
+
+    /**
+     * Aufträge an den Agenten in Termux weitergeben. Aus, solange Art den Agenten
+     * nicht eingerichtet hat – sonst liefe jeder Auftrag in einen Verbindungsfehler.
+     */
+    public boolean agentEnabled() {
+        return sp.getBoolean("agent_enabled", false);
+    }
+
+    public void setAgentEnabled(boolean value) {
+        sp.edit().putBoolean("agent_enabled", value).apply();
+    }
+
+    public int agentPort() {
+        return clamp(sp.getInt("agent_port", DEFAULT_AGENT_PORT), 1024, 65535);
+    }
+
+    public void setAgentPort(int value) {
+        sp.edit().putInt("agent_port", clamp(value, 1024, 65535)).apply();
+    }
+
+    /** Token des Agenten – steht auf dem Handy in {@code ~/.jarvis-agent/token}. */
+    public String agentToken() {
+        return sp.getString("agent_token", "").trim();
+    }
+
+    public void setAgentToken(String value) {
+        sp.edit().putString("agent_token", value == null ? "" : value.trim()).apply();
+    }
+
+    /** Vorschau fürs Anzeigen, ohne das ganze Token zu zeigen. */
+    public String agentTokenPreview() {
+        return Text.keyPreview(agentToken());
+    }
+
+    /** Der Agent ist nur nutzbar, wenn er eingeschaltet ist und ein Token vorliegt. */
+    public boolean agentReady() {
+        return agentEnabled() && !agentToken().isEmpty();
+    }
+
     private static int clamp(int v, int min, int max) {
         return Math.max(min, Math.min(max, v));
     }
