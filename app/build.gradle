@@ -67,6 +67,8 @@ dependencies {
     implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.23.2'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.13.0'
+    // WebSocket für den Gesprächsmodus – Android hat keinen eigenen Client
+    implementation 'com.squareup.okhttp3:okhttp:5.3.1'
     testImplementation 'junit:junit:4.13.2'
     // Echtes org.json für JVM-Tests (Android-Stub wirft dort)
     testImplementation 'org.json:json:20240303'
