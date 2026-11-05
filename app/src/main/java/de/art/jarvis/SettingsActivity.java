@@ -300,11 +300,28 @@ public class SettingsActivity extends AppCompatActivity {
 
     // ---------------------------------------------------------------- Wünsche an die Entwicklung
 
+    /**
+     * GitHub-Formular für einen fein eingeschränkten Schlüssel, vorausgefüllt per URL (laut GitHub-Doku:
+     * name, description, target_name, expires_in und Berechtigungen). Die Auswahl des Repos lässt
+     * GitHub nicht vorausfüllen – das tippt Art selbst an.
+     */
+    private static final String GITHUB_TOKEN_TEMPLATE = "https://github.com/settings/personal-access-tokens/new"
+            + "?name=Jarvis+W%C3%BCnsche"
+            + "&description=Jarvis+legt+W%C3%BCnsche+als+Aufgaben+in+sroroxd%2FJarvis+an"
+            + "&target_name=sroroxd&expires_in=365&issues=write";
+
     private void setupWishes() {
         b.githubTokenField.setText(prefs.githubToken());
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         b.wishList.setText(Wishes.display(prefs.wishes()));
         b.wishSend.setOnClickListener(v -> sendOpenWishes());
+        b.githubTokenCreate.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_TOKEN_TEMPLATE)));
+            } catch (Exception ignored) {
+                showResult(b.wishResult, "✗ Kein Browser gefunden.");
+            }
+        });
     }
 
     /** Schickt alle noch offenen Wünsche als Aufgaben an GitHub. */

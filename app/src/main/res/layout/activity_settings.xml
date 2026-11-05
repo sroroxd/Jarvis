@@ -639,7 +639,15 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="github.com → Settings → Developer settings → Fine-grained tokens → Generate: nur Repository sroroxd/Jarvis, Berechtigung „Issues: Read and write“. Ohne Schlüssel werden Wünsche nur hier gesammelt." />
+                        android:text="Der Knopf öffnet GitHub mit allem vorausgefüllt. Dort nur noch „Only select repositories“ → sroroxd/Jarvis wählen und „Generate token“ tippen, dann den Schlüssel hier einfügen. Ohne Schlüssel werden Wünsche nur hier gesammelt." />
+
+                    <Button
+                        android:id="@+id/githubTokenCreate"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Schlüssel bei GitHub anlegen" />
 
                     <TextView
                         android:id="@+id/wishList"
