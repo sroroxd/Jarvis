@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Echo- und Rauschunterdrückung fürs Dazwischenreden; normale Berechtigung, ohne Nachfrage. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Gesprächsmodus: MODE_IN_COMMUNICATION setzen, damit die Echo-Unterdrückung greift -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

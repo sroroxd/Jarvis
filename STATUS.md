@@ -48,19 +48,19 @@ zusammengeführt. `main` bekommt damit genau den Stand, den Art getestet hat.
 
 ### Testliste für Art
 
-1. **Wachwort:** „Jarvis“ sagen – hört er zu? Löst er im Alltag falsch aus?
-2. **Hände:** „Was steht morgen in meinem Kalender?“, „Trag mir Freitag 18 Uhr
-   Training ein“, eine Frage, die eine Websuche braucht.
-3. **TFT:** „Spielmodus an“ – antwortet er sofort? In einer Partie fragen,
-   „Neue Partie“ sagen.
-4. **Dauergespräch (Claude):** einmal auf den Kern tippen – ab dann nach jeder
-   Antwort von selbst weiter zuhören, ohne erneut zu tippen. Nochmal tippen oder
-   „Gespräch beenden“ beendet es; nach 15 Minuten ohne Wort endet es von selbst.
-   Auch per Sprache: „Hör durchgehend zu“ oder in eigenen Worten (Claude schaltet
-   dann selbst). Mit geteiltem Bildschirm bekommt jede Frage ein frisches Bild.
-   Bildschirm nachträglich freigeben: oben auf „Bildschirm“ tippen.
-5. **Agent:** Termux einrichten (`agent/README.md`), Token eintragen, „Übernimm
-   das: leg mir eine Datei einkaufsliste.txt mit Milch und Brot an“.
+Getestet am 5. Nov. (Test-Build 50, Video): Dauergespräch läuft – „Sprach-Thematik
+vorerst okay“. Daraus drei Wünsche, umgesetzt ab Test-Build 51:
+
+1. **Dazwischenreden:** Im Dauergespräch während Jarvis spricht einfach losreden –
+   bricht er sofort ab und hört zu? Unterbricht er sich selbst (Lautsprecher laut)?
+   Dann Einstellungen → „Dazwischenreden unterbricht Jarvis“ aus und Bescheid geben.
+2. **TFT-Coach:** keine Optionen, ein Befehl mit „Danach:“; Reihenfolge
+   Taktikerleben → Gold → Stufe → Ziel-Comp; gezielte Rückfrage statt Raten.
+3. **Wünsche direkt ins Repo:** GitHub-Schlüssel eintragen (Einstellungen →
+   „Wünsche an die Entwicklung“), dann „Notier für die Entwicklung: …“ sagen oder
+   einen Wunsch in eigenen Worten äußern → erscheint als Issue „Wunsch: …“.
+
+Weiter offen: Wachwort im Alltag, Hände (Kalender, Websuche), Agent in Termux.
 
 ## Aufräumen (geprüft am 4. November)
 

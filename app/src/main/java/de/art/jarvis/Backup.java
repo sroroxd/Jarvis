@@ -42,11 +42,14 @@ final class Backup {
             o.put("apiKey", p.apiKey());
             o.put("elevenKey", p.elevenKey());
             o.put("agentToken", p.agentToken());
+            o.put("githubToken", p.githubToken());
         }
         o.put("agent", p.agentEnabled());
+        o.put("wishes", p.wishes());
         o.put("wakeWord", p.wakeWord());
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
+        o.put("bargeIn", p.bargeIn());
         o.put("floatingJ", p.floatingJ());
         o.put("subtitles", p.subtitles());
         o.put("subtitlesGame", p.subtitlesInGame());
@@ -76,9 +79,13 @@ final class Backup {
         String agentToken = o.optString("agentToken", "");
         if (!agentToken.isEmpty()) p.setAgentToken(agentToken);
         p.setAgentEnabled(o.optBoolean("agent", false));
+        String githubToken = o.optString("githubToken", "");
+        if (!githubToken.isEmpty()) p.setGithubToken(githubToken);
+        if (o.has("wishes")) p.setWishes(o.optString("wishes", ""));
         p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));
+        p.setBargeIn(o.optBoolean("bargeIn", true));
         p.setFloatingJ(o.optBoolean("floatingJ", false));
         p.setSubtitles(o.optBoolean("subtitles", true));
         p.setSubtitlesInGame(o.optBoolean("subtitlesGame", false));

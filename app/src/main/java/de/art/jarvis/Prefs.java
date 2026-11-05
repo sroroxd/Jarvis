@@ -276,6 +276,41 @@ public final class Prefs {
         sp.edit().putBoolean("subtitles_top", value).apply();
     }
 
+    // ---------------------------------------------------------------- Dazwischenreden
+
+    /** Im Dauergespräch unterbricht Arts Stimme Jarvis sofort (Standard an). */
+    public boolean bargeIn() {
+        return sp.getBoolean("barge_in", true);
+    }
+
+    public void setBargeIn(boolean value) {
+        sp.edit().putBoolean("barge_in", value).apply();
+    }
+
+    // ---------------------------------------------------------------- Wünsche an die Entwicklung
+
+    /** GitHub-Schlüssel (fine-grained, nur sroroxd/Jarvis, „Issues: Read and write“). */
+    public String githubToken() {
+        return sp.getString("github_token", "").trim();
+    }
+
+    public void setGithubToken(String value) {
+        sp.edit().putString("github_token", Text.cleanKey(value)).apply();
+    }
+
+    public String githubTokenPreview() {
+        return Text.keyPreview(githubToken());
+    }
+
+    /** Notierte Wünsche, Format siehe {@link Wishes}. */
+    public String wishes() {
+        return sp.getString("wishes", "");
+    }
+
+    public void setWishes(String value) {
+        sp.edit().putString("wishes", value == null ? "" : value).apply();
+    }
+
     // ---------------------------------------------------------------- Agent-Rückgrat
 
     /** Standard-Port des Agenten in Termux (siehe {@code agent/jarvis-agent.mjs}). */

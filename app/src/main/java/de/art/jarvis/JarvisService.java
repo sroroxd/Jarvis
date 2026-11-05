@@ -164,6 +164,10 @@ public class JarvisService extends Service {
     /** Aufeinanderfolgende Erkennungsfehler im Dauergespräch – für das Zurückweichen. */
     private int continuousErrors;
     private final Runnable relisten = this::relistenIfContinuous;
+    /** Dazwischenreden: lauscht, während Jarvis im Dauergespräch spricht. */
+    private BargeIn bargeIn;
+    /** Wünsche an die Entwicklung → GitHub-Issues. */
+    private WishSender wishSender;
     /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
     private int agentJobId;
     private ElevenTts eleven;
@@ -239,6 +243,8 @@ public class JarvisService extends Service {
         agent = new AgentClient();
         eleven = new ElevenTts(this);
         earcon = new Earcon();
+        bargeIn = new BargeIn(this::onArtSpeaks);
+        wishSender = new WishSender();
         subtitles = new Subtitles(this);
         wm = getSystemService(WindowManager.class);
         wake = new WakeWordEngine(this, new WakeWordEngine.Listener() {
@@ -314,6 +320,7 @@ public class JarvisService extends Service {
             receiverRegistered = false;
         }
         wake.release();
+        bargeIn.stop(null);
         destroyRecognizer();
         eleven.stop();
         earcon.release();
@@ -505,6 +512,27 @@ public class JarvisService extends Service {
             main.removeCallbacks(resumeWake);
             main.postDelayed(resumeWake, 350);
         }
+        // Dazwischenreden: Spricht Jarvis im Dauergespräch, lauscht ein eigenes Mikrofon mit
+        // Echo-Unterdrückung, ob Art anfängt zu reden. Es ersetzt dann das Wachwort-Mikrofon,
+        // weil zwei Aufnahmen gleichzeitig sich gegenseitig stören können.
+        if (s == State.SPEAKING && old != State.SPEAKING && bargeInWanted()) {
+            wake.stop(() -> {
+                if (state == State.SPEAKING && bargeInWanted() && running) bargeIn.start();
+            });
+        } else if (s != State.SPEAKING) {
+            bargeIn.stop(null);
+        }
+    }
+
+    private boolean bargeInWanted() {
+        return continuous && prefs.bargeIn() && micGranted();
+    }
+
+    /** Art redet dazwischen: Stimme sofort aus, zuhören. */
+    private void onArtSpeaks() {
+        if (!running || !continuous || state != State.SPEAKING) return;
+        stopSpeaking();
+        startListening(true);
     }
 
     private void notifyUi() {
@@ -525,7 +553,8 @@ public class JarvisService extends Service {
 
     private void updateWake() {
         boolean should = running && prefs.wakeWord() && micGranted() && screenAwake
-                && state != State.LISTENING && wakeProblem == null;
+                && state != State.LISTENING && wakeProblem == null
+                && !(state == State.SPEAKING && bargeInWanted()); // dann lauscht das Dazwischenreden
         if (should) wake.start();
         else wake.stop(null);
     }
@@ -632,10 +661,10 @@ public class JarvisService extends Service {
         if (prefs.earcon() && !quiet) earcon.play();
         if (prefs.tftMode()) subtitles.hide(); // alte Antwort weg, Spielbild frei
         status("Ich höre …");
-        // Erst das Wachwort-Mikrofon freigeben, dann übernimmt die Spracherkennung.
-        wake.stop(() -> {
+        // Erst die Mikrofone freigeben (Dazwischenreden, Wachwort), dann übernimmt die Spracherkennung.
+        bargeIn.stop(() -> wake.stop(() -> {
             if (state == State.LISTENING) beginRecognition();
-        });
+        }));
     }
 
     /**
@@ -910,6 +939,12 @@ public class JarvisService extends Service {
             speak(local.reply);
             return;
         }
+        // „Notier für die Entwicklung: …“ – Wunsch direkt als Aufgabe ins Repo, ohne Umweg über Claude.
+        String wish = Wishes.command(text);
+        if (wish != null) {
+            noteWish(Wishes.titleFrom(wish), wish, true);
+            return;
+        }
         // Lange Aufgaben gibt Art ausdrücklich ab („Übernimm das: …“). Die macht der
         // Agent in Termux über Claude Code – das zählt gegen das Abo, nicht gegen das
         // API-Guthaben. Im Spielmodus nie: der Agent braucht Sekunden bis Minuten.
@@ -976,7 +1011,7 @@ public class JarvisService extends Service {
         // Werkzeuge (Websuche, Kalender) nur im Alltag mit Claude – der Spielmodus bleibt schnell und nutzt die Tages-Meta.
         boolean withTools = !prefs.tftMode() && !prefs.isGemini();
         String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate(),
-                withTools);
+                withTools, prefs.agentReady());
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
@@ -986,6 +1021,10 @@ public class JarvisService extends Service {
                 Boolean dauer = Commands.continuousTag(answer);
                 answer = Commands.stripControlTags(answer);
                 if (dauer != null) setContinuousFromAnswer(dauer);
+                // Wünsche, die Art in eigenen Worten geäußert hat – Claude meldet sie per Steuerzeile.
+                java.util.List<String[]> wishes = Wishes.tags(answer);
+                answer = Wishes.stripTags(answer);
+                for (String[] w : wishes) noteWish(w[0], w[1], false);
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
                 prefs.setMemory(tagged.memory);
                 Backup.autoSave(JarvisService.this, prefs);
@@ -1100,6 +1139,34 @@ public class JarvisService extends Service {
             return;
         }
         startListening(true);
+    }
+
+    // ---------------------------------------------------------------- Wünsche an die Entwicklung
+
+    /**
+     * Notiert einen Wunsch und legt ihn als GitHub-Issue an, wenn ein Schlüssel da ist.
+     * @param confirm selbst bestätigen (beim Sprachbefehl); bei der Steuerzeile bestätigt Claude schon.
+     */
+    private void noteWish(String title, String body, boolean confirm) {
+        prefs.setWishes(Wishes.add(prefs.wishes(), title, body));
+        Backup.autoSave(this, prefs);
+        String token = prefs.githubToken();
+        if (confirm) {
+            setState(State.IDLE);
+            speak(token.isEmpty()
+                    ? "Notiert, Sir. Damit es direkt als Aufgabe an die Entwicklung geht, fehlt noch der GitHub-Schlüssel in den Einstellungen."
+                    : "Notiert, Sir. Ich gebe es als Aufgabe an die Entwicklung weiter.");
+        }
+        if (token.isEmpty()) return;
+        wishSender.send(token, title, body, today(), (issue, error) -> {
+            if (issue > 0) {
+                prefs.setWishes(Wishes.markSent(prefs.wishes(), title, issue));
+                Backup.autoSave(this, prefs);
+                publishExchange(null, "Als Aufgabe #" + issue + " an die Entwicklung: " + title);
+            } else {
+                publishExchange(null, "Wunsch notiert, aber nicht gesendet: " + error);
+            }
+        });
     }
 
     private void remember(String role, String text) {

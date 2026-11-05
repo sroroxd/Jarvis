@@ -62,6 +62,7 @@ public class SettingsActivity extends AppCompatActivity {
         setupVoice();
         setupDisplay();
         setupGame();
+        setupWishes();
         setupAgent();
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
@@ -132,6 +133,11 @@ public class SettingsActivity extends AppCompatActivity {
 
         b.switchEarcon.setChecked(prefs.earcon());
         b.switchEarcon.setOnCheckedChangeListener((v, on) -> prefs.setEarcon(on));
+        b.switchBargeIn.setChecked(prefs.bargeIn());
+        b.switchBargeIn.setOnCheckedChangeListener((v, on) -> {
+            prefs.setBargeIn(on);
+            refreshService();
+        });
 
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         b.pauseValue.setText(seconds(prefs.pauseMs() / 1000f));
@@ -292,6 +298,47 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+    // ---------------------------------------------------------------- Wünsche an die Entwicklung
+
+    private void setupWishes() {
+        b.githubTokenField.setText(prefs.githubToken());
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
+        b.wishList.setText(Wishes.display(prefs.wishes()));
+        b.wishSend.setOnClickListener(v -> sendOpenWishes());
+    }
+
+    /** Schickt alle noch offenen Wünsche als Aufgaben an GitHub. */
+    private void sendOpenWishes() {
+        prefs.setGithubToken(text(b.githubTokenField));
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
+        String token = prefs.githubToken();
+        if (token.isEmpty()) {
+            showResult(b.wishResult, "✗ Erst den GitHub-Schlüssel eintragen.");
+            return;
+        }
+        java.util.List<Wishes.Wish> open = new java.util.ArrayList<>();
+        for (Wishes.Wish w : Wishes.load(prefs.wishes())) if (w.open()) open.add(w);
+        if (open.isEmpty()) {
+            showResult(b.wishResult, "Keine offenen Wünsche.");
+            return;
+        }
+        showResult(b.wishResult, "Sende " + open.size() + " …");
+        WishSender sender = new WishSender();
+        int[] left = {open.size()};
+        String[] lastError = {null};
+        for (Wishes.Wish w : open) {
+            sender.send(token, w.title, w.body, JarvisService.today(), (issue, error) -> {
+                if (issue > 0) prefs.setWishes(Wishes.markSent(prefs.wishes(), w.title, issue));
+                else lastError[0] = error;
+                if (--left[0] == 0) {
+                    Backup.autoSave(this, prefs);
+                    b.wishList.setText(Wishes.display(prefs.wishes()));
+                    showResult(b.wishResult, lastError[0] == null ? "✓ Alle gesendet." : "✗ " + lastError[0]);
+                }
+            });
+        }
+    }
+
     // ---------------------------------------------------------------- Agent-Rückgrat
 
     private void setupAgent() {
@@ -386,6 +433,7 @@ public class SettingsActivity extends AppCompatActivity {
     /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
     private void refreshFromPrefs() {
         updateAgentInfo();
+        b.wishList.setText(Wishes.display(prefs.wishes()));
         b.switchBackupKeys.setChecked(prefs.backupKeys());
         b.memoryField.setText(prefs.memory());
         b.modelField.setText(prefs.rawModel());
@@ -393,6 +441,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.switchWake.setChecked(prefs.wakeWord());
         setSlider(b.sliderSensitivity, prefs.sensitivity());
         b.switchEarcon.setChecked(prefs.earcon());
+        b.switchBargeIn.setChecked(prefs.bargeIn());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         setSlider(b.sliderRate, prefs.rate());
         setSlider(b.sliderPitch, prefs.pitch());
@@ -446,6 +495,8 @@ public class SettingsActivity extends AppCompatActivity {
         prefs.setModel(model);
         prefs.setMemory(text(b.memoryField));
         prefs.setAgentToken(text(b.agentTokenField));
+        prefs.setGithubToken(text(b.githubTokenField));
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
         Backup.autoSave(this, prefs);

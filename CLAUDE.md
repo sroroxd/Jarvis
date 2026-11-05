@@ -19,6 +19,13 @@ Besitzer des Projekts: Art. Antworten und Commit-Texte auf Deutsch.
 - Nichts als erledigt melden, was nicht gebaut oder getestet wurde. Wenn Tests in
   der Umgebung nicht laufen können, das ausdrücklich dazuschreiben.
 
+## Wünsche aus der App
+
+Art spricht Verbesserungswünsche direkt mit Jarvis ab; die App legt sie als
+GitHub-Issues mit dem Titel „Wunsch: …“ an. Zu Beginn jeder Sitzung die offenen
+Issues prüfen (`gh api repos/sroroxd/Jarvis/issues`) und als Aufträge behandeln:
+umsetzen, im Pull Request mit „Closes #N“ verknüpfen.
+
 ## Doku-Regeln (Context7)
 
 Für Fragen zu Bibliotheken und APIs zuerst Context7 nutzen, direkt mit der
