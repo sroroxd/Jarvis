@@ -1,6 +1,7 @@
 name: Jarvis APK bauen
 
-# Jeder Zweig wird gebaut und getestet. Veröffentlicht wird nur, was auf „main“ landet.
+# Jeder Zweig wird gebaut, mit den automatischen Tests geprüft und im Emulator getestet.
+# Erst wenn beides bestanden ist, wird eine APK veröffentlicht – Art bekommt nur geprüfte Dateien.
 on:
   push:
     branches: [ '**' ]
@@ -29,23 +30,99 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      # Erst die automatischen Tests (inkl. Wachwort-Erkennung mit echten Aufnahmen), dann die APK.
-      # Schlägt ein Test fehl, wird nichts veröffentlicht.
+      # Erst die automatischen Tests (inkl. Wachwort-Erkennung mit echten Aufnahmen), dann die APKs.
       # main baut die normale App. Jeder andere Zweig baut die separate Test-App („Jarvis Test“),
       # die sich neben die normale App installiert, statt sie zu überschreiben.
-      - name: Tests und APK bauen
+      # Die Debug-APK enthält alle Architekturen und läuft im Emulator; die Release-APK ist nur arm64 (Handy).
+      - name: Tests und APKs bauen
         run: |
           set -o pipefail
           variant=""
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then variant="-PtestApp"; fi
-          if ! gradle --no-daemon $variant :wakeword:test testDebugUnitTest assembleRelease 2>&1 | tee build.log; then
+          if ! gradle --no-daemon $variant :wakeword:test testDebugUnitTest assembleRelease assembleDebug 2>&1 | tee build.log; then
             msg=$(grep -E "error:|FAILED|AssertionError|expected|What went wrong" build.log | head -40 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Build oder Tests fehlgeschlagen::$msg"
             exit 1
           fi
 
+      - name: APKs ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          retention-days: 3
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/debug/app-debug.apk
+
+  geraetetest:
+    # Die App im Android-Emulator installieren, starten, bedienen und auf Abstürze und Hänger prüfen.
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Code holen
+        uses: actions/checkout@v5
+
+      - name: APKs holen
+        uses: actions/download-artifact@v4
+        with:
+          name: apks
+          path: apks
+
+      - name: KVM freischalten
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Im Emulator testen
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            if [ "$GITHUB_REF" = "refs/heads/main" ]; then pkg=de.art.jarvis; else pkg=de.art.jarvis.test; fi; bash .github/scripts/geraetetest.sh "$pkg" "$(find apks -name app-debug.apk | head -1)"
+
+      - name: Ergebnis im Protokoll zeigen
+        if: always()
+        run: cat shots/geraetetest.txt 2>/dev/null || echo "Kein Bericht – der Emulator kam nicht hoch."
+
+      # Bildschirmfotos und Bericht für Claude und Art – auch wenn der Test fehlschlägt (dann erst recht).
+      - name: Bilder und Bericht hochladen
+        if: always()
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: vorschau
+          name: Gerätetest im Emulator (nicht installieren)
+          prerelease: true
+          make_latest: false
+          files: |
+            shots/*.png
+            shots/*.txt
+          body: |
+            Gerätetest vom Arbeitsstand „${{ github.ref_name }}“ (Build ${{ github.run_number }}): Bildschirmfotos,
+            Bericht (geraetetest.txt) und Fehlerprotokoll. Keine App zum Installieren.
+
+  veroeffentlichen:
+    # Nur wenn Tests UND Gerätetest bestanden sind.
+    needs: [ build, geraetetest ]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: APKs holen
+        uses: actions/download-artifact@v4
+        with:
+          name: apks
+          path: apks
+
       - name: APK umbenennen
-        run: cp app/build/outputs/apk/release/app-release.apk Jarvis.apk
+        run: |
+          cp "$(find apks -name app-release.apk | head -1)" Jarvis.apk
+          cp Jarvis.apk JarvisTest.apk
 
       - name: Als Release veröffentlichen
         if: github.ref == 'refs/heads/main'
@@ -57,13 +134,10 @@ jobs:
           files: Jarvis.apk
           body: |
             Jarvis.apk herunterladen und installieren – wird über die vorherige Version installiert.
+            Im Emulator getestet: installiert, gestartet, bedient, kein Absturz.
 
       # Test-App eines Arbeitszweigs: eigene Vorab-Version „test-<Zweig>“. Wird nie als „neueste Version“
       # markiert – der normale Download-Link (latest) zeigt weiter auf die main-App.
-      - name: Test-App umbenennen
-        if: github.ref != 'refs/heads/main'
-        run: cp Jarvis.apk JarvisTest.apk
-
       - name: Test-App veröffentlichen
         if: github.ref != 'refs/heads/main'
         uses: softprops/action-gh-release@v3
@@ -76,6 +150,7 @@ jobs:
           make_latest: false
           files: JarvisTest.apk
           body: |
-            Test-App vom Arbeitszweig „${{ github.ref_name }}“. Installiert sich NEBEN der normalen Jarvis-App
-            (eigenes Symbol „Jarvis Test“, eigene Einstellungen) und überschreibt sie nicht.
+            Test-App vom Arbeitszweig „${{ github.ref_name }}“, im Emulator getestet (installiert, gestartet,
+            bedient, kein Absturz). Installiert sich NEBEN der normalen Jarvis-App (eigenes Symbol „Jarvis Test“,
+            eigene Einstellungen) und überschreibt sie nicht.
             Bitte immer nur eine der beiden Apps einschalten – sonst reagieren beide auf das Wachwort.
