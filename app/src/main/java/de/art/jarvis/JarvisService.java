@@ -248,7 +248,8 @@ public class JarvisService extends Service {
         agent = new AgentClient();
         eleven = new ElevenTts(this);
         earcon = new Earcon();
-        bargeIn = new BargeIn(this::onArtSpeaks);
+        // Eigener Wachwort-Erkenner fürs Dazwischenreden: „Jarvis“ unterbricht auch im Dauergespräch.
+        bargeIn = new BargeIn(this::onArtSpeaks, () -> WakeWordEngine.load(getAssets()));
         wishSender = new WishSender();
         subtitles = new Subtitles(this);
         wm = getSystemService(WindowManager.class);
@@ -334,7 +335,7 @@ public class JarvisService extends Service {
             receiverRegistered = false;
         }
         wake.release();
-        bargeIn.stop(null);
+        bargeIn.release();
         destroyRecognizer();
         eleven.stop();
         earcon.release();
@@ -528,11 +529,16 @@ public class JarvisService extends Service {
         }
         // Dazwischenreden: Spricht Jarvis im Dauergespräch, lauscht ein eigenes Mikrofon mit
         // Echo-Unterdrückung, ob Art anfängt zu reden. Es ersetzt dann das Wachwort-Mikrofon,
-        // weil zwei Aufnahmen gleichzeitig sich gegenseitig stören können.
-        if (s == State.SPEAKING && old != State.SPEAKING && bargeInWanted()) {
-            wake.stop(() -> {
-                if (state == State.SPEAKING && bargeInWanted() && running) bargeIn.start();
-            });
+        // weil zwei Aufnahmen gleichzeitig sich gegenseitig stören können – und hört dafür selbst auf „Jarvis“.
+        if (s == State.SPEAKING && old != State.SPEAKING) {
+            // Die Echo-Schranke lernt erst, wenn die Stimme wirklich zu hören ist (siehe onVoiceStarted).
+            bargeIn.newUtterance();
+            if (bargeInWanted()) {
+                bargeIn.setWakeThreshold(prefs.wakeWord() ? Prefs.thresholdFor(prefs.sensitivity()) : -1f);
+                wake.stop(() -> {
+                    if (state == State.SPEAKING && bargeInWanted() && running) bargeIn.start();
+                });
+            }
         } else if (s != State.SPEAKING) {
             bargeIn.stop(null);
         }
@@ -660,7 +666,7 @@ public class JarvisService extends Service {
     /** @param quiet ohne Signalton – im Dauergespräch soll nicht nach jeder Antwort ein Ton kommen. */
     private void startListening(boolean quiet) {
         if (!micGranted()) {
-            say("Mir fehlt die Mikrofon-Berechtigung. Bitte öffne die Jarvis-App.");
+            say("Mir fehlt die Mikrofon-Berechtigung. Bitte öffnen Sie die Jarvis-App.");
             return;
         }
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -786,11 +792,11 @@ public class JarvisService extends Service {
                 }
                 if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
                     // Nach „Jarvis“ ohne Frage einfach still zurück in Bereitschaft.
-                    statusBriefly(heardSomething ? "Ich habe dich nicht verstanden." : "Ich habe nichts gehört.");
+                    statusBriefly(heardSomething ? "Ich habe Sie nicht verstanden." : "Ich habe nichts gehört.");
                 } else {
                     String msg = "Die Spracherkennung meldet Fehler " + error + ".";
                     if (prefs.tftMode()) say(msg);
-                    else statusBriefly(msg + " Versuch es einfach nochmal.");
+                    else statusBriefly(msg + " Versuchen Sie es einfach noch einmal.");
                 }
             }
         });
@@ -972,7 +978,7 @@ public class JarvisService extends Service {
         String key = prefs.apiKey();
         if (key.isEmpty()) {
             setState(State.IDLE);
-            say("Mir fehlt noch der API-Schlüssel. Bitte trag ihn in den Jarvis-Einstellungen ein.");
+            say("Mir fehlt noch der API-Schlüssel. Bitte tragen Sie ihn in den Jarvis-Einstellungen ein.");
             return;
         }
         long now = System.currentTimeMillis();
@@ -1044,8 +1050,12 @@ public class JarvisService extends Service {
                 answer = Wishes.stripTags(answer);
                 for (String[] w : wishes) noteWish(w[0], w[1], false);
                 Memory.Outcome tagged = Memory.tags(answer, prefs.memory());
-                prefs.setMemory(tagged.memory);
-                Backup.autoSave(JarvisService.this, prefs);
+                // Nur bei echter Änderung speichern: Die Sicherungsdatei wurde sonst nach JEDER Antwort neu
+                // geschrieben – auf dem Haupt-Thread, direkt bevor Jarvis zu sprechen beginnt.
+                if (!tagged.memory.equals(prefs.memory())) {
+                    prefs.setMemory(tagged.memory);
+                    Backup.autoSave(JarvisService.this, prefs);
+                }
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
                 ClaudeClient.Usage used = prefs.isGemini() ? null : ClaudeClient.lastUsage;
                 testLog("antwort [" + (used == null ? "?" : used.summary()) + "]: " + answer);
@@ -1294,6 +1304,7 @@ public class JarvisService extends Service {
 
     /** Erster Ton einer Antwort: Messung abschließen und auf dem Startbildschirm zeigen. */
     private void onVoiceStarted() {
+        bargeIn.voiceStarted(); // ab jetzt lernt die Echo-Schranke Jarvis' eigene Stimme
         if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
             ClaudeClient.Usage usage = prefs.isGemini() ? null : ClaudeClient.lastUsage;
             lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary()) + ")";

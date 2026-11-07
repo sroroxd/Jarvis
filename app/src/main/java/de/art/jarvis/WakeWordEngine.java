@@ -177,7 +177,8 @@ final class WakeWordEngine {
         }
     }
 
-    private static WakeWordDetector load(AssetManager assets) throws Exception {
+    /** Lädt die drei Modelle. Auch fürs Dazwischenreden ({@link BargeIn}), das einen eigenen Erkenner hält. */
+    static WakeWordDetector load(AssetManager assets) throws Exception {
         return new WakeWordDetector(
                 read(assets, DIR + "melspectrogram.onnx"),
                 read(assets, DIR + "embedding_model.onnx"),

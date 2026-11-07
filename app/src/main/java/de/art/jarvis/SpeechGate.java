@@ -6,9 +6,17 @@ package de.art.jarvis;
  * Reine Java-Logik ohne Android, damit sie in den automatischen Tests läuft.
  *
  * Das Problem: Das Mikrofon hört auch Jarvis' eigene Stimme. Selbst mit der Echo-Unterdrückung des
- * Handys bleibt ein Rest. Deshalb lernt die Schranke in der ersten halben Sekunde, wie laut dieser
- * Rest ist, und schlägt erst an, wenn es deutlich lauter wird – und zwar nicht nur kurz (Klopfen,
- * Klick), sondern über gut eine Viertelsekunde hinweg.
+ * Handys bleibt ein Rest. Deshalb lernt die Schranke, wie laut dieser Rest ist, und schlägt erst an,
+ * wenn es deutlich lauter wird – und zwar nicht nur kurz (Klopfen, Klick), sondern über gut eine
+ * Viertelsekunde hinweg.
+ *
+ * Zwei Fehler der ersten Fassung, beide in der Simulation nachgestellt (siehe SpeechGateTest):
+ * - Gelernt wurde ab dem ersten Block. Kam die Stimme erst später (Sprachausgabe braucht einen Moment,
+ *   ElevenLabs lädt erst), lernte die Schranke Stille – und Jarvis' erster Satz brach sie auf.
+ *   Jetzt beginnt das Lernen erst mit {@link #voiceStarted()} (spätestens nach {@link #MAX_WAIT_FRAMES}).
+ * - In jeder Sprechpause zwischen zwei Sätzen sank die Echo-Schätzung Richtung Stille. Ab etwa 300 ms
+ *   Pause hielt die Schranke den nächsten Satz für Art und brach ab („liest nur den ersten Satz vor“,
+ *   Wünsche #11, #18, #20). Jetzt sinkt die Schätzung nie; sie steigt nur, wenn das Echo lauter wird.
  *
  * Arbeitet in Blöcken von 20 ms (320 Werte bei 16 kHz).
  */
@@ -18,32 +26,55 @@ final class SpeechGate {
     static final int FRAME = 320;
     /** 800 ms lang den Pegel des eigenen Echos lernen, bevor überhaupt etwas anschlagen kann. */
     static final int WARMUP_FRAMES = 40;
+    /**
+     * Kommt kein Startsignal der Stimme, beginnt das Lernen spätestens nach 5 s – dann ist sie sicher zu hören.
+     * Bis dahin schlägt nichts an.
+     */
+    static final int MAX_WAIT_FRAMES = 250;
     /** Betrachtetes Fenster: 300 ms … */
     static final int WINDOW = 15;
     /** … davon müssen mindestens 260 ms laut sein. */
     static final int NEEDED = 13;
     /**
-     * So viel lauter als das gelernte Echo muss Art sein. 14 dB statt 10: Jarvis' Sätze und der
-     * Spielsound schwanken um 10 dB, das darf nicht als Art zählen (Wunsch #10, #11).
+     * So viel lauter als das gelernte Echo muss Art sein. Die 14 dB der Vorversion waren eine Reaktion auf
+     * Selbstabbrüche, deren eigentliche Ursache die sinkende Echo-Schätzung war. Mit festgehaltener
+     * Schätzung reichen 10 dB – Art muss nicht mehr schreien, um Jarvis zu unterbrechen (Wünsche #17, #19).
      */
-    static final double MARGIN_DB = 14;
+    static final double MARGIN_DB = 10;
     /** Darunter ist es auf jeden Fall keine Stimme direkt am Handy. */
     static final double MIN_SPEECH_DB = -40;
+    /** Wie schnell die Echo-Schätzung einem lauter werdenden Echo folgt (je 20-ms-Block). */
+    static final double RISE = 0.1;
 
     private final double[] warmup = new double[WARMUP_FRAMES];
     private final boolean[] window = new boolean[WINDOW];
-    private int frames;
+    /** Wird vom Haupt-Thread gesetzt, gelesen vom Aufnahme-Thread. */
+    private volatile boolean voiceStarted;
+    private int waited;
+    private int learned;
     private int windowPos;
     private int loudInWindow;
     private double echoDb = -90;
 
     /** Setzt alles zurück – bei jeder neuen Antwort, denn Lautstärke und Umgebung ändern sich. */
     void reset() {
-        frames = 0;
+        voiceStarted = false;
+        waited = 0;
+        learned = 0;
         windowPos = 0;
         loudInWindow = 0;
         echoDb = -90;
         java.util.Arrays.fill(window, false);
+    }
+
+    /** Jarvis' Stimme ist gerade angelaufen: ab jetzt das Echo lernen. Darf von jedem Thread kommen. */
+    void voiceStarted() {
+        voiceStarted = true;
+    }
+
+    /** Hat die Schranke fertig gelernt und kann anschlagen? */
+    boolean armed() {
+        return learned >= WARMUP_FRAMES;
     }
 
     /** Aktuelle Schwelle in dBFS (für Anzeige und Tests). */
@@ -56,16 +87,21 @@ final class SpeechGate {
      */
     boolean feed(short[] pcm, int offset, int length) {
         double db = dbfs(pcm, offset, length);
-        if (frames < WARMUP_FRAMES) {
-            warmup[frames++] = db;
-            if (frames == WARMUP_FRAMES) echoDb = percentile(warmup, 0.95);
+        if (learned < WARMUP_FRAMES) {
+            // Vor dem Start der Stimme nichts lernen – sonst hält die Schranke Stille für das Echo.
+            if (!voiceStarted && waited < MAX_WAIT_FRAMES) {
+                waited++;
+                return false;
+            }
+            warmup[learned++] = db;
+            if (learned == WARMUP_FRAMES) echoDb = percentile(warmup, 0.95);
             return false;
         }
-        frames++;
         boolean loud = db >= thresholdDb();
-        // Leise Blöcke führen die Echo-Schätzung langsam nach (Jarvis spricht mal lauter, mal leiser).
-        // Laute Blöcke nicht – sonst lernte die Schranke Arts Stimme als „Echo“.
-        if (!loud) echoDb = 0.95 * echoDb + 0.05 * db;
+        // Wird das Echo lauter (Jarvis spricht lauter, Spielsound), zieht die Schätzung nach – aber nur mit
+        // Blöcken unter der Schwelle, sonst lernte sie Arts Stimme als „Echo“. Nach unten geht sie NIE:
+        // Sprechpausen zwischen Sätzen sind leise und ließen die Schwelle sonst bis zum nächsten Satz absacken.
+        if (!loud && db > echoDb) echoDb += RISE * (db - echoDb);
         if (window[windowPos]) loudInWindow--;
         window[windowPos] = loud;
         if (loud) loudInWindow++;

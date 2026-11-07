@@ -255,9 +255,16 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     mode = ReactorView.Mode.SPEAKING;
                     label = "SPRICHT";
                     status = "Spreche …";
-                    detail = live ? (prefs.wakeWord() ? "„Jarvis“ unterbricht · Antippen beendet das Dauergespräch."
-                                    : "Antippen beendet das Dauergespräch.")
-                            : prefs.wakeWord() ? "Antippen oder „Jarvis“ unterbricht." : "Antippen unterbricht.";
+                    if (live) {
+                        // Im Dauergespräch unterbricht (mit „Dazwischenreden“) auch einfaches Losreden.
+                        String interrupt = prefs.bargeIn()
+                                ? (prefs.wakeWord() ? "Losreden oder „Jarvis“ unterbricht" : "Losreden unterbricht")
+                                : (prefs.wakeWord() ? "„Jarvis“ unterbricht" : "");
+                        detail = interrupt.isEmpty() ? "Antippen beendet das Dauergespräch."
+                                : interrupt + " · Antippen beendet das Dauergespräch.";
+                    } else {
+                        detail = prefs.wakeWord() ? "Antippen oder „Jarvis“ unterbricht." : "Antippen unterbricht.";
+                    }
                     break;
                 default:
                     mode = ReactorView.Mode.IDLE;
