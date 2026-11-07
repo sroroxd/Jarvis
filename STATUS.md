@@ -7,7 +7,7 @@ wird der zu lang, fängt er einen neuen an. Claude liest zu Beginn jeder Sitzung
 aktuellen Stand – egal, in welchem Fenster.
 
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
-4. November 2026.
+7. November 2026.
 
 ## Was auf `main` läuft
 
@@ -90,6 +90,35 @@ Nach dem Zusammenführen von #7 können die Zweige `wachwort-jarvis`,
    werden.
 3. **Stimmklon Deutsch,** näher an der Jarvis-Stimme aus den Iron-Man-Filmen.
 4. **TFT-Live-Bild** statt einzelner Bildschirmfotos pro Frage.
+
+## Verfeinerung – Recherche vom 7. November
+
+Geprüft gegen den Code und die aktuelle Doku (Anthropic, Android). Reihenfolge nach Nutzen:
+
+1. **Prompt-Caching – gebaut, PR #13.** Die Uhrzeit stand auf die Minute in der
+   Grundanweisung, dadurch war jede Anfrage neu. Jetzt steht sie als `[KONTEXT: …]`
+   vor der Frage, Grundanweisung und Werkzeuge kommen aus dem Zwischenspeicher
+   (Sonnet 5.5: Lesen 0,10 statt 2 USD pro Mio. Tokens). Anzeige auf dem
+   Startbildschirm: „Cache … gelesen“.
+2. **Antworten streamen und satzweise sprechen.** Heute wartet Jarvis auf die
+   komplette Antwort und spricht sie dann am Stück. Mit Streaming (SSE,
+   `content_block_delta`/`text_delta`) kann der erste Satz gesprochen werden,
+   während Claude noch schreibt. Steuerzeilen (`[WUNSCH: …]`, `[MERKEN: …]`,
+   `[DAUERGESPRÄCH: …]`) stehen am Ende und müssen zurückgehalten werden. Größter
+   Gewinn bei der gefühlten Wartezeit.
+3. **Dazwischenreden an der Wurzel.** Die Echo-Unterdrückung sitzt im
+   Aufnahmepfad `VOICE_COMMUNICATION`. Laut mehreren Berichten greift sie auf
+   Samsung-Geräten aber erst im Modus `MODE_IN_COMMUNICATION`, und Jarvis spielt
+   seine Stimme bisher als normale Ausgabe ab. Plan: im Dauergespräch
+   Kommunikationsmodus, Ausgabe als Sprachkommunikation, Lautsprecher per
+   `setCommunicationDevice` (ab API 31). Zusätzlich Silero-VAD (ca. 2 MB,
+   ONNX Runtime ist schon im Projekt) statt reiner Lautstärke, damit Spielsound
+   nicht als Sprechen zählt. Ungeprüft bis zum Gerätetest: Klang und
+   Lautstärkeregelung im Kommunikationsmodus.
+4. **Bildkosten passen.** Ein Bildschirmfoto kostet im Alltag 1.012 Tokens
+   (0,2 Cent), im Spielmodus 2.208 Tokens (0,44 Cent). Gerechnet mit der
+   Formel aus der Doku: aufgerundete Breite/28 mal aufgerundete Höhe/28.
+   Kein Handlungsbedarf.
 
 ## Spielregeln, kurz
 
