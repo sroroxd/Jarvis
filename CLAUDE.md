@@ -11,6 +11,13 @@ Besitzer des Projekts: Art. Antworten und Commit-Texte auf Deutsch.
 - Jeder Arbeitszweig baut automatisch die Test-App „Jarvis Test“ (eigene Paket-ID
   `de.art.jarvis.test`, eigene Einstellungen). Art testet dort, bevor etwas nach
   `main` kommt.
+- Jeder Push durchläuft den Gerätetest im Emulator (`.github/scripts/geraetetest.sh`):
+  installieren, starten, „Starten“ tippen, Einstellungen öffnen, 30 s laufen lassen.
+  Bei Absturz, ANR oder beendetem Prozess wird keine APK veröffentlicht. Bericht und
+  Bildschirmfotos liegen in der Vorab-Version `vorschau` (`geraetetest.txt`,
+  `*.png`, direkt über `releases/download/vorschau/<Datei>` abrufbar). Vor jeder
+  Übergabe an Art Bericht und Bilder selbst ansehen. Grenze: ohne API-Schlüssel,
+  ohne Mikrofon, x86-Emulator statt S24 Ultra.
 - Pushes mit Arts privater Mail-Adresse werden von GitHub abgelehnt. Commits mit
   Autor `sroroxd <193030253+sroroxd@users.noreply.github.com>` und Committer
   `Claude <noreply@anthropic.com>` anlegen.
