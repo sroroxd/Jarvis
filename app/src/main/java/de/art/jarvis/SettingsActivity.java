@@ -31,6 +31,12 @@ public class SettingsActivity extends AppCompatActivity {
 
     private ActivitySettingsBinding b;
     private Prefs prefs;
+    /**
+     * Gedächtnis, wie es zuletzt im Feld angezeigt wurde. Gespeichert wird das Feld nur, wenn Art es geändert
+     * hat – sonst überschrieb das Verlassen der Einstellungen, was Jarvis sich inzwischen gemerkt hatte
+     * („Jarvis, merk dir …“, während die Einstellungen offen sind).
+     */
+    private String shownMemory = "";
 
     private ElevenTts elevenPreview;
     private TextToSpeech previewTts;
@@ -392,7 +398,7 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Gedächtnis und Sicherung
 
     private void setupBackup() {
-        b.memoryField.setText(prefs.memory());
+        showMemory();
         b.switchBackupKeys.setChecked(prefs.backupKeys());
         b.switchBackupKeys.setOnCheckedChangeListener((v, on) -> {
             prefs.setBackupKeys(on);
@@ -452,7 +458,15 @@ public class SettingsActivity extends AppCompatActivity {
         updateAgentInfo();
         b.wishList.setText(Wishes.display(prefs.wishes()));
         b.switchBackupKeys.setChecked(prefs.backupKeys());
-        b.memoryField.setText(prefs.memory());
+        showMemory();
+        // Auch die Schlüssel neu anzeigen: Sonst schrieb das Verlassen der Einstellungen (saveTextFields) die
+        // alten, meist leeren Felder zurück – und die eben wiederhergestellten Schlüssel waren wieder weg.
+        b.keyField.setText(prefs.apiKey());
+        b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        b.elevenKeyField.setText(prefs.elevenKey());
+        b.agentTokenField.setText(prefs.agentToken());
+        b.githubTokenField.setText(prefs.githubToken());
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         b.modelField.setText(prefs.rawModel());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());
         b.switchWake.setChecked(prefs.wakeWord());
@@ -480,7 +494,7 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Jarvis kann sich im Hintergrund Neues gemerkt haben.
-        b.memoryField.setText(prefs.memory());
+        showMemory();
         updateOverlayWarning();
     }
 
@@ -510,13 +524,22 @@ public class SettingsActivity extends AppCompatActivity {
             b.modelLayout.setError(null);
         }
         prefs.setModel(model);
-        prefs.setMemory(text(b.memoryField));
+        String memory = text(b.memoryField);
+        if (!memory.equals(shownMemory)) {
+            prefs.setMemory(memory);
+            shownMemory = prefs.memory();
+        }
         prefs.setAgentToken(text(b.agentTokenField));
         prefs.setGithubToken(text(b.githubTokenField));
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
         Backup.autoSave(this, prefs);
+    }
+
+    private void showMemory() {
+        shownMemory = prefs.memory();
+        b.memoryField.setText(shownMemory);
     }
 
     /** Läuft Jarvis, übernimmt er die Änderungen sofort. */
