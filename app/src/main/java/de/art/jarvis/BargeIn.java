@@ -165,7 +165,11 @@ final class BargeIn {
                     if (chunkFill == chunk.length) {
                         chunkFill = 0;
                         float threshold = wakeThreshold;
-                        if (threshold >= 0 && wakeWord.process(chunk) >= threshold) heard = true;
+                        try {
+                            if (threshold >= 0 && wakeWord.process(chunk) >= threshold) heard = true;
+                        } catch (Exception e) {
+                            wakeWord = null; // nur das Wachwort fällt aus, die Lautstärke-Schranke läuft weiter
+                        }
                     }
                 }
                 if (heard) active = false; // Mikrofon sofort für die Spracherkennung freigeben
