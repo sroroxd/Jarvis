@@ -47,6 +47,16 @@ public class PersonaTest {
         assertTrue(ohne.contains("kein Bildschirmfoto"));
     }
 
+    /** Wunsch #21: im Spielmodus kurze Befehle statt Erklärungen. */
+    @Test
+    public void spielmodusVerlangtKurzeAntworten() {
+        String s = Persona.system(true, "", "", "", false, false);
+        assertTrue(s.contains("höchstens zwanzig Wörter"));
+        assertTrue(s.contains("Keine Begründung"));
+        assertFalse(s.contains("Empfiehl Art einmalig"));
+        assertFalse(Persona.system(false, "", "", "", true, false).contains("zwanzig Wörter"));
+    }
+
     @Test
     public void spielmodusOhneBildSagtDasZuerst() {
         String s = Persona.turnContext(true, false, at(20, 0));

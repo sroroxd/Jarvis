@@ -7,7 +7,7 @@ wird der zu lang, fängt er einen neuen an. Claude liest zu Beginn jeder Sitzung
 aktuellen Stand – egal, in welchem Fenster.
 
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
-7. November 2026.
+8. November 2026.
 
 ## Was auf `main` läuft
 
@@ -119,6 +119,53 @@ Geprüft gegen den Code und die aktuelle Doku (Anthropic, Android). Reihenfolge 
    (0,2 Cent), im Spielmodus 2.208 Tokens (0,44 Cent). Gerechnet mit der
    Formel aus der Doku: aufgerundete Breite/28 mal aufgerundete Höhe/28.
    Kein Handlungsbedarf.
+
+## Gesamtprüfung vom 8. November – Zweig `ccr-4f440a4a-dx81et`
+
+Den ganzen Code (`main` und die Zweig-Kette #7 → #16) durchgesehen, gebaut und getestet. Die Korrekturen
+sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren.
+
+**Behoben:**
+
+1. **Jarvis bricht sich mitten im Satz selbst ab** (Wünsche #11, #18, #20). Ursache in `SpeechGate`:
+   In jeder Sprechpause zwischen zwei Sätzen sank die Echo-Schätzung Richtung Stille; ab rund 300 ms
+   Pause galt der nächste, gleich laute Satz als Art. In der Simulation: Abbruch in 199 von 200 Läufen.
+   Zweiter Fehler: Gelernt wurde ab dem ersten Block, auch wenn die Stimme noch gar nicht lief. Jetzt
+   lernt die Schranke erst ab dem Start der Stimme und senkt die Schätzung nie. Regressionstests dazu.
+2. **Dazwischenreden unzuverlässig** (Wünsche #17, #19). Die Schwelle lag 14 dB über dem Echo – eine
+   Reaktion auf Fehler 1. Jetzt 10 dB. Zusätzlich hört das Dazwischenreden-Mikrofon (mit
+   Echo-Unterdrückung) auf „Jarvis“; vorher war das Wachwort beim Sprechen im Dauergespräch ganz aus,
+   obwohl der Startbildschirm „„Jarvis“ unterbricht“ anzeigte.
+3. **Kürzere Antworten im Spielmodus** (Wunsch #21): höchstens zwei kurze Sätze, zusammen höchstens
+   zwanzig Wörter, keine Begründung ohne Nachfrage.
+4. **Schlüssel weg nach Wiederherstellen:** Nach dem Einlesen einer Sicherung mit Schlüsseln schrieb das
+   Verlassen der Einstellungen die alten (leeren) Felder zurück. Ebenso überschrieb das Gedächtnisfeld,
+   was Jarvis sich gemerkt hatte, während die Einstellungen offen waren.
+5. **Sicherungsdatei nach jeder Antwort neu geschrieben** – auf dem Haupt-Thread, direkt vor dem
+   Sprechen. Jetzt nur, wenn sich das Gedächtnis ändert.
+6. **„du“ und „Sie“ gemischt:** Jarvis siezt laut Grundanweisung, die festen Ansagen der App duzten.
+   Alle gesprochenen Meldungen jetzt per „Sie“.
+7. Kleinkram: Cache-Anzeige wurde von der Meta-Recherche überschrieben; Kalender-Werkzeug verwies
+   auf die Uhrzeit „in der Systemanweisung“ (steht seit #13 in der `[KONTEXT]`-Zeile).
+
+**Geprüft:** Build (Release und Debug), alle 129 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+**Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
+Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
+Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben
+(Kommunikationsmodus für die Echo-Unterdrückung auf Samsung).
+
+**Vorschläge, nicht umgesetzt:**
+
+- **Signaturschlüssel tauschen.** Er liegt öffentlich im Repo. Seit dem Selbst-Update wiegt das schwerer:
+  Jede APK, die mit diesem Schlüssel signiert ist, installiert sich über Jarvis und erbt alle
+  gespeicherten API-Schlüssel. Ein neuer Schlüssel heißt einmal deinstallieren und neu installieren
+  (Gedächtnis über die Sicherungsdatei zurückholen). Entscheidung von Art.
+- **`main` nachziehen.** `main` liegt sieben PRs hinter dem getesteten Stand. Je länger die Kette, desto
+  größer das Risiko beim Zusammenführen.
+- Das Bildschirmfoto wird auf dem Haupt-Thread umgewandelt und als JPEG komprimiert (nicht gemessen);
+  das lässt sich auf den Aufnahme-Thread verlegen, damit die Oberfläche dabei nicht stockt.
+- Selbst-Update: Verlangt Android eine Bestätigung, während Jarvis im Hintergrund ist, unterdrückt Android
+  den Dialog. Dann einfach die App öffnen und erneut auf „Installieren“ tippen.
 
 ## Spielregeln, kurz
 

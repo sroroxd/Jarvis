@@ -65,7 +65,7 @@ final class AgentClient {
                         + (beschaeftigt ? "Der Agent läuft und arbeitet gerade." : "Der Agent läuft und ist bereit.")
                         + "\"}");
             } else if (a.code == 0) {
-                r = AgentReply.fehler("Der Agent antwortet nicht. Starte ihn in Termux mit „jarvis-agent“.");
+                r = AgentReply.fehler("Der Agent antwortet nicht. Starten Sie ihn in Termux mit „jarvis-agent“.");
             } else {
                 r = AgentReply.parse(a.code, a.body);
             }
@@ -80,7 +80,7 @@ final class AgentClient {
         String body = "{\"text\":" + AgentReply.jsonText(text) + ",\"neu\":" + (neu ? "true" : "false") + "}";
         Antwort a = anfrage(port, token, "/auftrag", body, AUFTRAG_TIMEOUT_MS);
         if (a.code == 0) {
-            return AgentReply.fehler("Ich erreiche den Agenten nicht. Läuft er in Termux? Starte ihn mit „jarvis-agent“.");
+            return AgentReply.fehler("Ich erreiche den Agenten nicht. Läuft er in Termux? Starten Sie ihn mit „jarvis-agent“.");
         }
         return AgentReply.parse(a.code, a.body);
     }

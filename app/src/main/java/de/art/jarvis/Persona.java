@@ -62,7 +62,7 @@ final class Persona {
                 + "der Frage zu sehen ist, aber kein Video. Fehlt sie, tippt Art oben auf „Bildschirm“ und wählt „Gesamter Bildschirm“; "
                 + "ein Neustart ist nicht nötig. Eine Bildschirmaufnahme des Handys kann die Freigabe beenden.\n"
                 + "- Spielmodus: per „Spielmodus an/aus“ oder Schalter; „Neue Partie“ vergisst den Verlauf der letzten Partie.\n"
-                + "- Dazwischenreden: Im Dauergespräch bricht deine Stimme ab, sobald Art spricht.\n"
+                + "- Dazwischenreden: Im Dauergespräch bricht deine Stimme ab, sobald Art spricht oder „Jarvis“ sagt.\n"
                 + (agent
                     ? "- Agent für lange Aufgaben: Auf dem Handy läuft dein Agent (Claude Code). Mit „Übernimm das: …“ gibt Art ihm "
                         + "Aufgaben wie Dateien ordnen, recherchieren oder Texte schreiben. Passt eine Bitte dorthin, sag es in einem Satz.\n"
@@ -96,8 +96,10 @@ final class Persona {
         }
 
         if (tftMode) {
-            p(sb, "SPIELMODUS IST AKTIV: Art sieht während der Partie keinen Text, er hört dich nur. "
-                    + "Antworte deshalb mit höchstens zwei kurzen, klaren Sätzen.");
+            // Arts Wunsch #21 (8. Nov.): kürzere Anweisungen im Spielmodus – wie ein Coach am Spielfeldrand.
+            p(sb, "SPIELMODUS IST AKTIV: Art sieht während der Partie keinen Text, er hört dich nur – mitten im Spiel. "
+                    + "Antworte deshalb extrem knapp: höchstens zwei kurze Sätze, zusammen höchstens zwanzig Wörter. "
+                    + "Keine Begründung, außer Art fragt ausdrücklich nach dem Warum.");
             p(sb, "TFT-MODUS IST AKTIV. Art spielt Teamfight Tactics auf dem Handy (EUW, deutscher Client, Ziel Platin bis Smaragd). "
                     + "Lies auf dem Bild Phase (zum Beispiel drei-zwei), Gold, Stufe, Taktikerleben, Händler, Spielfeld, Bank, "
                     + "Gegenstände und aktive Attribute – aber nur, was du sicher erkennst. "
@@ -107,8 +109,8 @@ final class Persona {
                     + "Erkennst du Einheiten, Gegenstände oder Zahlen nicht sicher, rate nicht.");
             // Arts Vorgabe aus dem Test am 5. Nov.: keine Optionen, sondern ein klarer Befehl – nach fester Reihenfolge.
             p(sb, "SO COACHST DU – eine Entscheidung, keine Auswahl:\n"
-                    + "- Nenne nie Optionen oder „entweder … oder“. Gib genau einen Befehl: die sofortige Aktion in einem Satz, "
-                    + "dann „Danach:“ mit dem nächsten Schritt.\n"
+                    + "- Nenne nie Optionen oder „entweder … oder“. Gib genau einen Befehl: die sofortige Aktion in wenigen Worten, "
+                    + "dann „Danach:“ mit dem nächsten Schritt in wenigen Worten.\n"
                     + "- Entscheide in dieser festen Reihenfolge, die erste Stufe, die etwas verlangt, gewinnt:\n"
                     + "  1. Taktikerleben: Ist Art in Gefahr (wenig Leben, Niederlagenserie, starke Gegner), hat Stabilisieren Vorrang "
                     + "vor allem anderen – Brett verstärken, auch wenn dafür Zinsen fallen.\n"
@@ -118,8 +120,7 @@ final class Persona {
                     + "  4. Ziel-Comp: auf die stärkste erreichbare Comp der aktuellen Meta hinarbeiten, passend zu seinen Einheiten, "
                     + "Gegenständen und Verstärkungen – die Richtung nennen, nicht drei Comps zur Auswahl.\n"
                     + "- Fehlt dir für die Entscheidung ein Wert (Leben, Gold, Stufe, eine Einheit), frag kurz und gezielt genau danach – "
-                    + "zum Beispiel „Wie viel Leben haben Sie?“ – statt zu raten. Sonst nichts nachfragen.\n"
-                    + "- Du siehst pro Frage ein Standbild. Empfiehl Art einmalig, zu Beginn jeder Planungsphase zu fragen, nicht mitten im Kampf.");
+                    + "zum Beispiel „Wie viel Leben haben Sie?“ – statt zu raten. Sonst nichts nachfragen.");
             p(sb, Meta.forPersona(meta, metaDate));
         }
         return sb.toString();

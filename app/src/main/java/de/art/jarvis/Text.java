@@ -55,11 +55,11 @@ final class Text {
         if (code == 403 || "permission_error".equals(t)) return "Der Schlüssel hat keine Berechtigung" + suffix;
         if (lower.contains("credit balance")) return "Das API-Guthaben ist aufgebraucht. Bitte in der Anthropic-Konsole aufladen.";
         if (code == 404 || "not_found_error".equals(t)) {
-            return "Das eingestellte Modell ist nicht verfügbar. Lass das Modellfeld in der App leer" + suffix;
+            return "Das eingestellte Modell ist nicht verfügbar. Lassen Sie das Modellfeld in der App leer" + suffix;
         }
-        if (code == 429 || "rate_limit_error".equals(t)) return "Zu viele Anfragen in kurzer Zeit. Versuch es gleich noch einmal.";
+        if (code == 429 || "rate_limit_error".equals(t)) return "Zu viele Anfragen in kurzer Zeit. Versuchen Sie es gleich noch einmal.";
         if (code == 529 || "overloaded_error".equals(t) || code >= 500) {
-            return "Die Claude-Server sind gerade überlastet. Versuch es gleich noch einmal.";
+            return "Die Claude-Server sind gerade überlastet. Versuchen Sie es gleich noch einmal.";
         }
         if (code == 400) return "Die Anfrage wurde abgelehnt (Fehler 400)" + suffix;
         return "Fehler " + code + suffix;
@@ -72,7 +72,7 @@ final class Text {
     static String replyOrFallback(String raw, String cleaned) {
         if (cleaned != null && !cleaned.isEmpty()) return cleaned;
         if (raw != null && raw.toUpperCase(java.util.Locale.ROOT).contains("[MERKEN")) return "Notiert, Sir.";
-        return "Ich habe darauf keine Antwort bekommen. Frag mich bitte noch einmal.";
+        return "Ich habe darauf keine Antwort bekommen. Fragen Sie mich bitte noch einmal.";
     }
 
     /**

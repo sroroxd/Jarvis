@@ -44,7 +44,7 @@ final class Tools implements ClaudeClient.ToolRunner {
                 .put("name", CALENDAR_READ)
                 .put("description", "Liest Arts Termine aus dem Kalender seines Handys (alle synchronisierten Kalender, "
                         + "z. B. Google und Samsung). Nutze das bei Fragen wie „Was steht morgen an?“ oder „Hab ich Freitag Zeit?“. "
-                        + "Rechne relative Angaben wie „morgen“ oder „nächste Woche“ mit der aktuellen Zeit aus der Systemanweisung um.")
+                        + "Rechne relative Angaben wie „morgen“ oder „nächste Woche“ mit der aktuellen Zeit aus der [KONTEXT]-Zeile vor der Frage um.")
                 .put("input_schema", new JSONObject()
                         .put("type", "object")
                         .put("properties", new JSONObject()

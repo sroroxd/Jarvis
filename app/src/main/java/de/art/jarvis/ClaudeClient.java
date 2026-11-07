@@ -86,7 +86,9 @@ final class ClaudeClient {
             Result r = tools == null
                     ? ask(apiKey, model, system, messages, effort, null)
                     : converse(apiKey, model, system, messages, effort, tools);
-            deliver(r, "Ich habe darauf keine Antwort bekommen. Frag mich bitte noch einmal.", callback);
+            // Nur Fragen zählen für die Anzeige – die Meta-Recherche im Hintergrund überschrieb sonst den Wert.
+            if (r.usage != null) lastUsage = r.usage;
+            deliver(r, "Ich habe darauf keine Antwort bekommen. Fragen Sie mich bitte noch einmal.", callback);
         });
     }
 
@@ -170,7 +172,7 @@ final class ClaudeClient {
             }
             return r;
         }
-        return failed("Das hat zu viele Schritte gebraucht. Frag mich bitte etwas einfacher.");
+        return failed("Das hat zu viele Schritte gebraucht. Fragen Sie mich bitte etwas einfacher.");
     }
 
     /** Claudes Websuche als Server-Werkzeug (läuft bei Anthropic, nicht auf dem Handy). */
@@ -230,6 +232,7 @@ final class ClaudeClient {
         String detail = "";
         String stopReason = "";
         JSONArray content = new JSONArray();
+        Usage usage;
     }
 
     /**
@@ -371,7 +374,7 @@ final class ClaudeClient {
             }
 
             JSONObject json = new JSONObject(response);
-            lastUsage = Usage.from(json.optJSONObject("usage"));
+            result.usage = Usage.from(json.optJSONObject("usage"));
             result.stopReason = json.optString("stop_reason", "");
             JSONArray content = json.optJSONArray("content");
             if (content != null) result.content = content;

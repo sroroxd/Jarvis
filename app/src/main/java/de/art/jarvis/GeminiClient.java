@@ -139,17 +139,17 @@ final class GeminiClient {
         } catch (Exception ignored) {
             // Kein JSON – dann bleibt nur der Statuscode.
         }
-        if (code == 400 && detail.toLowerCase(java.util.Locale.ROOT).contains("api key")) return "Der Gemini-Schlüssel wird abgelehnt. Bitte prüfe ihn in der Jarvis-App.";
-        if (code == 403) return "Gemini verweigert den Zugriff. Prüfe den Schlüssel in Google AI Studio.";
-        if (code == 404) return "Das eingestellte Gemini-Modell gibt es nicht. Lass das Modellfeld in der App leer.";
+        if (code == 400 && detail.toLowerCase(java.util.Locale.ROOT).contains("api key")) return "Der Gemini-Schlüssel wird abgelehnt. Bitte prüfen Sie ihn in der Jarvis-App.";
+        if (code == 403) return "Gemini verweigert den Zugriff. Prüfen Sie den Schlüssel in Google AI Studio.";
+        if (code == 404) return "Das eingestellte Gemini-Modell gibt es nicht. Lassen Sie das Modellfeld in der App leer.";
         if (code == 429) {
             String all = response == null ? "" : response.toLowerCase();
             if (all.contains("perday") || all.contains("per_day") || all.contains("per day")) {
-                return "Das kostenlose Gemini-Tageslimit ist erreicht, Sir. Ab morgen geht es wieder – oder du nimmst einen Claude-Schlüssel.";
+                return "Das kostenlose Gemini-Tageslimit ist erreicht, Sir. Ab morgen geht es wieder – oder Sie nehmen einen Claude-Schlüssel.";
             }
-            return "Das kostenlose Gemini-Minutenlimit ist erreicht. Gib mir eine Minute, dann geht es weiter.";
+            return "Das kostenlose Gemini-Minutenlimit ist erreicht. Geben Sie mir eine Minute, dann geht es weiter.";
         }
-        if (code >= 500) return "Die Gemini-Server sind gerade überlastet. Versuch es gleich noch einmal.";
+        if (code >= 500) return "Die Gemini-Server sind gerade überlastet. Versuchen Sie es gleich noch einmal.";
         return "Gemini-Fehler " + code + (detail.isEmpty() ? "." : ": " + detail);
     }
 
