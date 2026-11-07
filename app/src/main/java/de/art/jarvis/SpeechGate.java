@@ -8,7 +8,7 @@ package de.art.jarvis;
  * Das Problem: Das Mikrofon hört auch Jarvis' eigene Stimme. Selbst mit der Echo-Unterdrückung des
  * Handys bleibt ein Rest. Deshalb lernt die Schranke in der ersten halben Sekunde, wie laut dieser
  * Rest ist, und schlägt erst an, wenn es deutlich lauter wird – und zwar nicht nur kurz (Klopfen,
- * Klick), sondern über eine Viertelsekunde hinweg.
+ * Klick), sondern über gut eine Viertelsekunde hinweg.
  *
  * Arbeitet in Blöcken von 20 ms (320 Werte bei 16 kHz).
  */
@@ -16,14 +16,17 @@ final class SpeechGate {
     static final int SAMPLE_RATE = 16000;
     /** 20 ms. */
     static final int FRAME = 320;
-    /** 500 ms lang den Pegel des eigenen Echos lernen, bevor überhaupt etwas anschlagen kann. */
-    static final int WARMUP_FRAMES = 25;
+    /** 800 ms lang den Pegel des eigenen Echos lernen, bevor überhaupt etwas anschlagen kann. */
+    static final int WARMUP_FRAMES = 40;
     /** Betrachtetes Fenster: 300 ms … */
     static final int WINDOW = 15;
-    /** … davon müssen mindestens 220 ms laut sein. */
-    static final int NEEDED = 11;
-    /** So viel lauter als das gelernte Echo muss Art sein. */
-    static final double MARGIN_DB = 10;
+    /** … davon müssen mindestens 260 ms laut sein. */
+    static final int NEEDED = 13;
+    /**
+     * So viel lauter als das gelernte Echo muss Art sein. 14 dB statt 10: Jarvis' Sätze und der
+     * Spielsound schwanken um 10 dB, das darf nicht als Art zählen (Wunsch #10, #11).
+     */
+    static final double MARGIN_DB = 14;
     /** Darunter ist es auf jeden Fall keine Stimme direkt am Handy. */
     static final double MIN_SPEECH_DB = -40;
 
@@ -55,7 +58,7 @@ final class SpeechGate {
         double db = dbfs(pcm, offset, length);
         if (frames < WARMUP_FRAMES) {
             warmup[frames++] = db;
-            if (frames == WARMUP_FRAMES) echoDb = percentile(warmup, 0.9);
+            if (frames == WARMUP_FRAMES) echoDb = percentile(warmup, 0.95);
             return false;
         }
         frames++;

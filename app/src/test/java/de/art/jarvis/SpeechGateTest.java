@@ -97,4 +97,13 @@ public class SpeechGateTest {
         assertTrue(g.thresholdDb() < laut);
         assertFalse(g.feed(block(-60, rnd), 0, SpeechGate.FRAME));
     }
+
+    @Test
+    public void lauterWerdendeStimmeUndSpielsoundLoesenNichtAus() {
+        Random rnd = new Random(8);
+        SpeechGate g = new SpeechGate();
+        feed(g, -35, 3, SpeechGate.WARMUP_FRAMES, rnd);
+        // Der zweite Satz kommt 10 dB lauter zurück (Echo/Spielsound): kein Abbruch.
+        assertEquals(-1, feed(g, -25, 3, 300, rnd));
+    }
 }
