@@ -126,13 +126,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Freihändig mit „Hey Jarvis“" />
+                        android:text="Freihändig mit „Jarvis“" />
 
                     <TextView
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Sag „Hey Jarvis“, warte den kurzen Ton ab und sprich los. Die Erkennung läuft offline auf dem Handy und pausiert bei ausgeschaltetem Bildschirm. Das Mikrofon-Symbol oben in der Statusleiste zeigt, dass Jarvis lauscht." />
+                        android:text="Sag „Jarvis“ und sprich los – ohne Antippen. Der kurze Ton zeigt, dass Jarvis zuhört. „Hey Jarvis“ klappt auch. Die Erkennung läuft offline auf dem Handy und pausiert bei ausgeschaltetem Bildschirm. Das Mikrofon-Symbol oben in der Statusleiste zeigt, dass Jarvis lauscht." />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -237,7 +237,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Mit ElevenLabs-Schlüssel spricht Jarvis mit der Premium-Stimme „Daniel“. Sonst offline über SherpaTTS: Thorsten → Miro → Alan. Deine eigene Auswahl hat immer Vorrang." />
+                        android:text="Mit ElevenLabs-Schlüssel spricht Jarvis mit der Premium-Stimme „Daniel“. Sonst offline über SherpaTTS: Miro → Thorsten → Alan. Deine eigene Auswahl hat immer Vorrang." />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/engineLayout"
@@ -718,7 +718,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="• „Hey Jarvis“ sagen – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: „Hey Jarvis“ oder Antippen unterbricht.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
+                        android:text="• „Jarvis“ sagen – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: „Jarvis“ oder Antippen unterbricht.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

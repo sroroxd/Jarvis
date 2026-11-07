@@ -20,7 +20,8 @@ import java.util.Locale;
  * API-Schlüssel (Claude/Gemini und ElevenLabs) werden bewusst NICHT gespeichert – die Datei soll gefahrlos herumliegen können.
  */
 final class Backup {
-    static final String FILE_NAME = "jarvis-sicherung.json";
+    /** Die Test-App sichert in eine eigene Datei, damit sie die Sicherung der normalen App nie überschreibt. */
+    static final String FILE_NAME = BuildConfig.TEST_APP ? "jarvis-test-sicherung.json" : "jarvis-sicherung.json";
 
     private Backup() {}
 
