@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,15 +47,52 @@ final class UpdateCheck {
         return 0;
     }
 
-    /** Adresse der Release-Abfrage. Leerer Zweig bei einer Test-App = lokal gebaut → keine Prüfung. */
+    /** Liste der letzten Releases (für die Test-App). */
+    private static final String LIST = "https://api.github.com/repos/sroroxd/Jarvis/releases?per_page=30";
+
+    /**
+     * Adresse der Release-Abfrage. Leerer Zweig bei einer Test-App = lokal gebaut → keine Prüfung.
+     * Die Test-App schaut über ALLE Zweige: Alle Test-Apps teilen eine Paket-ID, und die höchste
+     * Build-Nummer ist der neueste geprüfte Stand – egal aus welchem Zweig. Vorher sah eine Test-App
+     * nur ihren eigenen Zweig und bemerkte neue Zweige nie.
+     */
     static String releaseUrl(boolean testApp, String branch) {
         if (!testApp) return API + "latest";
         if (branch == null || branch.trim().isEmpty()) return null;
-        try {
-            return API + "tags/" + URLEncoder.encode("test-" + branch.trim(), "UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            return null;
+        return LIST;
+    }
+
+    /** Ein Release mit APK als Ergebnis, sonst null. */
+    static Result fromRelease(org.json.JSONObject json) {
+        if (json == null) return null;
+        int build = buildNumber(json.optString("name", ""), json.optString("tag_name", ""));
+        if (build <= 0) return null;
+        org.json.JSONArray assets = json.optJSONArray("assets");
+        if (assets != null) {
+            for (int i = 0; i < assets.length(); i++) {
+                org.json.JSONObject a = assets.optJSONObject(i);
+                if (a != null && a.optString("name", "").endsWith(".apk")) {
+                    String url = a.optString("browser_download_url", "");
+                    if (!url.isEmpty()) return new Result(build, url);
+                }
+            }
         }
+        String page = json.optString("html_url", "");
+        return page.isEmpty() ? null : new Result(build, page);
+    }
+
+    /** Die Test-App mit der höchsten Build-Nummer (Vorab-Versionen „test-…“ mit APK), sonst null. */
+    static Result newestTestApp(org.json.JSONArray releases) {
+        Result best = null;
+        if (releases == null) return null;
+        for (int i = 0; i < releases.length(); i++) {
+            org.json.JSONObject rel = releases.optJSONObject(i);
+            if (rel == null || !rel.optString("tag_name", "").startsWith("test-")) continue;
+            Result r = fromRelease(rel);
+            if (r == null || !r.url.endsWith(".apk")) continue;
+            if (best == null || r.build > best.build) best = r;
+        }
+        return best;
     }
 
     /**
@@ -74,21 +110,11 @@ final class UpdateCheck {
             conn.setRequestProperty("accept", "application/vnd.github+json");
             conn.setRequestProperty("user-agent", "Jarvis-App"); // GitHub verlangt einen User-Agent
             if (conn.getResponseCode() != 200) return null;
-            org.json.JSONObject json = new org.json.JSONObject(readAll(conn.getInputStream()));
-            int build = buildNumber(json.optString("name", ""), json.optString("tag_name", ""));
-            if (build <= installedBuild) return null;
-            org.json.JSONArray assets = json.optJSONArray("assets");
-            String url = null;
-            if (assets != null) {
-                for (int i = 0; i < assets.length() && url == null; i++) {
-                    org.json.JSONObject a = assets.optJSONObject(i);
-                    if (a != null && a.optString("name", "").endsWith(".apk")) {
-                        url = a.optString("browser_download_url", null);
-                    }
-                }
-            }
-            if (url == null) url = json.optString("html_url", null);
-            return url == null ? null : new Result(build, url);
+            String body = readAll(conn.getInputStream());
+            Result r = testApp
+                    ? newestTestApp(new org.json.JSONArray(body))
+                    : fromRelease(new org.json.JSONObject(body));
+            return r != null && r.build > installedBuild ? r : null;
         } catch (Exception e) {
             return null; // kein Netz o. Ä. – dann eben beim nächsten Start
         } finally {

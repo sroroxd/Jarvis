@@ -176,16 +176,33 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                 Snackbar.make(b.getRoot(), "Neuere " + (BuildConfig.TEST_APP ? "Test-Version" : "Version")
                                 + " liegt bereit: Build " + r.build + " (installiert: " + BuildConfig.VERSION_CODE + ").",
                                 Snackbar.LENGTH_INDEFINITE)
-                        .setAction("Laden", v -> {
-                            try {
-                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(r.url)));
-                            } catch (Exception ignored) {
-                                // kein Browser – sehr unwahrscheinlich
-                            }
-                        })
+                        .setAction("Installieren", v -> installUpdate(r))
                         .show();
             });
         }, "Jarvis-UpdateCheck").start();
+    }
+
+    /** Neue Version direkt einspielen (ohne Browser, ohne Datei im Download-Ordner). */
+    private void installUpdate(UpdateCheck.Result r) {
+        if (!r.url.endsWith(".apk")) { // kein APK am Release – dann eben die Seite öffnen
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(r.url)));
+            } catch (Exception ignored) {
+                // kein Browser – sehr unwahrscheinlich
+            }
+            return;
+        }
+        Snackbar bar = Snackbar.make(b.getRoot(), "Build " + r.build + " wird geladen …", Snackbar.LENGTH_INDEFINITE);
+        boolean started = AppUpdater.install(this, r.url, r.build, text -> {
+            if (!isFinishing() && !isDestroyed()) bar.setText(text);
+        });
+        if (started) {
+            bar.show();
+        } else {
+            lastUpdateCheck = 0; // nach dem Erlauben beim Zurückkehren gleich wieder anbieten
+            Toast.makeText(this, "Bitte „Apps aus dieser Quelle zulassen“ einschalten und zurückkehren.",
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
