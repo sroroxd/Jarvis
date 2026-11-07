@@ -94,6 +94,8 @@ jobs:
       # Bildschirmfotos und Bericht für Claude und Art – auch wenn der Test fehlschlägt (dann erst recht).
       - name: Bilder und Bericht hochladen
         if: always()
+        # Die Bilder sind Beiwerk: Ein Upload-Problem darf die Veröffentlichung nicht blockieren.
+        continue-on-error: true
         uses: softprops/action-gh-release@v3
         with:
           tag_name: vorschau

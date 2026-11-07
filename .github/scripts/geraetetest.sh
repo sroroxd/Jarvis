@@ -83,7 +83,8 @@ if adb shell dumpsys activity services "$PKG" | grep -q "JarvisService"; then
 else
   say "Info: Hintergrunddienst läuft nicht (ohne API-Schlüssel erwartet)"
 fi
-adb logcat -d -s AndroidRuntime:E > shots/logcat_fehler.txt 2>/dev/null || true
+# Nie leer lassen: GitHub lehnt leere Dateien beim Hochladen ab.
+{ echo "Fehlerprotokoll (AndroidRuntime:E, leer = keine Fehler):"; adb logcat -d -s AndroidRuntime:E 2>/dev/null; } > shots/logcat_fehler.txt || true
 
 if [ "$fail" -eq 0 ]; then
   say "BESTANDEN: installiert, gestartet, Einstellungen geöffnet, 30 s gelaufen – kein Absturz, kein Hänger."
