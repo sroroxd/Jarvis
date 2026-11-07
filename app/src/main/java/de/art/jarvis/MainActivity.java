@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         setContentView(b.getRoot());
         prefs = new Prefs(this);
         readDemo(getIntent());
+        readTestHooks(getIntent());
         // Build-Nummer sichtbar – so sieht man auf jedem Bildschirmfoto, welche Version läuft.
         b.subtitle.setText("Dein persönlicher Assistent · " + (BuildConfig.TEST_APP ? "Test-Build " : "Build ")
                 + BuildConfig.VERSION_CODE);
@@ -109,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         readDemo(intent);
+        readTestHooks(intent);
         render();
     }
 
@@ -122,6 +124,25 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             } catch (IllegalArgumentException ignored) {
                 // unbekannter Zustand
             }
+        }
+    }
+
+    /**
+     * Nur Debug-Builds, für den Gesprächstest in der CI (siehe .github/scripts/geraetetest.sh):
+     * „testkey“ trägt den API-Schlüssel ein, „teststart“ startet Jarvis ohne Bildschirmfreigabe,
+     * „testfrage“ stellt eine Frage, als wäre sie gesprochen. In der Handy-Version (Release) wirkungslos.
+     */
+    private void readTestHooks(Intent intent) {
+        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        if (!debuggable || intent == null) return;
+        String key = intent.getStringExtra("testkey");
+        if (key != null && !key.trim().isEmpty()) prefs.setApiKey(key.trim());
+        if (intent.getBooleanExtra("teststart", false)) startJarvis(RESULT_CANCELED, null);
+        String frage = intent.getStringExtra("testfrage");
+        if (frage != null && !frage.trim().isEmpty()) {
+            startService(new Intent(this, JarvisService.class)
+                    .setAction(JarvisService.ACTION_TEST_ASK)
+                    .putExtra(JarvisService.EXTRA_TEXT, frage.trim()));
         }
     }
 

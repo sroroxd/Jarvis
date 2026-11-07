@@ -77,6 +77,10 @@ jobs:
 
       - name: Im Emulator testen
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          # Arts API-Schlüssel als GitHub-Secret: Damit stellt der Test echte Fragen an Claude.
+          # Fehlt er, wird nur der Gesprächstest übersprungen. GitHub schwärzt ihn in allen Protokollen.
+          JARVIS_TESTKEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           api-level: 34
           target: google_apis

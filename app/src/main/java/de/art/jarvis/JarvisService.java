@@ -53,6 +53,11 @@ public class JarvisService extends Service {
     public static final String ACTION_RESET = "de.art.jarvis.RESET";
     public static final String ACTION_REFRESH = "de.art.jarvis.REFRESH";
     public static final String ACTION_STOP = "de.art.jarvis.STOP";
+    /** Nur Debug-Builds: eine Frage so behandeln, als hätte Art sie gesprochen (Gesprächstest in der CI). */
+    public static final String ACTION_TEST_ASK = "de.art.jarvis.TEST_ASK";
+    public static final String EXTRA_TEXT = "text";
+    /** Log-Kennung für den Gesprächstest in der CI – nur Debug-Builds schreiben hier etwas hinein. */
+    static final String TEST_TAG = "JarvisTest";
     public static final String EXTRA_CODE = "code";
     public static final String EXTRA_DATA = "data";
 
@@ -306,6 +311,15 @@ public class JarvisService extends Service {
         if (ACTION_LISTEN.equals(action)) onTap();
         else if (ACTION_RESET.equals(action)) resetConversation();
         else if (ACTION_REFRESH.equals(action)) applySettings();
+        else if (ACTION_TEST_ASK.equals(action) && debuggable()) {
+            String text = intent.getStringExtra(EXTRA_TEXT);
+            if (text != null && !text.trim().isEmpty()) {
+                // Genau der Weg, den eine erkannte Spracheingabe nimmt – nur ohne Mikrofon.
+                testLog("frage: " + text.trim());
+                publishExchange(text.trim(), "");
+                handleUtterance(text.trim());
+            }
+        }
         return START_NOT_STICKY;
     }
 
@@ -1033,6 +1047,8 @@ public class JarvisService extends Service {
                 prefs.setMemory(tagged.memory);
                 Backup.autoSave(JarvisService.this, prefs);
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
+                ClaudeClient.Usage used = prefs.isGemini() ? null : ClaudeClient.lastUsage;
+                testLog("antwort [" + (used == null ? "?" : used.summary()) + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", answer);
                 speak(answer);
@@ -1041,6 +1057,7 @@ public class JarvisService extends Service {
             @Override
             public void onError(String message) {
                 if (id != requestId || !running) return;
+                testLog("fehler: " + message);
                 setState(State.IDLE);
                 say(message);
             }
@@ -1227,8 +1244,18 @@ public class JarvisService extends Service {
         speak(text);
     }
 
+    private boolean debuggable() {
+        return (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    }
+
+    /** Protokollzeile für den Gesprächstest in der CI; in der Handy-Version (Release) passiert nichts. */
+    private void testLog(String line) {
+        if (debuggable()) android.util.Log.i(TEST_TAG, line);
+    }
+
     private void speak(String text) {
         String clean = Text.cleanForSpeech(text);
+        testLog("sprechen: " + clean);
         if (clean.isEmpty()) {
             onSpeechFinished();
             return;

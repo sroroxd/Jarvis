@@ -60,8 +60,47 @@ adb shell am start -n "$ACT" > /dev/null 2>&1
 sleep 30
 adb exec-out screencap -p > shots/04_nach_30s.png
 
+# ---------------------------------------------------------------- Gesprächstest mit Claude
+# Nur wenn der API-Schlüssel als GitHub-Secret ANTHROPIC_API_KEY hinterlegt ist. Die Fragen laufen
+# genau den Weg einer gesprochenen Frage (ohne Mikrofon) bis zu Claude und zurück.
+gfail=0
+answers() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "antwort \[|fehler:" || true; }
+ask() {  # ask <Name> <Frage> <Muster für die richtige Antwort>
+  local before line
+  before=$(answers | wc -l)
+  adb shell "am start -n $ACT --es testfrage '$2'" > /dev/null 2>&1
+  for _ in $(seq 1 45); do
+    sleep 2
+    [ "$(answers | wc -l)" -gt "$before" ] && break
+  done
+  line=$(answers | tail -1)
+  if [ "$(answers | wc -l)" -le "$before" ]; then
+    say "  FEHLER $1: keine Antwort nach 90 s"; gfail=1; return
+  fi
+  say "  $1: ${line#*JarvisTest: }"
+  if echo "$line" | grep -q "fehler:"; then gfail=1; return; fi
+  if ! echo "$line" | grep -qiE "$3"; then say "  FEHLER $1: Antwort passt nicht zu /$3/"; gfail=1; fi
+  LAST_LINE="$line"
+}
+if [ -n "${JARVIS_TESTKEY:-}" ]; then
+  say "Gesprächstest mit Claude:"
+  adb shell "am start -n $ACT --es testkey '$JARVIS_TESTKEY' --ez teststart true" > /dev/null 2>&1
+  sleep 10
+  ask "Rechnen" "Wie viel ist siebzehn mal drei? Antworte nur mit der Zahl." "51|einundf.nfzig"
+  ask "Verlauf" "Und das Doppelte davon? Nur die Zahl." "102|hundertzwei"
+  # Prompt-Caching: Ab der zweiten Frage muss die Grundanweisung aus dem Zwischenspeicher kommen.
+  if echo "${LAST_LINE:-}" | grep -q "gelesen"; then
+    say "  Cache: greift"
+  else
+    say "  Hinweis: Cache griff bei der zweiten Frage nicht"
+  fi
+  adb exec-out screencap -p > shots/05_gespraech.png
+else
+  say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
+fi
+
 # ---------------------------------------------------------------- Auswertung
-fail=0
+fail=$gfail
 crashes=$(adb logcat -d -b crash 2>/dev/null | grep -A25 "Process: $PKG" || true)
 if [ -n "$crashes" ]; then
   say "FEHLER: Absturz"
@@ -88,5 +127,6 @@ fi
 
 if [ "$fail" -eq 0 ]; then
   say "BESTANDEN: installiert, gestartet, Einstellungen geöffnet, 30 s gelaufen – kein Absturz, kein Hänger."
+  [ -n "${JARVIS_TESTKEY:-}" ] && say "BESTANDEN: Gespräch mit Claude (Rechnen, Verlauf)."
 fi
 exit "$fail"
