@@ -31,10 +31,14 @@ jobs:
 
       # Erst die automatischen Tests (inkl. Wachwort-Erkennung mit echten Aufnahmen), dann die APK.
       # Schlägt ein Test fehl, wird nichts veröffentlicht.
+      # main baut die normale App. Jeder andere Zweig baut die separate Test-App („Jarvis Test“),
+      # die sich neben die normale App installiert, statt sie zu überschreiben.
       - name: Tests und APK bauen
         run: |
           set -o pipefail
-          if ! gradle --no-daemon :wakeword:test testDebugUnitTest assembleRelease 2>&1 | tee build.log; then
+          variant=""
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then variant="-PtestApp"; fi
+          if ! gradle --no-daemon $variant :wakeword:test testDebugUnitTest assembleRelease 2>&1 | tee build.log; then
             msg=$(grep -E "error:|FAILED|AssertionError|expected|What went wrong" build.log | head -40 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Build oder Tests fehlgeschlagen::$msg"
             exit 1
@@ -53,3 +57,25 @@ jobs:
           files: Jarvis.apk
           body: |
             Jarvis.apk herunterladen und installieren – wird über die vorherige Version installiert.
+
+      # Test-App eines Arbeitszweigs: eigene Vorab-Version „test-<Zweig>“. Wird nie als „neueste Version“
+      # markiert – der normale Download-Link (latest) zeigt weiter auf die main-App.
+      - name: Test-App umbenennen
+        if: github.ref != 'refs/heads/main'
+        run: cp Jarvis.apk JarvisTest.apk
+
+      - name: Test-App veröffentlichen
+        if: github.ref != 'refs/heads/main'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: test-${{ github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          # Die Build-Nummer im Namen liest die App, um auf eine neuere Version hinzuweisen (UpdateCheck).
+          name: Jarvis Test (Zweig ${{ github.ref_name }}, Build ${{ github.run_number }})
+          prerelease: true
+          make_latest: false
+          files: JarvisTest.apk
+          body: |
+            Test-App vom Arbeitszweig „${{ github.ref_name }}“. Installiert sich NEBEN der normalen Jarvis-App
+            (eigenes Symbol „Jarvis Test“, eigene Einstellungen) und überschreibt sie nicht.
+            Bitte immer nur eine der beiden Apps einschalten – sonst reagieren beide auf das Wachwort.

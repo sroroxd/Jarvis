@@ -37,7 +37,8 @@ final class Text {
         if (k == null || k.isEmpty()) return "Kein Schlüssel gespeichert.";
         String head = k.substring(0, Math.min(10, k.length()));
         String tail = k.length() > 14 ? k.substring(k.length() - 4) : "";
-        String kind = isGeminiKey(k) ? "Gemini" : k.startsWith("sk-ant-") ? "Claude" : "unbekanntes Format";
+        String kind = isGeminiKey(k) ? "Gemini" : k.startsWith("sk-ant-") ? "Claude"
+                : k.startsWith("github_pat_") || k.startsWith("ghp_") ? "GitHub" : "unbekanntes Format";
         return "Gespeichert: " + head + "…" + tail + " (" + k.length() + " Zeichen, " + kind + ")";
     }
 

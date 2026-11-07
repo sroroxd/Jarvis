@@ -126,13 +126,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Freihändig mit „Hey Jarvis“" />
+                        android:text="Freihändig mit „Jarvis“" />
 
                     <TextView
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Sag „Hey Jarvis“, warte den kurzen Ton ab und sprich los. Die Erkennung läuft offline auf dem Handy und pausiert bei ausgeschaltetem Bildschirm. Das Mikrofon-Symbol oben in der Statusleiste zeigt, dass Jarvis lauscht." />
+                        android:text="Sag „Jarvis“ und sprich los – ohne Antippen. Der kurze Ton zeigt, dass Jarvis zuhört. „Hey Jarvis“ klappt auch. Die Erkennung läuft offline auf dem Handy und pausiert bei ausgeschaltetem Bildschirm. Das Mikrofon-Symbol oben in der Statusleiste zeigt, dass Jarvis lauscht." />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -176,6 +176,20 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="Signalton, wenn Jarvis zuhört" />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchBargeIn"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Dazwischenreden unterbricht Jarvis" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Im Dauergespräch: Sobald du sprichst, hört Jarvis auf zu reden und hört zu. Unterbricht er sich selbst (Lautsprecher sehr laut), hier ausschalten – dann unterbricht nur „Jarvis“." />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -237,7 +251,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Mit ElevenLabs-Schlüssel spricht Jarvis mit der Premium-Stimme „Daniel“. Sonst offline über SherpaTTS: Thorsten → Miro → Alan. Deine eigene Auswahl hat immer Vorrang." />
+                        android:text="Mit ElevenLabs-Schlüssel spricht Jarvis mit der Premium-Stimme „Daniel“. Sonst offline über SherpaTTS: Miro → Thorsten → Alan. Deine eigene Auswahl hat immer Vorrang." />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/engineLayout"
@@ -578,6 +592,172 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- ===================================================== Wünsche an die Entwicklung -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Jarvis.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Jarvis.SectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Wünsche an die Entwicklung" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Sag „Notier für die Entwicklung: …“ – oder sprich einfach über einen Wunsch, Jarvis erkennt ihn. Er landet als Aufgabe im Repo sroroxd/Jarvis, und Claude arbeitet ihn dort ab. Kein Abtippen, kein Wechsel zu Claude." />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/githubTokenLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="GitHub-Schlüssel"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/githubTokenField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Der Knopf öffnet GitHub mit allem vorausgefüllt. Dort nur noch „Only select repositories“ → sroroxd/Jarvis wählen und „Generate token“ tippen, dann den Schlüssel hier einfügen. Ohne Schlüssel werden Wünsche nur hier gesammelt." />
+
+                    <Button
+                        android:id="@+id/githubTokenCreate"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Schlüssel bei GitHub anlegen" />
+
+                    <TextView
+                        android:id="@+id/wishList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textIsSelectable="true" />
+
+                    <Button
+                        android:id="@+id/wishSend"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Offene Wünsche senden" />
+
+                    <TextView
+                        android:id="@+id/wishResult"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ===================================================== Agent-Rückgrat -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Jarvis.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Jarvis.SectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Agent-Rückgrat" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Lange Aufgaben übernimmt ein Agent, der auf diesem Handy in Termux läuft (Claude Code). Dateien, Recherche, Zeitpläne – über dein Abo statt über das API-Guthaben. Sag „Übernimm das: …“, „Auftrag: …“, „Kümmere dich um …“ oder „Erledige …“. Im Spielmodus bleibt alles beim schnellen Weg." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAgent"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Aufträge an den Agenten geben" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Token des Agenten"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/agentTokenField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Steht auf dem Handy in ~/.jarvis-agent/token (zeigt das Einrichtungsskript am Ende an)." />
+
+                    <TextView
+                        android:id="@+id/agentInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary" />
+
+                    <Button
+                        android:id="@+id/agentTest"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Verbindung prüfen" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Einrichtung: Termux öffnen und einmal das Skript aus agent/einrichten.sh im Repo starten. Danach läuft der Agent mit dem Befehl „jarvis-agent“ – solange er nicht läuft, meldet Jarvis den Auftrag als nicht zustellbar." />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- ===================================================== Gedächtnis -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Jarvis.Card"
@@ -718,7 +898,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="• „Hey Jarvis“ sagen – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: „Hey Jarvis“ oder Antippen unterbricht.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
+                        android:text="• „Jarvis“ sagen – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: „Jarvis“ oder Antippen unterbricht.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

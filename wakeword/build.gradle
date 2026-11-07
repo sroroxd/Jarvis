@@ -23,6 +23,7 @@ dependencies {
 test {
     // Die Modelle liegen bei der App und werden von dort geladen.
     systemProperty 'jarvis.models', file('../app/src/main/assets/wakeword').absolutePath
+    systemProperty 'jarvis.reference', file('../training/wakeword/referenz/hey_jarvis_v0.1.onnx').absolutePath
     testLogging {
         events 'failed'
         exceptionFormat 'full'

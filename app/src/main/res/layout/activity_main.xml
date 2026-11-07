@@ -34,6 +34,7 @@
                 android:textSize="24sp" />
 
             <TextView
+                android:id="@+id/subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
@@ -99,7 +100,7 @@
                 android:layout_marginTop="2dp"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant"
-                tools:text="Sag „Hey Jarvis“ oder tippe auf den Kern." />
+                tools:text="Sag „Jarvis“ – oder tippe auf den Kern." />
 
             <com.google.android.material.chip.ChipGroup
                 android:layout_width="match_parent"
@@ -112,7 +113,7 @@
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Hey Jarvis" />
+                    android:text="Wachwort" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipGame"
@@ -121,14 +122,12 @@
                     android:layout_height="wrap_content"
                     android:text="Spielmodus" />
 
-                <!-- Nur Anzeige: Haken = Bildschirm wird geteilt -->
+                <!-- Haken = Bildschirm wird geteilt. Antippen gibt ihn frei, ohne Jarvis neu zu starten. -->
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipScreen"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:clickable="false"
-                    android:focusable="false"
                     android:text="Bildschirm" />
             </com.google.android.material.chip.ChipGroup>
         </LinearLayout>
@@ -159,36 +158,24 @@
         android:textColor="?attr/colorOnSurfaceVariant"
         tools:text="Tippen: sprechen · Lang drücken: neues Gespräch" />
 
-    <!-- Letzter Wortwechsel -->
-    <LinearLayout
-        android:id="@+id/exchange"
+    <!-- Ganzer Gesprächsverlauf, scrollbar – der neueste Eintrag steht unten. -->
+    <ScrollView
+        android:id="@+id/logScroll"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:layout_height="0dp"
+        android:layout_weight="0.9"
+        android:clipToPadding="false"
+        android:fadingEdgeLength="24dp"
+        android:requiresFadingEdge="vertical"
         android:paddingHorizontal="32dp"
-        android:paddingTop="14dp">
+        android:paddingTop="6dp">
 
-        <TextView
-            android:id="@+id/lastYou"
+        <LinearLayout
+            android:id="@+id/logList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            tools:text="Du: Was soll ich kaufen?" />
-
-        <TextView
-            android:id="@+id/lastJarvis"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:ellipsize="end"
-            android:maxLines="4"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
-            android:textColor="?attr/colorOnSurface"
-            tools:text="Kauf den zweiten Kämpfer und leg ihn auf die Bank. Danach: auf Stufe sechs gehen." />
-    </LinearLayout>
+            android:orientation="vertical" />
+    </ScrollView>
 
     <Button
         android:id="@+id/stopButton"

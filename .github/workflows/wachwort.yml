@@ -1,0 +1,206 @@
+name: Wachwort „Jarvis“ trainieren
+
+# Trainiert das Offline-Wachwort „Jarvis“ (openWakeWord-Format) und prüft es gegen das alte „Hey Jarvis“.
+# 4 Rechner erzeugen parallel Sprachbeispiele, ein fünfter trainiert mit echtem Alltagsaudio
+# (ACAV100M-Merkmale) gegen Fehlalarme. Ergebnis: Artefakt „wachwort-modell“ (Modell + Messwerte).
+on:
+  workflow_dispatch:
+    inputs:
+      n_pos:
+        description: Positive Beispiele gesamt
+        default: '24000'
+      n_neg:
+        description: Negative Beispiele gesamt
+        default: '24000'
+      steps:
+        description: Trainingsschritte pro Durchgang
+        default: '40000'
+      daten_lauf:
+        description: Lauf-ID mit fertigen Merkmalen (leer = neu erzeugen)
+        default: ''
+  # Neu trainieren: training/wakeword/start.txt ändern (z. B. Datum eintragen) und pushen – oder „Run workflow“.
+  push:
+    paths: [ 'training/wakeword/start.txt' ]
+    # Nie auf main: das Ergebnis wird in den Zweig committet, und main bekommt keine Bot-Commits.
+    branches-ignore: [ 'main' ]
+
+# Fertige Merkmale eines früheren Laufs wiederverwenden: Lauf-ID in training/wakeword/daten_lauf.txt
+# (oder als Eingabe). Datei löschen, sobald sich Stimmen, Texte oder Verrauschen ändern.
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: wachwort-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  N_POS: ${{ github.event.inputs.n_pos || '24000' }}
+  N_NEG: ${{ github.event.inputs.n_neg || '24000' }}
+  STEPS: ${{ github.event.inputs.steps || '40000' }}
+  PYTHONUNBUFFERED: '1'
+
+jobs:
+  plan:
+    # Nur auf ausdrücklichen Wunsch: von Hand gestartet oder start.txt in einem bestehenden Zweig geändert.
+    # Beim Anlegen eines Zweigs zählt jede Datei als geändert – das hat schon einmal ein ungewolltes,
+    # stundenlanges Training ausgelöst. Alle anderen Jobs hängen an „plan“ und fallen dann mit weg.
+    if: github.event_name == 'workflow_dispatch' || (github.event.created == false && github.ref_name != 'main')
+    runs-on: ubuntu-24.04
+    outputs:
+      reuse: ${{ steps.p.outputs.reuse }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: p
+        run: |
+          r="${{ github.event.inputs.daten_lauf }}"
+          if [ -z "$r" ] && [ -f training/wakeword/daten_lauf.txt ]; then r=$(tr -dc 0-9 < training/wakeword/daten_lauf.txt); fi
+          echo "reuse=$r" >> "$GITHUB_OUTPUT"
+          echo "Merkmale wiederverwenden aus Lauf: ${r:-nein, neu erzeugen}"
+
+  daten:
+    needs: plan
+    if: needs.plan.outputs.reuse == ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: true
+      matrix:
+        shard: [ 0, 1, 2, 3 ]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Werkzeuge
+        run: pip install -q piper-tts==1.8.0 onnxruntime numpy scipy huggingface_hub
+
+      - name: Stimmen laden
+        run: bash training/wakeword/get_voices.sh voices train
+
+      - name: Raumhall (MIT-Impulsantworten) laden
+        run: |
+          python - <<'EOF' || echo "Hall nicht verfügbar – nur künstlicher Hall"
+          from huggingface_hub import snapshot_download
+          snapshot_download("davidscripka/MIT_environmental_impulse_responses", repo_type="dataset", local_dir="rirs")
+          EOF
+          find rirs -name '*.wav' 2>/dev/null | wc -l
+
+      - name: Sprachbeispiele erzeugen
+        run: |
+          python training/wakeword/jarvis_wakeword.py generate --voices voices --work work \
+            --n-pos $((N_POS / 4)) --n-neg $((N_NEG / 4)) --seed 1${{ matrix.shard }} --workers 4 \
+            2>&1 | grep -v "Missing phoneme"
+
+      - name: Merkmale berechnen
+        run: |
+          rirs=""; [ -d rirs ] && rirs="--rirs rirs"
+          python training/wakeword/jarvis_wakeword.py features --work work \
+            --models app/src/main/assets/wakeword $rirs --seed 2${{ matrix.shard }} --workers 4
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: merkmale-${{ matrix.shard }}
+          path: work/feat_*.npy
+          retention-days: 3
+
+  training:
+    needs: [ plan, daten ]
+    if: always() && needs.plan.result == 'success' && (needs.daten.result == 'success' || needs.daten.result == 'skipped')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Drei Varianten parallel; die beste kommt in die App. a = openWakeWord-Standard.
+        cfg:
+          - { name: a, hidden: 32, weight: 1500 }
+          - { name: b, hidden: 64, weight: 1500 }
+          - { name: c, hidden: 64, weight: 400 }
+    name: training (${{ matrix.cfg.name }})
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Werkzeuge
+        run: |
+          pip install -q --index-url https://download.pytorch.org/whl/cpu torch
+          pip install -q onnx onnxruntime numpy scipy piper-tts==1.8.0
+
+      - name: Merkmale aus diesem Lauf
+        if: needs.plan.outputs.reuse == ''
+        uses: actions/download-artifact@v7
+        with:
+          pattern: merkmale-*
+          path: work
+
+      - name: Merkmale aus früherem Lauf
+        if: needs.plan.outputs.reuse != ''
+        uses: actions/download-artifact@v7
+        with:
+          pattern: merkmale-*
+          path: work
+          run-id: ${{ needs.plan.outputs.reuse }}
+          github-token: ${{ github.token }}
+
+      - name: Alltagsaudio laden (ACAV100M, ca. 370 Stunden) und Validierungsset (ca. 11 Stunden)
+        run: |
+          base=https://huggingface.co/datasets/davidscripka/openwakeword_features/resolve/main
+          curl -sSL "$base/openwakeword_features_ACAV100M_2000_hrs_16bit.npy" | head -c 3221225600 > acav.npy || true
+          curl -sSL -o val.npy "$base/validation_set_features.npy"
+          ls -la acav.npy val.npy
+
+      - name: Trainieren
+        run: |
+          mkdir -p out
+          python training/wakeword/jarvis_wakeword.py train --work work --out out \
+            --acav acav.npy --val-fp val.npy --steps "$STEPS" --workers 4 \
+            --hidden ${{ matrix.cfg.hidden }} --max-neg-weight ${{ matrix.cfg.weight }} 2>&1 | tee out/training.log
+
+      - name: Teststimmen laden
+        run: bash training/wakeword/get_voices.sh testvoices test
+
+      - name: Prüfen (neu gegen alt, Stimmen die nie im Training waren)
+        run: |
+          python training/wakeword/jarvis_wakeword.py evaluate --model out/jarvis.onnx \
+            --old training/wakeword/referenz/hey_jarvis_v0.1.onnx --models app/src/main/assets/wakeword \
+            --voices testvoices --report out/eval.json 2>&1 | grep -v "Missing phoneme" | tee out/eval.txt
+          { echo "### Variante ${{ matrix.cfg.name }}"; echo '```'; grep -E "Gewählt" out/training.log; sed -n '/Teststimmen/,/Schwächste/p' out/eval.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      # Ergebnis direkt in den Zweig schreiben (Artefakte sind aus der Entwicklungsumgebung nicht abrufbar).
+      # Pushes mit dem GITHUB_TOKEN lösen keinen neuen Lauf aus.
+      - name: Ergebnis in den Zweig schreiben
+        run: |
+          d=training/wakeword/ergebnis/${{ matrix.cfg.name }}
+          rm -rf "$d" && mkdir -p "$d"
+          cp out/jarvis.onnx out/jarvis_training.json out/eval.txt out/eval.json out/training.log "$d"/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$d"
+          git commit -q -m "Wachwort-Ergebnis Variante ${{ matrix.cfg.name }} (Lauf ${{ github.run_id }})"
+          for i in 1 2 3 4 5 6; do
+            git pull -q --rebase origin "${{ github.ref_name }}" && git push -q origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep $(( (RANDOM % 15) + 5 ))
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: wachwort-modell-${{ matrix.cfg.name }}
+          path: out/
+          retention-days: 14

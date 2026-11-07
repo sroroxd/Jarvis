@@ -62,6 +62,8 @@ public class SettingsActivity extends AppCompatActivity {
         setupVoice();
         setupDisplay();
         setupGame();
+        setupWishes();
+        setupAgent();
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
         hideTicks(b.sliderSensitivity, b.sliderPause, b.sliderRate, b.sliderPitch);
@@ -131,6 +133,11 @@ public class SettingsActivity extends AppCompatActivity {
 
         b.switchEarcon.setChecked(prefs.earcon());
         b.switchEarcon.setOnCheckedChangeListener((v, on) -> prefs.setEarcon(on));
+        b.switchBargeIn.setChecked(prefs.bargeIn());
+        b.switchBargeIn.setOnCheckedChangeListener((v, on) -> {
+            prefs.setBargeIn(on);
+            refreshService();
+        });
 
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         b.pauseValue.setText(seconds(prefs.pauseMs() / 1000f));
@@ -291,6 +298,97 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+    // ---------------------------------------------------------------- Wünsche an die Entwicklung
+
+    /**
+     * GitHub-Formular für einen fein eingeschränkten Schlüssel, vorausgefüllt per URL (laut GitHub-Doku:
+     * name, description, target_name, expires_in und Berechtigungen). Die Auswahl des Repos lässt
+     * GitHub nicht vorausfüllen – das tippt Art selbst an.
+     */
+    private static final String GITHUB_TOKEN_TEMPLATE = "https://github.com/settings/personal-access-tokens/new"
+            + "?name=Jarvis+W%C3%BCnsche"
+            + "&description=Jarvis+legt+W%C3%BCnsche+als+Aufgaben+in+sroroxd%2FJarvis+an"
+            + "&target_name=sroroxd&expires_in=365&issues=write";
+
+    private void setupWishes() {
+        b.githubTokenField.setText(prefs.githubToken());
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
+        b.wishList.setText(Wishes.display(prefs.wishes()));
+        b.wishSend.setOnClickListener(v -> sendOpenWishes());
+        b.githubTokenCreate.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_TOKEN_TEMPLATE)));
+            } catch (Exception ignored) {
+                showResult(b.wishResult, "✗ Kein Browser gefunden.");
+            }
+        });
+    }
+
+    /** Schickt alle noch offenen Wünsche als Aufgaben an GitHub. */
+    private void sendOpenWishes() {
+        prefs.setGithubToken(text(b.githubTokenField));
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
+        String token = prefs.githubToken();
+        if (token.isEmpty()) {
+            showResult(b.wishResult, "✗ Erst den GitHub-Schlüssel eintragen.");
+            return;
+        }
+        java.util.List<Wishes.Wish> open = new java.util.ArrayList<>();
+        for (Wishes.Wish w : Wishes.load(prefs.wishes())) if (w.open()) open.add(w);
+        if (open.isEmpty()) {
+            showResult(b.wishResult, "Keine offenen Wünsche.");
+            return;
+        }
+        showResult(b.wishResult, "Sende " + open.size() + " …");
+        WishSender sender = new WishSender();
+        int[] left = {open.size()};
+        String[] lastError = {null};
+        for (Wishes.Wish w : open) {
+            sender.send(token, w.title, w.body, JarvisService.today(), (issue, error) -> {
+                if (issue > 0) prefs.setWishes(Wishes.markSent(prefs.wishes(), w.title, issue));
+                else lastError[0] = error;
+                if (--left[0] == 0) {
+                    Backup.autoSave(this, prefs);
+                    b.wishList.setText(Wishes.display(prefs.wishes()));
+                    showResult(b.wishResult, lastError[0] == null ? "✓ Alle gesendet." : "✗ " + lastError[0]);
+                }
+            });
+        }
+    }
+
+    // ---------------------------------------------------------------- Agent-Rückgrat
+
+    private void setupAgent() {
+        b.agentTokenField.setText(prefs.agentToken());
+        b.switchAgent.setChecked(prefs.agentEnabled());
+        b.switchAgent.setOnCheckedChangeListener((v, on) -> {
+            prefs.setAgentEnabled(on);
+            updateAgentInfo();
+            refreshService();
+        });
+        b.agentTest.setOnClickListener(v -> testAgent());
+        updateAgentInfo();
+    }
+
+    private void updateAgentInfo() {
+        if (!prefs.agentEnabled()) {
+            b.agentInfo.setText("Aus – Aufträge gehen an die Claude-API wie bisher.");
+        } else if (prefs.agentToken().isEmpty()) {
+            b.agentInfo.setText("An, aber ohne Token. Trag das Token ein, sonst weist der Agent jeden Auftrag ab.");
+        } else {
+            b.agentInfo.setText("An, Port " + prefs.agentPort() + ", Token " + prefs.agentTokenPreview() + ".");
+        }
+    }
+
+    /** Fragt den Agenten, ob er läuft. Antwort steht direkt unter dem Knopf. */
+    private void testAgent() {
+        prefs.setAgentToken(text(b.agentTokenField));
+        updateAgentInfo();
+        showResult(b.agentInfo, "Prüfe …");
+        new AgentClient().pruefen(prefs.agentPort(), prefs.agentToken(),
+                reply -> showResult(b.agentInfo, reply.ok() ? "✓ " + reply.antwort : "✗ " + reply.fehler));
+    }
+
     // ---------------------------------------------------------------- Gedächtnis und Sicherung
 
     private void setupBackup() {
@@ -320,9 +418,12 @@ public class SettingsActivity extends AppCompatActivity {
         if (uri == null) return;
         try {
             int count = Backup.apply(prefs, Backup.read(this, uri));
-            useAsBackupTarget(uri); // künftig in dieselbe Datei sichern
+            // Die Test-App liest eine Sicherung nur – sie schreibt nie zurück, damit die Sicherung
+            // der normalen Jarvis-App unverändert bleibt.
+            if (!BuildConfig.TEST_APP) useAsBackupTarget(uri); // künftig in dieselbe Datei sichern
             refreshFromPrefs();
-            b.backupInfo.setText("✓ Wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen.");
+            b.backupInfo.setText("✓ Wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen."
+                    + (BuildConfig.TEST_APP ? " Die Test-App ändert diese Datei nicht." : ""));
             refreshService();
         } catch (Exception e) {
             b.backupInfo.setText("✗ Das ist keine gültige Jarvis-Sicherung.");
@@ -348,6 +449,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
     private void refreshFromPrefs() {
+        updateAgentInfo();
+        b.wishList.setText(Wishes.display(prefs.wishes()));
         b.switchBackupKeys.setChecked(prefs.backupKeys());
         b.memoryField.setText(prefs.memory());
         b.modelField.setText(prefs.rawModel());
@@ -355,6 +458,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.switchWake.setChecked(prefs.wakeWord());
         setSlider(b.sliderSensitivity, prefs.sensitivity());
         b.switchEarcon.setChecked(prefs.earcon());
+        b.switchBargeIn.setChecked(prefs.bargeIn());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         setSlider(b.sliderRate, prefs.rate());
         setSlider(b.sliderPitch, prefs.pitch());
@@ -407,6 +511,9 @@ public class SettingsActivity extends AppCompatActivity {
         }
         prefs.setModel(model);
         prefs.setMemory(text(b.memoryField));
+        prefs.setAgentToken(text(b.agentTokenField));
+        prefs.setGithubToken(text(b.githubTokenField));
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
         Backup.autoSave(this, prefs);

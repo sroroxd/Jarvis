@@ -23,34 +23,69 @@ Die APK aus `main` ist die Version auf Arts Galaxy S24 Ultra:
 - Tägliche TFT-Meta per Claude-Websuche, Fragen warten nicht darauf
 - Gedächtnis mit „Merk dir …" / „Vergiss …", einsehbar in den Einstellungen
 
-## Offene Zweige
+## Offene Zweige – zusammengefasst in `sammeltest`
 
-Nichts davon ist in `main`. Jeder Zweig baut eine eigene Test-App
-(„Jarvis Test", Paket `de.art.jarvis.test`). Alle Test-Apps haben dieselbe
-Paket-ID – eine ältere lässt sich nicht über eine neuere installieren, dann
-vorher deinstallieren.
+Alle offenen Zweige sind im Zweig `sammeltest` zusammengeführt (PR #7). Art
+testet **eine** App statt fünf und spart das Deinstallieren dazwischen:
+github.com/sroroxd/Jarvis/releases/download/test-sammeltest/JarvisTest.apk
+(vorher eine alte „Jarvis Test“ deinstallieren – alle Test-Apps haben die
+Paket-ID `de.art.jarvis.test`).
 
-| Zweig | PR | Was drin ist | Was Art prüfen muss |
-|---|---|---|---|
-| `gespraech-modus` | #5 | Gesprächsmodus über Gemini Live: Protokoll, Mikrofon mit Echo-Unterdrückung, Tonausgabe, Live-Verbindung, Kostenzähler | Redet Jarvis sich selbst ins Wort? Bleibt die Verbindung stehen? Kostenzähler plausibel? |
-| `tft-coach` | #3 | Fragen warten nie auf die Meta, Erkennung „neue Partie", schärferes Spielbild | Coaching während einer echten Partie |
-| `wachwort-jarvis` | #2 | Wachwort „Jarvis" statt „Hey Jarvis" (selbst trainiertes Modell) | Löst es im Alltag falsch aus? Wird „Jarvis" sicher erkannt? |
-| `jarvis-haende` | #1 | Erste „Hände": gemeinsame Websuche für Alltag und TFT-Meta, Kalender | Findet Jarvis Termine? Stimmen Suchergebnisse? |
-| `claude-md-doku-regeln` | #4 | Nur Textdateien: `CLAUDE.md` und diese `STATUS.md` | Nichts – reine Doku, kann ohne Test zusammengeführt werden |
+| Zweig | PR | Was drin ist |
+|---|---|---|
+| `wachwort-jarvis` | #2 | Wachwort „Jarvis“ statt „Hey Jarvis“ (selbst trainiertes Modell) |
+| `jarvis-haende` | #1 | Websuche für Alltag und TFT-Meta, Kalender |
+| `tft-coach` | #3 | Fragen warten nie auf die Meta, „Neue Partie“, schärferes Spielbild |
+| `gespraech-modus` | #5 | Gemini-Live-Baustein. Art nutzt Gemini nicht (4. Nov.) – in `sammeltest` wieder entfernt, steht nur noch in der Git-Historie. Das Dauergespräch läuft über Claude. |
+| `agent-ruckgrat` | #6 | Aufträge an Claude Code in Termux (Abo statt Guthaben) |
 
-Reihenfolge der Empfehlung: erst #4 (kostet nichts), dann #2 und #1, dann #3,
-zuletzt #5.
+**Zusammenführen:** Nach Arts Test geht `sammeltest` als Ganzes nach `main` –
+mit **Merge-Commit, nicht Squash**. Dann enthält `main` die Original-Commits
+aller Zweige, und GitHub schließt #1, #2, #3, #5 und #6 von selbst als
+zusammengeführt. `main` bekommt damit genau den Stand, den Art getestet hat.
+
+#4 (Doku) ist am 4. November in `main` zusammengeführt.
+
+### Testliste für Art
+
+Getestet am 5. Nov. (Test-Build 50, Video): Dauergespräch läuft – „Sprach-Thematik
+vorerst okay“. Daraus drei Wünsche, umgesetzt ab Test-Build 51:
+
+1. **Dazwischenreden:** Im Dauergespräch während Jarvis spricht einfach losreden –
+   bricht er sofort ab und hört zu? Unterbricht er sich selbst (Lautsprecher laut)?
+   Dann Einstellungen → „Dazwischenreden unterbricht Jarvis“ aus und Bescheid geben.
+2. **TFT-Coach:** keine Optionen, ein Befehl mit „Danach:“; Reihenfolge
+   Taktikerleben → Gold → Stufe → Ziel-Comp; gezielte Rückfrage statt Raten.
+3. **Wünsche direkt ins Repo:** GitHub-Schlüssel eintragen (Einstellungen →
+   „Wünsche an die Entwicklung“), dann „Notier für die Entwicklung: …“ sagen oder
+   einen Wunsch in eigenen Worten äußern → erscheint als Issue „Wunsch: …“.
+
+Weiter offen: Wachwort im Alltag, Hände (Kalender, Websuche), Agent in Termux.
+
+## Aufräumen (geprüft am 4. November)
+
+Repo geprüft: keine fremden Pushes, keine echten Schlüssel im Code, keine
+fehlgeschlagenen Builds (nur zwei absichtlich abgebrochene Trainingsläufe).
+Erledigt von Art: Zweig `claude-md-doku-regeln` gelöscht, „Automatically delete
+head branches“ eingeschaltet (zusammengeführte Zweige verschwinden jetzt von selbst).
+
+Alte Releases: **GitHub → Actions → „Alte Releases aufräumen“ → Run workflow**
+(PR #8, auf `main`). Löscht `test`, `test-wachwort-jarvis`, `test-tft-coach`,
+`test-jarvis-haende` und `v1.0.1` bis `v1.0.26` samt Git-Tags. Geschützt:
+`v1.0.43`, `v1.0.32`, `v1.0.29`, `vorschau`, `test-sammeltest`. Starten muss Art
+selbst – Löschen ist aus der Entwicklungsumgebung gesperrt.
+
+Nach dem Zusammenführen von #7 können die Zweige `wachwort-jarvis`,
+`jarvis-haende`, `tft-coach`, `gespraech-modus`, `agent-ruckgrat` und
+`sammeltest` weg.
 
 ## Was als Nächstes kommt
 
-1. **Agenten-Rückgrat über das Claude-Abo.** Statt jede Fähigkeit einzeln in die
-   App zu bauen, läuft ein Agent auf dem Handy (Termux, Ubuntu über
-   `proot-distro`, Claude Code mit dem offiziellen Installer – es gibt keinen
-   Android-Build, auf reinem Termux bricht es ab) und übernimmt die langen
-   Aufgaben: Dateien, Suche, Kalender, Mails, Zeitpläne, erweiterbar über
-   Skill-Ordner. Die App bleibt die Oberfläche. Kostet Abo statt Guthaben.
-   Stimme, Gesprächsmodus und TFT bleiben auf dem schnellen API-Weg, weil der
-   Agent für Sprachtempo und Spielbilder zu träge ist.
+1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 liegt in `sammeltest`
+   (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
+   Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
+   Skill-Ordner im Arbeitsordner, und das automatische Erkennen von Aufgaben, die
+   zum Agenten gehören – bisher muss Art sie ausdrücklich abgeben.
 2. **Design und Bedienung.** Die Oberfläche wirkt billig und soll überarbeitet
    werden.
 3. **Stimmklon Deutsch,** näher an der Jarvis-Stimme aus den Iron-Man-Filmen.
@@ -67,3 +102,11 @@ Ausführlich in `CLAUDE.md`. Das Wichtigste:
   der Entwicklungsumgebung nicht prüfen lässt (Mikrofon, Echo, Akku,
   Erkennungsqualität), wird ausdrücklich als ungeprüft benannt.
 - Zweige und Releases löscht Art im Browser.
+
+## Agent-Rückgrat, kurz
+
+Lange Aufgaben macht nicht die App, sondern ein Agent auf demselben Handy:
+Claude Code in Termux (Ubuntu über `proot-distro`), erreichbar über
+`127.0.0.1:8777` mit Token. Das kostet Abo statt API-Guthaben. Die schnellen
+Wege (Stimme, Gespräch, Spielmodus) bleiben bei der Claude-API, weil der Agent
+dafür zu träge ist. Einrichtung und Fehlersuche: `agent/README.md`.
