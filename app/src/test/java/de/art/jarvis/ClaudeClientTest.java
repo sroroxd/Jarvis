@@ -80,4 +80,41 @@ public class ClaudeClientTest {
         assertFalse(ClaudeClient.mentionsWebSearch("max_tokens: too large"));
         assertFalse(ClaudeClient.mentionsWebSearch(null));
     }
+
+    @Test
+    public void grundanweisungGehtMitCacheMarkeRaus() throws Exception {
+        org.json.JSONObject body = ClaudeClient.body("claude-sonnet-5-5", 1024, "disabled", null,
+                "Du bist JARVIS.", new JSONArray(), null);
+        org.json.JSONArray system = body.getJSONArray("system");
+        assertEquals(1, system.length());
+        org.json.JSONObject block = system.getJSONObject(0);
+        assertEquals("text", block.getString("type"));
+        assertEquals("Du bist JARVIS.", block.getString("text"));
+        assertEquals("ephemeral", block.getJSONObject("cache_control").getString("type"));
+        assertFalse(body.has("cache_control")); // keine automatische Marke am Verlaufsende
+        assertFalse(body.has("tools"));
+        assertFalse(body.has("temperature"));
+    }
+
+    @Test
+    public void leereGrundanweisungFaelltWeg() throws Exception {
+        org.json.JSONObject body = ClaudeClient.body("claude-sonnet-5-5", 1024, null, null, "  ", new JSONArray(), null);
+        assertFalse(body.has("system")); // leere Textblöcke lehnt die API ab
+    }
+
+    @Test
+    public void cacheVerbrauchWirdGelesen() throws Exception {
+        ClaudeClient.Usage gelesen = ClaudeClient.Usage.from(new org.json.JSONObject(
+                "{\"input_tokens\":1300,\"cache_read_input_tokens\":2450,\"cache_creation_input_tokens\":0,\"output_tokens\":40}"));
+        assertEquals(2450, gelesen.cacheRead);
+        assertEquals("Cache 2,5 Tsd. gelesen", gelesen.summary());
+
+        ClaudeClient.Usage neu = ClaudeClient.Usage.from(new org.json.JSONObject(
+                "{\"input_tokens\":1300,\"cache_creation_input_tokens\":2450}"));
+        assertEquals("Cache 2,5 Tsd. neu", neu.summary());
+
+        ClaudeClient.Usage ohne = ClaudeClient.Usage.from(new org.json.JSONObject("{\"input_tokens\":300}"));
+        assertEquals("ohne Cache", ohne.summary());
+        assertEquals(null, ClaudeClient.Usage.from(null));
+    }
 }

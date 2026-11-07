@@ -8,31 +8,32 @@ import java.util.Locale;
 final class Persona {
     private Persona() {}
 
-    static String system(boolean tftMode, boolean hasScreenshot, String memory) {
-        return system(tftMode, hasScreenshot, memory, "", "", false);
+    static String system(boolean tftMode, String memory) {
+        return system(tftMode, memory, "", "", false);
     }
 
-    static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate) {
-        return system(tftMode, hasScreenshot, memory, meta, metaDate, false);
+    static String system(boolean tftMode, String memory, String meta, String metaDate) {
+        return system(tftMode, memory, meta, metaDate, false);
     }
 
     /**
      * meta/metaDate: tägliche TFT-Meta aus dem Internet (nur im Spielmodus genutzt).
      * tools: Websuche und Kalender stehen zur Verfügung (Alltag mit Claude).
      */
-    static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate,
-                         boolean tools) {
-        return system(tftMode, hasScreenshot, memory, meta, metaDate, tools, false);
+    static String system(boolean tftMode, String memory, String meta, String metaDate, boolean tools) {
+        return system(tftMode, memory, meta, metaDate, tools, false);
     }
 
     /** agent: der Agent in Termux ist eingerichtet („Übernimm das: …“ geht an ihn). */
-    static String system(boolean tftMode, boolean hasScreenshot, String memory, String meta, String metaDate,
-                         boolean tools, boolean agent) {
-        String now = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(new Date());
+    static String system(boolean tftMode, String memory, String meta, String metaDate, boolean tools, boolean agent) {
+        // Bewusst OHNE Uhrzeit und ohne Bildschirm-Hinweis: Diese Anweisung bleibt von Frage zu Frage gleich, damit
+        // Claude sie aus dem Zwischenspeicher lesen kann (Prompt-Caching). Was sich jede Frage ändert, steht in
+        // turnContext() direkt vor der Frage.
         StringBuilder sb = new StringBuilder();
         sb.append("Du bist JARVIS, der persönliche KI-Assistent von Art – nach dem Vorbild von Tony Starks JARVIS: ")
           .append("ruhig, präzise, loyal, mit trockenem, feinem Humor. Du sprichst Deutsch, siezt Art durchgehend („Sie“, nie „du“) und nennst ihn gelegentlich „Sir“, aber nicht in jedem Satz.\n")
-          .append("Aktuelle Zeit: ").append(now).append(".\n");
+          .append("Vor jeder Frage steht eine Zeile [KONTEXT: …] mit der aktuellen Uhrzeit und ob ein Bildschirmfoto anliegt. "
+                  + "Sie kommt von der App, nicht von Art. Richte dich nach ihr, lies sie aber nie vor und erwähne sie nicht.\n");
 
         p(sb, "SO ANTWORTEST DU – deine Antworten werden laut vorgelesen:\n"
                 + "- Beantworte die eigentliche Frage konkret und mit Substanz: Nutze dein volles Wissen, gib eine klare Empfehlung "
@@ -51,12 +52,6 @@ final class Persona {
                 + "den passenden Bildschirm zu öffnen und dich noch einmal zu fragen – dann bekommst du ein neues Bildschirmfoto.\n"
                 + "- Eine ehrliche Antwort wie „Das kann ich nicht sicher erkennen“ ist immer besser als eine geratene.");
 
-        if (hasScreenshot) {
-            p(sb, "Angehängt ist ein Bildschirmfoto von Arts Handy im Moment der Frage. Nutze es, wenn die Frage sich darauf bezieht. "
-                    + "Erwähne es nicht, wenn es für die Frage keine Rolle spielt.");
-        } else {
-            p(sb, "Diesmal liegt kein Bildschirmfoto vor. Behaupte nichts darüber, was auf dem Bildschirm zu sehen ist.");
-        }
 
         p(sb, "DIESE APP – das weißt du über dich selbst, erkläre und schalte es, statt Art an einen Entwickler zu verweisen:\n"
                 + "- Dauergespräch: Ein Tipp auf den Kern startet es. Danach hörst du nach jeder Antwort von selbst weiter zu, "
@@ -125,15 +120,30 @@ final class Persona {
                     + "- Fehlt dir für die Entscheidung ein Wert (Leben, Gold, Stufe, eine Einheit), frag kurz und gezielt genau danach – "
                     + "zum Beispiel „Wie viel Leben haben Sie?“ – statt zu raten. Sonst nichts nachfragen.\n"
                     + "- Du siehst pro Frage ein Standbild. Empfiehl Art einmalig, zu Beginn jeder Planungsphase zu fragen, nicht mitten im Kampf.");
-            if (!hasScreenshot) {
-                p(sb, "Du siehst Arts Spielfeld gerade NICHT – es liegt kein Bildschirmfoto vor (die Bildschirmfreigabe fehlt). "
-                        + "Bezieht sich die Frage auf seine laufende Partie, sag zuerst in einem kurzen Satz, dass du das Spielfeld nicht siehst "
-                        + "und er oben auf „Bildschirm“ tippen und „Gesamter Bildschirm“ wählen soll; gib danach höchstens einen "
-                        + "allgemeinen Tipp ohne Bezug auf sein Brett. Allgemeine Fragen, zum Beispiel zur Meta, beantwortest du normal.");
-            }
             p(sb, Meta.forPersona(meta, metaDate));
         }
         return sb.toString();
+    }
+
+    /**
+     * Was sich von Frage zu Frage ändert: Uhrzeit und ob ein Bildschirmfoto anliegt. Steht als eigener Textblock
+     * vor der Frage – nicht in der Grundanweisung, sonst wäre die bei jeder Frage neu und nie im Zwischenspeicher.
+     */
+    static String turnContext(boolean tftMode, boolean hasScreenshot, Date now) {
+        String time = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(now);
+        StringBuilder sb = new StringBuilder("[KONTEXT: Aktuelle Zeit: ").append(time).append(". ");
+        if (hasScreenshot) {
+            sb.append("Angehängt ist ein Bildschirmfoto von Arts Handy im Moment der Frage. Nutze es, wenn die Frage sich "
+                    + "darauf bezieht, und erwähne es nicht, wenn es keine Rolle spielt.");
+        } else if (tftMode) {
+            sb.append("Du siehst Arts Spielfeld gerade NICHT – es liegt kein Bildschirmfoto vor (die Bildschirmfreigabe fehlt). "
+                    + "Bezieht sich die Frage auf seine laufende Partie, sag zuerst in einem kurzen Satz, dass du das Spielfeld nicht siehst "
+                    + "und er oben auf „Bildschirm“ tippen und „Gesamter Bildschirm“ wählen soll; gib danach höchstens einen "
+                    + "allgemeinen Tipp ohne Bezug auf sein Brett. Allgemeine Fragen, zum Beispiel zur Meta, beantwortest du normal.");
+        } else {
+            sb.append("Diesmal liegt kein Bildschirmfoto vor. Behaupte nichts darüber, was auf dem Bildschirm zu sehen ist.");
+        }
+        return sb.append(']').toString();
     }
 
     private static void p(StringBuilder sb, String paragraph) {

@@ -1000,6 +1000,10 @@ public class JarvisService extends Service {
                                 .put("media_type", "image/jpeg")
                                 .put("data", image)));
             }
+            // Uhrzeit und Bildschirm-Hinweis stehen vor der Frage statt in der Grundanweisung – so bleibt
+            // die Grundanweisung gleich und kommt aus dem Zwischenspeicher (siehe ClaudeClient.body).
+            content.put(new JSONObject().put("type", "text")
+                    .put("text", Persona.turnContext(prefs.tftMode(), image != null, new java.util.Date())));
             content.put(new JSONObject().put("type", "text").put("text", text));
             messages.put(new JSONObject().put("role", "user").put("content", content));
         } catch (JSONException e) {
@@ -1010,7 +1014,7 @@ public class JarvisService extends Service {
 
         // Werkzeuge (Websuche, Kalender) nur im Alltag mit Claude – der Spielmodus bleibt schnell und nutzt die Tages-Meta.
         boolean withTools = !prefs.tftMode() && !prefs.isGemini();
-        String system = Persona.system(prefs.tftMode(), image != null, prefs.memory(), prefs.metaText(), prefs.metaDate(),
+        String system = Persona.system(prefs.tftMode(), prefs.memory(), prefs.metaText(), prefs.metaDate(),
                 withTools, prefs.agentReady());
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
@@ -1264,7 +1268,8 @@ public class JarvisService extends Service {
     /** Erster Ton einer Antwort: Messung abschließen und auf dem Startbildschirm zeigen. */
     private void onVoiceStarted() {
         if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
-            lastTiming = timing.summary() + " (" + lastModel + ")";
+            ClaudeClient.Usage usage = prefs.isGemini() ? null : ClaudeClient.lastUsage;
+            lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary()) + ")";
             notifyUi();
         }
     }

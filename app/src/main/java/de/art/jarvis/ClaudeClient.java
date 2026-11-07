@@ -271,21 +271,75 @@ final class ClaudeClient {
         return calls;
     }
 
+    /**
+     * Der Anfrage-Körper. Die Grundanweisung (system) geht als Textblock mit Cache-Marke raus: Werkzeuge und
+     * Grundanweisung bleiben von Frage zu Frage gleich, Claude liest sie dann aus dem Zwischenspeicher – bei
+     * Sonnet 5.5 für 5 % des normalen Eingabepreises statt 100 %. Die Marke sitzt bewusst am Ende der
+     * Grundanweisung und nicht am Ende des Verlaufs: Der Verlauf wird ohne Bildschirmfotos gespeichert, das
+     * Ende jeder Anfrage ist also nie wiederverwendbar – dort zu cachen, kostete nur den Aufschlag fürs Schreiben.
+     * Unter 512 Tokens cacht die API nicht, liefert dann aber auch keinen Fehler.
+     */
+    static JSONObject body(String model, int maxTokens, String thinking, String effort, String system,
+                           JSONArray messages, JSONArray tools) throws JSONException {
+        JSONObject body = new JSONObject();
+        body.put("model", model);
+        body.put("max_tokens", maxTokens); // Nachdenken + Antwort teilen sich dieses Budget
+        if (thinking != null) body.put("thinking", new JSONObject().put("type", thinking));
+        if (effort != null) body.put("output_config", new JSONObject().put("effort", effort));
+        // Kein „temperature“: Die aktuellen Claude-Modelle lehnen den Parameter ab (Fehler 400).
+        if (system != null && !system.trim().isEmpty()) {
+            // Leere Textblöcke lehnt die API ab – ohne Grundanweisung fällt das Feld ganz weg.
+            body.put("system", new JSONArray().put(new JSONObject()
+                    .put("type", "text")
+                    .put("text", system)
+                    .put("cache_control", new JSONObject().put("type", "ephemeral"))));
+        }
+        body.put("messages", messages);
+        if (tools != null && tools.length() > 0) body.put("tools", tools);
+        return body;
+    }
+
+    /** Verbrauch der letzten Anfrage (für die Anzeige auf dem Startbildschirm), null = noch keine. */
+    static volatile Usage lastUsage;
+
+    /** Eingabe-Tokens einer Antwort, aufgeteilt in normal, aus dem Zwischenspeicher gelesen und neu hineingeschrieben. */
+    static final class Usage {
+        final int input;
+        final int cacheRead;
+        final int cacheWrite;
+
+        Usage(int input, int cacheRead, int cacheWrite) {
+            this.input = input;
+            this.cacheRead = cacheRead;
+            this.cacheWrite = cacheWrite;
+        }
+
+        static Usage from(JSONObject usage) {
+            if (usage == null) return null;
+            return new Usage(usage.optInt("input_tokens", 0),
+                    usage.optInt("cache_read_input_tokens", 0),
+                    usage.optInt("cache_creation_input_tokens", 0));
+        }
+
+        /** Kurz für die Anzeige, z. B. „Cache 2,4 Tsd. gelesen“. */
+        String summary() {
+            if (cacheRead > 0) return "Cache " + thousands(cacheRead) + " gelesen";
+            if (cacheWrite > 0) return "Cache " + thousands(cacheWrite) + " neu";
+            return "ohne Cache";
+        }
+
+        private static String thousands(int tokens) {
+            return String.format(java.util.Locale.GERMANY, "%.1f Tsd.", tokens / 1000.0);
+        }
+    }
+
     /** thinking: "adaptive", "disabled" oder null (Feld weglassen); effort: "low"/"medium"/… oder null. */
     private Result request(String apiKey, String model, String system, JSONArray messages,
                            String thinking, String effort, int maxTokens, JSONArray tools) {
         Result result = new Result();
         HttpURLConnection conn;
         try {
-            JSONObject body = new JSONObject();
-            body.put("model", model);
-            body.put("max_tokens", maxTokens); // Nachdenken + Antwort teilen sich dieses Budget
-            if (thinking != null) body.put("thinking", new JSONObject().put("type", thinking));
-            if (effort != null) body.put("output_config", new JSONObject().put("effort", effort));
-            // Kein „temperature“: Die aktuellen Claude-Modelle lehnen den Parameter ab (Fehler 400).
-            body.put("system", system);
-            body.put("messages", messages);
-            if (tools != null && tools.length() > 0) body.put("tools", tools);
+            JSONObject body = body(model, maxTokens, thinking, effort, system, messages, tools);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
 
             conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
@@ -317,6 +371,7 @@ final class ClaudeClient {
             }
 
             JSONObject json = new JSONObject(response);
+            lastUsage = Usage.from(json.optJSONObject("usage"));
             result.stopReason = json.optString("stop_reason", "");
             JSONArray content = json.optJSONArray("content");
             if (content != null) result.content = content;
