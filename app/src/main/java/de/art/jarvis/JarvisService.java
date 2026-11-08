@@ -466,6 +466,11 @@ public class JarvisService extends Service {
                     @Override
                     public void onResult(String text) {
                         metaRunning = false;
+                        // Geprüfte Meta: ohne Set und Patch nicht speichern – nach 30 Minuten neuer Versuch.
+                        if (!Meta.isPlausible(text)) {
+                            testLog("meta verworfen: " + text);
+                            return;
+                        }
                         prefs.setMeta(text, today);
                         notifyUi();
                     }
@@ -1097,6 +1102,10 @@ public class JarvisService extends Service {
                 // Art hat in eigenen Worten um Dauerzuhören gebeten (oder es beendet) – Claude meldet das per Steuerzeile.
                 Boolean dauer = Commands.continuousTag(answer);
                 answer = Commands.stripControlTags(answer);
+                // Spielmodus: die stille Ablese-Zeile [STAND: …] – nie vorlesen, aber im Verlauf behalten.
+                String stand = GameReadout.find(answer);
+                answer = GameReadout.strip(answer);
+                if (stand != null) testLog("stand: " + stand);
                 if (dauer != null) setContinuousFromAnswer(dauer);
                 // Wünsche, die Art in eigenen Worten geäußert hat – Claude meldet sie per Steuerzeile.
                 java.util.List<String[]> wishes = Wishes.tags(answer);
@@ -1113,7 +1122,7 @@ public class JarvisService extends Service {
                 ClaudeClient.Usage used = prefs.isGemini() ? null : ClaudeClient.lastUsage;
                 testLog("antwort [" + (used == null ? "?" : used.summary()) + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
-                remember("assistant", answer);
+                remember("assistant", GameReadout.forHistory(stand, answer));
                 finishStream(stream, answer);
             }
 
@@ -1132,7 +1141,10 @@ public class JarvisService extends Service {
         if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
         // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
         // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low",
+        // Spielmodus standardmäßig „low“ wie im Alltag (Wunsch #23: Tempo zuerst) – das genaue Hinsehen übernimmt die
+        // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
+        // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
+        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() && prefs.gameThinkDeep() ? "medium" : "low",
                 withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
     }
 

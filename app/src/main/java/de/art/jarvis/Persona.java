@@ -125,6 +125,9 @@ final class Persona {
                     + "  3. Stufe: nach den üblichen Stufen-Zeitpunkten der aktuellen Meta aufsteigen.\n"
                     + "  4. Ziel-Comp: auf die stärkste erreichbare Comp der aktuellen Meta hinarbeiten, passend zu seinen Einheiten, "
                     + "Gegenständen und Verstärkungen – die Richtung nennen, nicht drei Comps zur Auswahl.\n"
+                    + "- Liegt ein Bildschirmfoto bei, schreib als ALLERERSTE Zeile, was du abliest: "
+                    + "[STAND: Phase … | Gold … | Stufe … | Leben …] – für alles, was du nicht sicher erkennst, ein Fragezeichen. "
+                    + "Die Zeile wird nicht vorgelesen. Stütze den Befehl danach auf genau diese Werte.\n"
                     + "- Fehlt dir für die Entscheidung ein Wert (Leben, Gold, Stufe, eine Einheit), frag kurz und gezielt genau danach – "
                     + "zum Beispiel „Wie viel Leben haben Sie?“ – statt zu raten. Sonst nichts nachfragen.");
             p(sb, Meta.forPersona(meta, metaDate));

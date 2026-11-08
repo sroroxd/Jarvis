@@ -307,6 +307,15 @@ public final class Prefs {
         sp.edit().putBoolean("game_auto", value).apply();
     }
 
+    /** Spielmodus: gründlicher nachdenken (langsamer). Standard aus – Tempo zuerst (Wunsch #23). */
+    public boolean gameThinkDeep() {
+        return sp.getBoolean("game_think_deep", false);
+    }
+
+    public void setGameThinkDeep(boolean value) {
+        sp.edit().putBoolean("game_think_deep", value).apply();
+    }
+
     // ---------------------------------------------------------------- Wünsche an die Entwicklung
 
     /** GitHub-Schlüssel (fine-grained, nur sroroxd/Jarvis, „Issues: Read and write“). */

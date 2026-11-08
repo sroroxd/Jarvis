@@ -37,6 +37,9 @@ Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `f
    TFT öffnen → sagt Jarvis „TFT erkannt“ und hört ohne „Jarvis“ zu? Nach dem Spiel (20 s raus) wieder aus?
 6. **Empfindlichkeit beim Dazwischenreden** (Einstellungen → Sprachsteuerung, Wunsch #25): Unterbricht
    Jarvis sich selbst → niedriger stellen; kommst du nicht durch → höher.
+7. **TFT-Coaching (#23):** Kommen die Befehle schneller? Stimmen Gold, Stufe und Leben, auf die er sich
+   bezieht? Wenn die Pläne zu flach wirken: Einstellungen → Spielmodus → „Gründlicher nachdenken“ an
+   und vergleichen.
 
 ## Aufräumen (8. November)
 
@@ -58,8 +61,7 @@ Früher erledigt (4. Nov.): Repo geprüft – keine fremden Pushes, keine echten
 
 0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die
    Test-App und den Schnellstart („Jarvis zuhören“ mit Mikrofon-Symbol). Die automatische TFT-Erkennung
-   ist seit dem 8. Nov. gebaut. Wunsch #23 (TFT-Coaching schnell, sichere Bilderkennung, geprüfte Meta)
-   ist teilweise erledigt (Streaming, kürzere Antworten); offen sind Bilderkennung und Meta-Prüfung.
+   ist seit dem 8. Nov. gebaut, Wunsch #23 ebenso (siehe Punkt 14 der Gesamtprüfung).
 1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 liegt in `sammeltest`
    (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
    Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
@@ -155,7 +157,17 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
 13. **Empfindlichkeit beim Dazwischenreden** einstellbar (Wunsch #25): Stufe 1–10, 5 = 10 dB über dem
     Echo (bisheriger Wert), 1 = 14,8 dB, 10 = 4 dB. Für „Jarvis“ gilt der vorhandene Regler „Empfindlichkeit“.
 
-**Geprüft:** Build (Release und Debug), alle 151 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+14. **TFT-Coaching hat Vorrang** (Wunsch #23, 8. Nov.):
+    - *Erst lesen, dann befehlen:* Zu jedem Spielbild schreibt Claude zuerst eine stille Zeile
+      `[STAND: Phase … | Gold … | Stufe … | Leben …]` (Unsicheres mit „?“) und stützt den Befehl darauf.
+      Nie vorgelesen, bleibt aber im Verlauf – die nächste Runde sieht die letzten Werte. Im Testprotokoll als „stand:“.
+    - *Tempo:* Spielmodus standardmäßig mit Stufe „low“ wie der Alltag (laut Claude-Doku denkt das Modell ab
+      „medium“ vor fast jeder Antwort nach). Schalter „Gründlicher nachdenken“ holt „medium“ zurück.
+    - *Geprüfte Meta:* Eine Recherche ohne „Set <n>“ und „Patch <n>“ in der ersten Zeile (oder zu dünn)
+      wird nicht gespeichert und nach 30 Minuten wiederholt; Jarvis sagt bis dahin, dass sein Stand veraltet
+      sein kann.
+
+**Geprüft:** Build (Release und Debug), alle 156 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

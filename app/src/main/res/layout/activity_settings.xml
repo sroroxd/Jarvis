@@ -596,6 +596,20 @@
                         android:text="Nichts verdeckt das Spielbild, Jarvis antwortet nur per Stimme und denkt als TFT-Coach mit (Claude Sonnet 5.5). Umschalten auch per Sprache: „Spielmodus an“ oder „Spielmodus aus“." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchGameThink"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Gründlicher nachdenken" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Aus (Standard) = schnellste Befehle; Jarvis liest Gold, Stufe und Leben aber immer zuerst ab. An = denkt vor fast jeder Antwort nach – manchmal bessere Pläne, dafür spürbar langsamer." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchGameAuto"
                         style="@style/Jarvis.Label"
                         android:layout_width="match_parent"

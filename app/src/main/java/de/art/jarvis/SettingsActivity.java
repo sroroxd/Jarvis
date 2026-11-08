@@ -309,6 +309,11 @@ public class SettingsActivity extends AppCompatActivity {
             prefs.setTftMode(on);
             refreshService();
         });
+        b.switchGameThink.setChecked(prefs.gameThinkDeep());
+        b.switchGameThink.setOnCheckedChangeListener((v, on) -> {
+            prefs.setGameThinkDeep(on);
+            refreshService();
+        });
         b.switchGameAuto.setChecked(prefs.gameAuto());
         b.switchGameAuto.setOnCheckedChangeListener((v, on) -> {
             prefs.setGameAuto(on);
@@ -509,6 +514,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.switchBargeIn.setChecked(prefs.bargeIn());
         setSlider(b.sliderBargeIn, prefs.bargeInSensitivity());
         b.switchGameAuto.setChecked(prefs.gameAuto());
+        b.switchGameThink.setChecked(prefs.gameThinkDeep());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         setSlider(b.sliderRate, prefs.rate());
         setSlider(b.sliderPitch, prefs.pitch());
@@ -619,6 +625,11 @@ public class SettingsActivity extends AppCompatActivity {
                 Meta.MAX_SEARCHES, new ClaudeClient.Callback() {
                     @Override
                     public void onResult(String text) {
+                        if (!Meta.isPlausible(text)) {
+                            b.metaUpdate.setEnabled(true);
+                            b.metaInfo.setText("✗ Recherche unvollständig – kein Set oder Patch erkennbar. Bitte später noch einmal.");
+                            return;
+                        }
                         prefs.setMeta(text, today);
                         b.metaUpdate.setEnabled(true);
                         updateMetaInfo();
