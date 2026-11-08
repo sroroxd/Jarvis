@@ -455,6 +455,42 @@
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorPrimary"
                         android:visibility="gone" />
+
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="12dp" />
+
+                    <TextView
+                        style="@style/Jarvis.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Offline-Stimme (Test)" />
+
+                    <TextView
+                        android:id="@+id/pocketHint"
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Kyutai Pocket TTS direkt auf dem Handy – ohne Netz und ohne Kosten, möglicher Ersatz für ElevenLabs. Lädt beim ersten Antippen einmalig rund 147 MB (am besten im WLAN), spricht dann drei Probesätze und misst, wie schnell das Handy ist. Noch nicht Jarvis' Stimme." />
+
+                    <Button
+                        android:id="@+id/pocketTry"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Offline-Stimme ausprobieren" />
+
+                    <TextView
+                        android:id="@+id/pocketResult"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary"
+                        android:textIsSelectable="true"
+                        android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

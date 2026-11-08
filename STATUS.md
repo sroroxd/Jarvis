@@ -298,8 +298,17 @@ Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
 - **Preis.** Native Bibliotheken jetzt gepackt in der APK (`useLegacyPackaging`): Release-APK 34 MB statt 32 MB
   heute (ungepackt wären es 67 MB). Dazu einmalig das Modell (140 MB) auf dem Handy – das lädt die App erst, wenn
   Art zustimmt (Daten auf seinem Handy).
-- **Im Code:** `PocketVoice` (laden, sprechen), `Wav` (Sprachprobe lesen, 3 Tests), Testzugang `testpocket` im
-  Debug-Build. Noch **nicht** als Jarvis' Stimme eingebaut.
+- **Auf Android bestätigt (Gerätetest Build 99):** Modell geladen (14 s im Emulator), erster Satz erzeugt, kein
+  Absturz. Das Tempo im x86-Emulator ist ohne Aussagekraft (114 s für 1,7 s Audio – rund 50-mal langsamer als der
+  Rechner hier mit derselben Bibliothek).
+- **Im Code:** `PocketVoice` (laden, sprechen), `Wav` (Sprachprobe lesen, 3 Tests), `PcmPlayer`, Testzugang
+  `testpocket` im Debug-Build, und für Arts Handy in den Einstellungen **„Offline-Stimme ausprobieren“**
+  (`PocketTrial`): lädt erst auf Antippen rund 147 MB (jede Datei mit fester Prüfsumme, feste Fassung des
+  Modell-Repos; im Mobilfunk erst nach zweitem Tippen), spricht drei Sätze und zeigt die Zeiten. Noch **nicht**
+  als Jarvis' Stimme eingebaut.
+- **Was Arts Messung entscheidet:** Unter 1 s Rechenzeit für „Zu Diensten, Sir.“ (ohne den ersten Satz, der die
+  Stimme einliest) → Pocket als Jarvis' Stimme einbauen (Satz für Satz über StreamSpeech, Sprachprobe wählbar,
+  ElevenLabs bleibt als Wahl). Deutlich darüber → whisper.cpp/Agent zuerst, Pocket später mit kleinerem Modell.
 
 ### Vertiefung (zweiter Durchgang)
 

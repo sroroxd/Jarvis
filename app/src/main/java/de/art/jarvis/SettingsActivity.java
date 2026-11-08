@@ -207,6 +207,8 @@ public class SettingsActivity extends AppCompatActivity {
         b.elevenKeyField.setText(prefs.elevenKey());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());
         b.previewVoice.setOnClickListener(v -> preview());
+        b.pocketTry.setOnClickListener(v -> tryPocket());
+        if (PocketTrial.downloaded(this)) b.pocketTry.setText("Offline-Stimme anhören (schon geladen)");
         loadPreviewEngine(active);
     }
 
@@ -228,6 +230,32 @@ public class SettingsActivity extends AppCompatActivity {
         b.voiceResult.setVisibility(View.GONE);
         Voices.apply(previewTts, prefs, previewEngine);
         previewTts.speak(Text.sirForDeviceVoice(PREVIEW_TEXT), TextToSpeech.QUEUE_FLUSH, null, "preview");
+    }
+
+    /** Beim zweiten Antippen im Mobilfunk wird trotzdem geladen. */
+    private boolean pocketMeteredConfirmed;
+
+    /** „Offline-Stimme ausprobieren“: lädt nur auf Arts Antippen, im Mobilfunk erst nach einem zweiten Tippen. */
+    private void tryPocket() {
+        if (!PocketTrial.downloaded(this) && !pocketMeteredConfirmed) {
+            android.net.ConnectivityManager cm = getSystemService(android.net.ConnectivityManager.class);
+            if (cm != null && cm.isActiveNetworkMetered()) {
+                pocketMeteredConfirmed = true;
+                showResult(b.pocketResult, "Du bist im Mobilfunk. Noch einmal tippen, um die " + (PocketTrial.totalBytes() >> 20)
+                        + " MB trotzdem zu laden – oder später im WLAN.");
+                return;
+            }
+        }
+        b.pocketTry.setEnabled(false);
+        showResult(b.pocketResult, "Starte …");
+        PocketTrial.start(this, (text, done) -> {
+            if (isFinishing() || isDestroyed()) return;
+            showResult(b.pocketResult, text);
+            if (done) {
+                b.pocketTry.setEnabled(true);
+                if (PocketTrial.downloaded(this)) b.pocketTry.setText("Offline-Stimme anhören (schon geladen)");
+            }
+        });
     }
 
     /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */

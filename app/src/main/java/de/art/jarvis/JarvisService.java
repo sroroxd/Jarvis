@@ -625,7 +625,7 @@ public class JarvisService extends Service {
                             i + 1, ms, sec, sec > 0 ? ms / 1000f / sec : 0));
                     if (i == 0) audio.save(new java.io.File(dir, "probe.wav").getAbsolutePath());
                     try {
-                        playPcm(audio.getSamples(), audio.getSampleRate());
+                        PcmPlayer.play(audio.getSamples(), audio.getSampleRate());
                     } catch (RuntimeException e) { // Emulator ohne Ton: Abspielen ist hier Beiwerk
                         testLog("pocket abspielen: " + e.getMessage());
                     }
@@ -637,28 +637,6 @@ public class JarvisService extends Service {
                 if (voice != null) voice.release();
             }
         }, "pocket-test").start();
-    }
-
-    /** Spielt Gleitkomma-Samples einmal ab und wartet, bis sie durch sind (nur für den Pocket-Test). */
-    private static void playPcm(float[] samples, int rate) {
-        if (samples.length == 0) return;
-        android.media.AudioTrack track = new android.media.AudioTrack.Builder()
-                .setAudioAttributes(new android.media.AudioAttributes.Builder()
-                        .setUsage(android.media.AudioAttributes.USAGE_ASSISTANT)
-                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                .setAudioFormat(new android.media.AudioFormat.Builder()
-                        .setEncoding(android.media.AudioFormat.ENCODING_PCM_FLOAT)
-                        .setSampleRate(rate).setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO).build())
-                .setTransferMode(android.media.AudioTrack.MODE_STATIC)
-                .setBufferSizeInBytes(samples.length * 4)
-                .build();
-        try {
-            track.write(samples, 0, samples.length, android.media.AudioTrack.WRITE_BLOCKING);
-            track.play();
-            SystemClock.sleep(samples.length * 1000L / rate + 100);
-        } finally {
-            track.release();
-        }
     }
 
     private void testWatchFiles() {

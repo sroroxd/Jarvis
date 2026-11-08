@@ -247,17 +247,21 @@ if [ "$pok" = 1 ]; then
   done
   pocket() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "pocket" || true; }
   adb shell "am start -n $ACT --ez testpocket true" > /dev/null 2>&1
-  for _ in $(seq 1 60); do
+  # Der x86-Emulator rechnet Pocket TTS rund 50-mal langsamer als Echtzeit (Build 99: 114 s für 1,7 s Audio) –
+  # hier zählt nur, dass die Bibliothek lädt und der erste Satz entsteht. Das Tempo misst Arts Handy
+  # (Einstellungen → „Offline-Stimme ausprobieren“).
+  for _ in $(seq 1 80); do
     sleep 3
-    pocket | grep -qE "pocket (fertig|fehler)" && break
+    pocket | grep -qE "pocket (satz 1|fehler)" && break
   done
-  if pocket | grep -q "pocket fertig"; then
-    pocket | sed 's/.*JarvisTest: /  /' | while read -r l; do say "$l"; done
+  if pocket | grep -q "pocket satz 1"; then
+    pocket | grep -E "geladen|satz 1" | sed 's/.*JarvisTest: /  /' | while read -r l; do say "$l"; done
+    say "  Offline-Stimme läuft auf Android (Tempo im Emulator ohne Aussagekraft)"
     adb exec-out run-as "$PKG" cat files/pocket/probe.wav > shots/pocket_probe.wav 2>/dev/null || true
   elif pocket | grep -q "pocket fehler"; then
     say "  Hinweis Offline-Stimme: $(pocket | grep 'pocket fehler' | tail -1 | sed 's/.*JarvisTest: //')"
   else
-    say "  Hinweis Offline-Stimme: keine Rückmeldung nach 3 Minuten"
+    say "  Hinweis Offline-Stimme: kein erster Satz nach 4 Minuten"
     pocket | sed 's/.*JarvisTest: /    /' | while read -r l; do say "$l"; done
   fi
 else
