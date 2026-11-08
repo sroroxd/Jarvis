@@ -298,8 +298,8 @@ Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
 - **Preis.** Native Bibliotheken jetzt gepackt in der APK (`useLegacyPackaging`): Release-APK 34 MB statt 32 MB
   heute (ungepackt wären es 67 MB). Dazu einmalig das Modell (140 MB) auf dem Handy – das lädt die App erst, wenn
   Art zustimmt (Daten auf seinem Handy).
-- **Auf Android bestätigt (Gerätetest Build 99):** Modell geladen (14 s im Emulator), erster Satz erzeugt, kein
-  Absturz. Das Tempo im x86-Emulator ist ohne Aussagekraft (114 s für 1,7 s Audio – rund 50-mal langsamer als der
+- **Auf Android bestätigt (Gerätetest Build 99–101):** Modell geladen (11–19 s im Emulator), erster Satz erzeugt,
+  kein Absturz; Whisper liest die auf Android erzeugte Probe als „Zu Diensten …“ zurück. Das Tempo im x86-Emulator ist ohne Aussagekraft (114 s für 1,7 s Audio – rund 50-mal langsamer als der
   Rechner hier mit derselben Bibliothek).
 - **Im Code:** `PocketVoice` (laden, sprechen), `Wav` (Sprachprobe lesen, 3 Tests), `PcmPlayer`, Testzugang
   `testpocket` im Debug-Build, und für Arts Handy in den Einstellungen **„Offline-Stimme ausprobieren“**
