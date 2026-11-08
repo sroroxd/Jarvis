@@ -616,9 +616,9 @@ public class JarvisService extends Service {
                 voice = new PocketVoice(dir, new java.io.File(dir, "stimme.wav"), 2);
                 testLog("pocket: geladen in " + (SystemClock.elapsedRealtime() - t0) + " ms, "
                         + voice.sampleRate() + " Hz, " + Runtime.getRuntime().availableProcessors() + " Kerne");
-                String[] saetze = {"Zu Diensten, Sir.",
-                        "Kaufen Sie jetzt den zweiten Ornn und stellen Sie Ihren Carry hinten in die Ecke.",
-                        "Morgen um neun Uhr haben Sie einen Termin beim Zahnarzt."};
+                // Nur ein Satz: Im Emulator braucht jeder ~45 s, und ein zweites Modell im Speicher (der folgende
+                // Test „als Jarvis' Stimme“) würde dort den Prozess beenden. Drei Sätze misst Arts Handy.
+                String[] saetze = {"Zu Diensten, Sir."};
                 for (int i = 0; i < saetze.length; i++) {
                     long t = SystemClock.elapsedRealtime();
                     com.k2fsa.sherpa.onnx.GeneratedAudio audio = voice.generate(saetze[i]);
