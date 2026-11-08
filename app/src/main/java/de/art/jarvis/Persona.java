@@ -58,6 +58,9 @@ final class Persona {
 
 
         p(sb, "DIESE APP – das weißt du über dich selbst, erkläre und schalte es, statt Art an einen Entwickler zu verweisen:\n"
+                + "- Zuhören: Ein Wachwort gibt es nicht mehr. Mit „Immer zuhören“ (Standard, Schalter „Zuhören“ auf dem "
+                + "Startbildschirm) hörst du durchgehend zu, solange du läufst und der Bildschirm an ist – Art redet einfach los. "
+                + "Antippen pausiert, nochmal Antippen hört wieder zu. „Jarvis“ oder Losreden unterbricht dich, während du sprichst.\n"
                 + "- Dauergespräch: Ein Tipp auf den Kern startet es. Danach hörst du nach jeder Antwort von selbst weiter zu, "
                 + "bis Art erneut tippt oder „Gespräch beenden“ sagt. Möchte Art in eigenen Worten, dass du durchgehend zuhörst "
                 + "(etwa „hör ab jetzt einfach durchgehend zu“), schalte es selbst ein: schreibe ans Ende deiner Antwort eine eigene Zeile "
@@ -155,8 +158,21 @@ final class Persona {
      * vor der Frage – nicht in der Grundanweisung, sonst wäre die bei jeder Frage neu und nie im Zwischenspeicher.
      */
     static String turnContext(boolean tftMode, boolean hasScreenshot, Date now) {
+        return turnContext(tftMode, hasScreenshot, false, now);
+    }
+
+    /**
+     * @param openMic Jarvis hört durchgehend zu (Dauergespräch, „Immer zuhören“, Wunsch #47) – dann kann auch Gerede
+     *                ankommen, das gar nicht ihm gilt. Claude antwortet darauf nur [STILL], und Jarvis bleibt stumm.
+     */
+    static String turnContext(boolean tftMode, boolean hasScreenshot, boolean openMic, Date now) {
         String time = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(now);
         StringBuilder sb = new StringBuilder("[KONTEXT: Aktuelle Zeit: ").append(time).append(". ");
+        if (openMic) {
+            sb.append("Du hörst gerade durchgehend zu, ohne Wachwort. Ist das Gehörte erkennbar nicht an dich gerichtet – "
+                    + "ein Gespräch mit anderen Menschen, Fernseher, Video, Musik, ein Selbstgespräch – oder ergibt es keinen "
+                    + "Sinn, antworte nur [STILL]. Kann es eine Frage oder Bitte an dich sein, antworte normal. ");
+        }
         if (hasScreenshot) {
             sb.append("Angehängt ist ein Bildschirmfoto von Arts Handy im Moment der Frage. Nutze es, wenn die Frage sich "
                     + "darauf bezieht, und erwähne es nicht, wenn es keine Rolle spielt.");

@@ -75,9 +75,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             b.getRoot().postDelayed(this::render, 150);
         });
 
-        b.chipWake.setOnCheckedChangeListener((chip, checked) -> {
+        b.chipListen.setOnCheckedChangeListener((chip, checked) -> {
             if (rendering) return;
-            prefs.setWakeWord(checked);
+            prefs.setAlwaysListen(checked);
             Backup.autoSave(this, prefs);
             sendToService(JarvisService.ACTION_REFRESH);
             render();
@@ -137,7 +137,12 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (!debuggable || intent == null) return;
         String key = intent.getStringExtra("testkey");
-        if (key != null && !key.trim().isEmpty()) prefs.setApiKey(key.trim());
+        if (key != null && !key.trim().isEmpty()) {
+            prefs.setApiKey(key.trim());
+            // Gesprächstest: Der Emulator hat kein Mikrofon – „Immer zuhören“ würde nur Fehler der Spracherkennung
+            // zwischen die Testfragen streuen. Die Fragen kommen über „testfrage“.
+            prefs.setAlwaysListen(false);
+        }
         if (intent.getBooleanExtra("teststart", false)) startJarvis(RESULT_CANCELED, null);
         String frage = intent.getStringExtra("testfrage");
         if (frage != null && !frage.trim().isEmpty()) {
@@ -260,8 +265,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     label = "HÖRE ZU";
                     status = live ? "Dauergespräch · ich höre zu" : "Ich höre zu …";
                     detail = live
-                            ? (JarvisService.isScreenShared() ? "Sprich einfach – jede Frage bekommt ein frisches Bild. Antippen beendet."
-                                    : "Sprich einfach, ich höre durchgehend zu. Antippen beendet.")
+                            ? (JarvisService.isScreenShared() ? "Sprich einfach – jede Frage bekommt ein frisches Bild. Antippen pausiert."
+                                    : "Sprich einfach, ich höre durchgehend zu. Antippen pausiert.")
                             : "Sprich einfach. Antippen schickt sofort ab.";
                     break;
                 case THINKING:
@@ -274,22 +279,19 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     mode = ReactorView.Mode.SPEAKING;
                     label = "SPRICHT";
                     status = "Spreche …";
-                    if (live) {
-                        // Im Dauergespräch unterbricht (mit „Dazwischenreden“) auch einfaches Losreden.
-                        String interrupt = prefs.bargeIn()
-                                ? (prefs.wakeWord() ? "Losreden oder „Jarvis“ unterbricht" : "Losreden unterbricht")
-                                : (prefs.wakeWord() ? "„Jarvis“ unterbricht" : "");
-                        detail = interrupt.isEmpty() ? "Antippen beendet das Dauergespräch."
-                                : interrupt + " · Antippen beendet das Dauergespräch.";
+                    if (live && prefs.bargeIn()) {
+                        // Im Dauergespräch unterbrechen Losreden und „Jarvis“ (Dazwischenreden-Mikrofon).
+                        detail = "Losreden oder „Jarvis“ unterbricht · Antippen pausiert.";
                     } else {
-                        detail = prefs.wakeWord() ? "Antippen oder „Jarvis“ unterbricht." : "Antippen unterbricht.";
+                        detail = "Antippen unterbricht.";
                     }
                     break;
                 default:
                     mode = ReactorView.Mode.IDLE;
                     label = "SPRECHEN";
                     status = "Bereit";
-                    detail = idleDetail();
+                    // Im Dauergespräch ist „Bereit“ nur der kurze Moment zwischen zwei Mal Zuhören.
+                    detail = live ? "Gleich höre ich wieder zu." : idleDetail();
             }
         }
         b.reactor.setMode(mode, label);
@@ -298,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.statusDot.setBackgroundTintList(ColorStateList.valueOf(
                 running ? Palette.color(this, s) : Palette.off(this)));
 
-        b.chipWake.setChecked(prefs.wakeWord());
+        b.chipListen.setChecked(prefs.alwaysListen());
         b.chipGame.setChecked(prefs.tftMode());
         b.chipScreen.setChecked(JarvisService.isScreenShared());
 
@@ -331,10 +333,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     private String idleDetail() {
-        if (!prefs.wakeWord()) return "Tippe auf den Kern – ich höre dann durchgehend zu.";
-        String problem = JarvisService.wakeProblem();
-        if (problem != null) return "Wachwort pausiert: " + problem;
-        return "Tippe auf den Kern für ein Dauergespräch – oder sag „Jarvis“ für eine Frage.";
+        if (prefs.alwaysListen()) return "Pausiert – tippe auf den Kern, dann höre ich wieder zu.";
+        return "Tippe auf den Kern – ich höre dann durchgehend zu.";
     }
 
     /** Bisher gezeichnete Einträge – so wird bei jedem Zwischenergebnis nur der letzte erneuert. */

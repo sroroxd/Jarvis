@@ -273,7 +273,23 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
     entscheidet die App selbst: 1-1 zählt nie als Planungsphase, also keine Ansage zum Start. Der Gerätetest prüft
     die Entscheidung der App („=> ANDERES“), nicht nur die Rohantwort.
 
-**Geprüft:** Build (Release und Debug), alle 179 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+23. **Immer zuhören statt Wachwort** (Wünsche #47 „Wachwort entfernen“ und #39 „reagiert, sobald Art losredet“):
+    - Solange Jarvis läuft und der Bildschirm an ist, läuft das Dauergespräch von selbst – einfach losreden, ohne
+      „Jarvis“ und ohne Antippen. Bildschirm aus: Zuhören endet still, beim Einschalten geht es weiter. Keine
+      Viertelstunden-Grenze mehr. Antippen oder „Gespräch beenden“ pausiert, bis Art wieder antippt.
+    - Was nicht an Jarvis gerichtet ist (Gespräch mit anderen, Fernseher, Selbstgespräch), beantwortet Claude mit
+      `[STILL]` – Jarvis bleibt stumm (derselbe Weg wie beim proaktiven Coaching). Die Regel steht im Kontext jeder
+      Frage im Dauergespräch (`Persona.turnContext`, openMic).
+    - Das Wachwort als Aktivierung ist entfernt (`Prefs.wakeWord()` liefert immer false; Schalter „Freihändig“ und
+      Chip „Wachwort“ weg, dafür Schalter „Immer zuhören“ und Chip „Zuhören“). „Jarvis“ unterbricht weiter, während
+      er spricht; der Regler heißt jetzt „Empfindlichkeit für „Jarvis““.
+    - Grenzen: Jede gehörte Äußerung geht an Claude (mit Cache rund 0,1–0,2 Cent, mit Bildschirmfreigabe im
+      Spielmodus rund 0,6 Cent) – die Tagessumme steht auf dem Startbildschirm. Akku: die Spracherkennung läuft
+      durchgehend, solange der Bildschirm an ist. Ein sparsamerer Weg (Silero VAD vor der Spracherkennung, #39) ist
+      der nächste Schritt, falls Akku oder Kosten stören.
+    - Im CI-Gesprächstest ist „Immer zuhören“ aus (kein Mikrofon im Emulator).
+
+**Geprüft:** Build (Release und Debug), alle 180 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

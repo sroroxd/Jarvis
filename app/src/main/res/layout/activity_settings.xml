@@ -121,18 +121,18 @@
                         android:text="Sprachsteuerung" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchWake"
+                        android:id="@+id/switchListen"
                         style="@style/Jarvis.Label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Freihändig mit „Jarvis“" />
+                        android:text="Immer zuhören" />
 
                     <TextView
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Sag „Jarvis“ und sprich los – ohne Antippen. Der kurze Ton zeigt, dass Jarvis zuhört. „Hey Jarvis“ klappt auch. Die Erkennung läuft offline auf dem Handy und pausiert bei ausgeschaltetem Bildschirm. Das Mikrofon-Symbol oben in der Statusleiste zeigt, dass Jarvis lauscht." />
+                        android:text="Einfach losreden – ohne „Jarvis“ und ohne Antippen. Solange Jarvis läuft und der Bildschirm an ist, hört er durchgehend zu. Was nicht an ihn gerichtet ist (Gespräch mit anderen, Fernseher), lässt er unbeantwortet. Antippen pausiert, nochmal Antippen hört wieder zu. Jede gehörte Äußerung geht an Claude – die Kosten stehen auf dem Startbildschirm." />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -145,7 +145,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Empfindlichkeit" />
+                            android:text="Empfindlichkeit für „Jarvis“" />
 
                         <TextView
                             android:id="@+id/sensitivityValue"
@@ -167,7 +167,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Höher = reagiert leichter, löst aber auch öfter versehentlich aus. Gilt auch, wenn du Jarvis beim Sprechen mit „Jarvis“ unterbrichst. Standard: 5." />
+                        android:text="Sagst du „Jarvis“, während er spricht, hört er sofort auf. Höher = reagiert leichter, löst aber auch öfter versehentlich aus. Standard: 5." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchEarcon"

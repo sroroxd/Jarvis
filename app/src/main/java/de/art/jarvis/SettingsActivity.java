@@ -122,9 +122,9 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Sprachsteuerung
 
     private void setupVoiceControl() {
-        b.switchWake.setChecked(prefs.wakeWord());
-        b.switchWake.setOnCheckedChangeListener((v, on) -> {
-            prefs.setWakeWord(on);
+        b.switchListen.setChecked(prefs.alwaysListen());
+        b.switchListen.setOnCheckedChangeListener((v, on) -> {
+            prefs.setAlwaysListen(on);
             refreshService();
         });
 
@@ -559,7 +559,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         b.modelField.setText(prefs.rawModel());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());
-        b.switchWake.setChecked(prefs.wakeWord());
+        b.switchListen.setChecked(prefs.alwaysListen());
         setSlider(b.sliderSensitivity, prefs.sensitivity());
         b.switchEarcon.setChecked(prefs.earcon());
         b.switchBargeIn.setChecked(prefs.bargeIn());

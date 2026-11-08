@@ -57,6 +57,18 @@ public class PersonaTest {
         assertFalse(Persona.system(false, "", "", "", true, false).contains("zwanzig Wörter"));
     }
 
+    /** Wunsch #47 „Wachwort entfernen“: Beim Dauerzuhören bleibt Gerede, das nicht Jarvis gilt, unbeantwortet. */
+    @Test
+    public void dauerzuhoerenIgnoriertFremdesGerede() {
+        String offen = Persona.turnContext(false, false, true, at(20, 0));
+        assertTrue(offen.contains("durchgehend zu, ohne Wachwort"));
+        assertTrue(offen.contains("[STILL]"));
+        assertFalse(Persona.turnContext(false, false, false, at(20, 0)).contains("[STILL]"));
+        assertFalse(Persona.turnContext(false, false, at(20, 0)).contains("[STILL]"));
+        assertTrue(Persona.system(false, "", "", "", true, false).contains("Ein Wachwort gibt es nicht mehr"));
+        assertTrue(ProactiveCoach.isStill("[STILL]")); // derselbe Weg wie beim proaktiven Coaching: Jarvis bleibt stumm
+    }
+
     /** Arts Plan vom 30. Okt.: Spielplan festlegen und halten, „Plan?“ und „Warum?“, dritter Satz nur bei Schlüsselmomenten. */
     @Test
     public void spielplanWirdGehaltenUndMitgefuehrt() {
