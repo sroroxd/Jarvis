@@ -1036,10 +1036,13 @@ public class JarvisService extends Service {
         boolean withTools = !prefs.tftMode() && !prefs.isGemini();
         String system = Persona.system(prefs.tftMode(), prefs.memory(), prefs.metaText(), prefs.metaDate(),
                 withTools, prefs.agentReady());
+        // Satzweise sprechen, während Claude noch schreibt (Handy-Stimme). ElevenLabs bekommt die Antwort weiter am
+        // Stück – dort wäre jeder Satz eine eigene Anfrage. Gemini streamt hier nicht.
+        final StreamSpeech stream = prefs.isGemini() || !prefs.elevenKey().isEmpty() ? null : new StreamSpeech(id);
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
-                timing.answered(SystemClock.elapsedRealtime());
+                timing.firstAnswer(SystemClock.elapsedRealtime());
                 if (id != requestId || !running) return; // überholt (neue Frage, neues Gespräch)
                 // Art hat in eigenen Worten um Dauerzuhören gebeten (oder es beendet) – Claude meldet das per Steuerzeile.
                 Boolean dauer = Commands.continuousTag(answer);
@@ -1061,13 +1064,15 @@ public class JarvisService extends Service {
                 testLog("antwort [" + (used == null ? "?" : used.summary()) + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", answer);
-                speak(answer);
+                finishStream(stream, answer);
             }
 
             @Override
             public void onError(String message) {
                 if (id != requestId || !running) return;
                 testLog("fehler: " + message);
+                // Hat Art die gestreamte Antwort schon unterbrochen, nicht in sein Zuhören hineinreden.
+                if (stream != null && stream.interrupted(speechGen)) return;
                 setState(State.IDLE);
                 say(message);
             }
@@ -1078,7 +1083,63 @@ public class JarvisService extends Service {
         // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
         // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
         else claude.send(key, prefs.model(), system, messages, prefs.tftMode() ? "medium" : "low",
-                withTools ? tools : null, callback);
+                withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
+    }
+
+    // ---------------------------------------------------------------- Streaming: satzweise sprechen
+
+    /** Eine gestreamte Antwort: Fertige Sätze gehen an die Sprachausgabe, während Claude noch schreibt. */
+    private static final class StreamSpeech {
+        final int id;
+        final SpeechChunker chunker = new SpeechChunker();
+        final StringBuilder said = new StringBuilder();
+        /** Sprechvorgang dieser Antwort; -1 = es wurde noch nichts gesagt. */
+        int gen = -1;
+        boolean muted;
+
+        StreamSpeech(int id) {
+            this.id = id;
+        }
+
+        /** Wurde die schon begonnene Antwort abgebrochen (Dazwischenreden, Antippen, andere Ansage)? */
+        boolean interrupted(int currentGen) {
+            return muted || (gen != -1 && gen != currentGen);
+        }
+    }
+
+    private void onStreamText(StreamSpeech s, String delta) {
+        if (s.id != requestId || !running || s.muted) return;
+        for (String sentence : s.chunker.feed(delta)) sayStreamed(s, sentence);
+    }
+
+    private void sayStreamed(StreamSpeech s, String sentence) {
+        if (s.gen == -1) {
+            timing.firstAnswer(SystemClock.elapsedRealtime()); // „KI“ = Wartezeit bis zum ersten Satz
+            s.gen = newSpeech(true);
+        } else if (s.gen != speechGen) {
+            s.muted = true; // abgebrochen – der Rest wird nicht mehr gesprochen
+            return;
+        }
+        boolean first = s.said.length() == 0;
+        if (!first) s.said.append(' ');
+        s.said.append(sentence);
+        testLog("satz: " + sentence);
+        caption(s.said.toString());
+        publishExchange(null, s.said.toString());
+        speakDevice(sentence, s.gen, first);
+    }
+
+    /** Antwort komplett: den Rest sprechen – oder alles am Stück, wenn bisher kein Satz fertig war. */
+    private void finishStream(StreamSpeech s, String answer) {
+        if (s == null || s.gen == -1) {
+            speak(answer);
+            return;
+        }
+        if (s.interrupted(speechGen)) return; // abgebrochen: Verlauf ist gespeichert, gesprochen wird nichts mehr
+        String rest = s.chunker.finish();
+        if (!rest.isEmpty()) sayStreamed(s, rest);
+        moreComing = false;
+        speechDone(s.gen);
     }
 
     /**
@@ -1214,6 +1275,38 @@ public class JarvisService extends Service {
 
     // ---------------------------------------------------------------- Sprechen
 
+    /** Jeder Sprechvorgang (Antwort, Ansage) bekommt eine Nummer; Rückmeldungen älterer Vorgänge zählen nicht. */
+    private int speechGen;
+    /** Sätze des laufenden Vorgangs, die die Handy-Stimme noch nicht fertig gesprochen hat. */
+    private int queuedUtterances;
+    /** Die Antwort streamt noch – nach dem letzten Satz kann noch einer kommen. */
+    private boolean moreComing;
+    private int utteranceSeq;
+    /** Vorgang, zu dem {@link #pendingSpeech} gehört. */
+    private int pendingGen;
+
+    /** Beginnt einen neuen Sprechvorgang; Rückmeldungen des alten zählen ab jetzt nicht mehr. */
+    private int newSpeech(boolean streaming) {
+        speechGen++;
+        queuedUtterances = 0;
+        moreComing = streaming;
+        pendingSpeech = null;
+        return speechGen;
+    }
+
+    /** Ein Satz der Handy-Stimme ist durch (oder ging schief). */
+    private void utteranceDone(String utteranceId) {
+        if (utteranceId == null || !utteranceId.startsWith("jarvis-" + speechGen + "-")) return; // älterer Vorgang
+        if (queuedUtterances > 0) queuedUtterances--;
+        speechDone(speechGen);
+    }
+
+    /** Fertig gesprochen erst, wenn nichts mehr in der Warteschlange ist und die Antwort nicht mehr streamt. */
+    private void speechDone(int gen) {
+        if (gen != speechGen || queuedUtterances > 0 || moreComing) return;
+        onSpeechFinished();
+    }
+
     /** Startet die Sprachausgabe mit der gewählten Engine (z. B. SherpaTTS). */
     private void initTts(String engine) {
         if (tts != null) {
@@ -1238,13 +1331,13 @@ public class JarvisService extends Service {
             appliedVoiceKey = null; // neue Engine → beim nächsten Satz sicher neu einstellen
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) { main.post(JarvisService.this::onVoiceStarted); }
-                @Override public void onDone(String id) { main.post(JarvisService.this::onSpeechFinished); }
-                @Override public void onError(String id) { main.post(JarvisService.this::onSpeechFinished); }
+                @Override public void onDone(String id) { main.post(() -> utteranceDone(id)); }
+                @Override public void onError(String id) { main.post(() -> utteranceDone(id)); }
             });
             if (pendingSpeech != null) {
                 String text = pendingSpeech;
                 pendingSpeech = null;
-                speakNow(text);
+                speakNow(text, pendingGen, true);
             }
         });
         tts = holder[0];
@@ -1263,9 +1356,11 @@ public class JarvisService extends Service {
         if (debuggable()) android.util.Log.i(TEST_TAG, line);
     }
 
+    /** Spricht einen ganzen Text am Stück (Ansagen, Antworten ohne Streaming). */
     private void speak(String text) {
         String clean = Text.cleanForSpeech(text);
         testLog("sprechen: " + clean);
+        int gen = newSpeech(false);
         if (clean.isEmpty()) {
             onSpeechFinished();
             return;
@@ -1274,30 +1369,31 @@ public class JarvisService extends Service {
         publishExchange(null, clean);
         // Premium-Stimme (ElevenLabs), wenn eingerichtet – sonst die Stimme des Handys.
         if (!prefs.elevenKey().isEmpty()) {
-            speakPremium(clean);
+            speakPremium(clean, gen);
             return;
         }
-        speakDevice(clean);
+        speakDevice(clean, gen, true);
     }
 
-    private void speakPremium(String clean) {
+    private void speakPremium(String clean, int gen) {
         setState(State.SPEAKING);
         eleven.speak(prefs.elevenKey(), prefs.elevenVoice(), clean, prefs.rate(), new ElevenTts.Listener() {
             @Override public void onStart() { onVoiceStarted(); }
 
             @Override
             public void onDone() {
-                onSpeechFinished();
+                if (gen == speechGen) onSpeechFinished();
             }
 
             @Override
             public void onError(String message) {
+                if (gen != speechGen) return;
                 // Einmal pro Sitzung Bescheid geben, dann mit der Handy-Stimme weitermachen.
                 if (!elevenWarned) {
                     elevenWarned = true;
                     statusBriefly(message + " Ich spreche mit der Handy-Stimme weiter.");
                 }
-                speakDevice(clean);
+                speakDevice(clean, gen, true);
             }
         });
     }
@@ -1312,32 +1408,40 @@ public class JarvisService extends Service {
         }
     }
 
+    /** Bricht ab, was gerade gesprochen wird – auch den Rest einer noch streamenden Antwort. */
     private void stopSpeaking() {
+        speechGen++;
+        queuedUtterances = 0;
+        moreComing = false;
         pendingSpeech = null;
         if (tts != null) tts.stop();
         eleven.stop();
     }
 
-    private void speakDevice(String clean) {
+    /** flush: erster Satz eines Vorgangs (verdrängt Älteres); sonst hinten anstellen. */
+    private void speakDevice(String clean, int gen, boolean flush) {
+        if (gen != speechGen) return;
         // Wurde in den Einstellungen eine andere Engine gewählt? Dann neu starten und danach sprechen.
         String engineNow = Voices.resolveEngine(this, prefs);
         boolean engineChanged = engineNow == null ? ttsEngine != null : !engineNow.equals(ttsEngine);
         if (engineChanged || !ttsReady) {
-            pendingSpeech = clean;
+            pendingSpeech = pendingSpeech == null ? clean : pendingSpeech + " " + clean;
+            pendingGen = gen;
             setState(State.SPEAKING);
             if (engineChanged) initTts(engineNow);
             main.postDelayed(() -> {
-                if (pendingSpeech != null) { // Sprachausgabe kam nicht hoch
+                if (pendingSpeech != null && pendingGen == gen) { // Sprachausgabe kam nicht hoch
                     pendingSpeech = null;
-                    onSpeechFinished();
+                    speechDone(gen);
                 }
             }, 6000);
             return;
         }
-        speakNow(clean);
+        speakNow(clean, gen, flush);
     }
 
-    private void speakNow(String clean) {
+    private void speakNow(String clean, int gen, boolean flush) {
+        if (gen != speechGen) return;
         int max = TextToSpeech.getMaxSpeechInputLength() - 1;
         String text = clean.length() > max ? clean.substring(0, max) : clean;
         setState(State.SPEAKING);
@@ -1348,7 +1452,14 @@ public class JarvisService extends Service {
             Voices.apply(tts, prefs, ttsEngine);
             appliedVoiceKey = voiceKey;
         }
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis-" + System.nanoTime());
+        queuedUtterances++;
+        int result = tts.speak(text, flush ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, null,
+                "jarvis-" + gen + "-" + (++utteranceSeq));
+        if (result != TextToSpeech.SUCCESS) {
+            // Ohne Rückmeldung der Sprachausgabe bliebe Jarvis sonst für immer im Zustand „spricht“.
+            queuedUtterances--;
+            speechDone(gen);
+        }
     }
 
     private void onSpeechFinished() {

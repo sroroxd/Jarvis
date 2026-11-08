@@ -34,6 +34,14 @@ final class ClaudeClient {
         void onError(String message);
     }
 
+    /**
+     * Empfängt die Antwort Stück für Stück, während Claude noch schreibt (Streaming). Läuft auf dem Haupt-Thread,
+     * in derselben Reihenfolge wie die Stücke kamen; {@link Callback#onResult} kommt danach mit dem ganzen Text.
+     */
+    interface TextListener {
+        void onText(String delta);
+    }
+
     /** Werkzeuge, die auf dem Handy laufen (z. B. Kalender). */
     interface ToolRunner {
         /** Werkzeugbeschreibungen für die API (ohne Websuche). */
@@ -60,32 +68,40 @@ final class ClaudeClient {
     private static volatile boolean webSearchUnavailable;
     private final Handler main = new Handler(Looper.getMainLooper());
 
-    /** Ohne Nachdenken – schnellste Antwort. */
+    /** Knappste Antwort (z. B. Schlüsseltest). */
     void send(String apiKey, String model, String system, JSONArray messages, Callback callback) {
-        send(apiKey, model, system, messages, null, null, callback);
+        send(apiKey, model, system, messages, null, null, null, callback);
     }
 
     void send(String apiKey, String model, String system, JSONArray messages, String effort, Callback callback) {
-        send(apiKey, model, system, messages, effort, null, callback);
+        send(apiKey, model, system, messages, effort, null, null, callback);
+    }
+
+    void send(String apiKey, String model, String system, JSONArray messages, String effort,
+              ToolRunner tools, Callback callback) {
+        send(apiKey, model, system, messages, effort, tools, null, callback);
     }
 
     /**
      * Schickt die Anfrage. Die aktuellen Claude-Modelle denken standardmäßig nach, und dieses Nachdenken
      * zählt zu max_tokens. Ist das Budget zu knapp, kommt nur Nachdenken und KEIN Text zurück –
      * genau das führte zu den leeren „Erledigt, Sir.“-Antworten. Deshalb:
-     * 0. effort == null: gar nicht nachdenken (schnellste Antwort),
-     * 1. sonst großzügiges Budget und gesteuerte Nachdenk-Tiefe (effort),
-     * 2. kommt trotzdem kein Text, ein zweiter Versuch ohne Nachdenken,
+     * 1. adaptives Nachdenken mit gesteuerter Tiefe (effort; null = „low“) und großzügigem Budget,
+     * 2. kommt trotzdem kein Text, ein zweiter Versuch mit „low“ und doppeltem Budget,
      * 3. kennt ein (älteres) Modell diese Parameter nicht, ein Versuch ganz ohne sie.
      *
-     * tools == null: keine Werkzeuge (Spielmodus, Schlüsseltest).
+     * Nie „thinking: disabled“: Sonnet 5.5 (der Standard) lehnt das mit Fehler 400 ab, Opus 5.5 ebenso.
+     * Laut Claude-Doku ist „low“ mit adaptivem Nachdenken der empfohlene schnelle Weg – bei einfachen
+     * Fragen denkt das Modell dann gar nicht nach.
+     *
+     * tools == null: keine Werkzeuge (Spielmodus, Schlüsseltest). listener != null: Antwort wird gestreamt.
      */
     void send(String apiKey, String model, String system, JSONArray messages, String effort,
-              ToolRunner tools, Callback callback) {
+              ToolRunner tools, TextListener listener, Callback callback) {
         executor.execute(() -> {
             Result r = tools == null
-                    ? ask(apiKey, model, system, messages, effort, null)
-                    : converse(apiKey, model, system, messages, effort, tools);
+                    ? ask(apiKey, model, system, messages, effort, null, listener)
+                    : converse(apiKey, model, system, messages, effort, tools, listener);
             // Nur Fragen zählen für die Anzeige – die Meta-Recherche im Hintergrund überschrieb sonst den Wert.
             if (r.usage != null) lastUsage = r.usage;
             deliver(r, "Ich habe darauf keine Antwort bekommen. Fragen Sie mich bitte noch einmal.", callback);
@@ -104,10 +120,11 @@ final class ClaudeClient {
                 JSONArray tools = new JSONArray().put(webSearchTool(maxUses));
                 JSONArray messages = new JSONArray()
                         .put(new JSONObject().put("role", "user").put("content", userText));
-                r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
+                // Kein „thinking: disabled“ (siehe send): adaptiv mit „low“, Budget für Nachdenken und Text.
+                r = request(apiKey, model, system, messages, "adaptive", "low", 4096, tools, null);
                 for (int i = 0; i < MAX_RESUMES && r.error == null && "pause_turn".equals(r.stopReason); i++) {
                     messages.put(new JSONObject().put("role", "assistant").put("content", r.content));
-                    r = request(apiKey, model, system, messages, "disabled", null, 3000, tools);
+                    r = request(apiKey, model, system, messages, "adaptive", "low", 4096, tools, null);
                 }
                 if (r.code == 400 && mentionsWebSearch(r.detail)) {
                     r = failed("Die Websuche ist im Anthropic-Konto nicht freigeschaltet. Das lässt sich in der Claude Console ändern.");
@@ -131,7 +148,7 @@ final class ClaudeClient {
 
     /** Die Werkzeug-Schleife. Arbeitet auf einer Kopie – der gespeicherte Gesprächsverlauf bleibt schlank. */
     private Result converse(String apiKey, String model, String system, JSONArray messages, String effort,
-                            ToolRunner tools) {
+                            ToolRunner tools, TextListener listener) {
         JSONArray convo;
         try {
             convo = new JSONArray(messages.toString());
@@ -145,7 +162,7 @@ final class ClaudeClient {
             } catch (JSONException e) {
                 return failed("Interner Fehler bei den Werkzeugen.");
             }
-            Result r = ask(apiKey, model, system, convo, effort, defs);
+            Result r = ask(apiKey, model, system, convo, effort, defs, listener);
             if (r.code == 400 && mentionsWebSearch(r.detail) && !webSearchUnavailable) {
                 // Websuche im Konto nicht freigeschaltet → ohne sie weitermachen statt ganz zu scheitern.
                 webSearchUnavailable = true;
@@ -196,15 +213,20 @@ final class ClaudeClient {
     }
 
     /** Eine Anfrage samt der Rückfallversuche rund ums Nachdenken. */
-    private Result ask(String apiKey, String model, String system, JSONArray messages, String effort, JSONArray tools) {
-        Result r = effort == null
-                ? request(apiKey, model, system, messages, "disabled", null, 1024, tools)
-                : request(apiKey, model, system, messages, "adaptive", effort, 4096, tools);
+    private Result ask(String apiKey, String model, String system, JSONArray messages, String effort, JSONArray tools,
+                       TextListener listener) {
+        Result r = request(apiKey, model, system, messages, "adaptive", effort == null ? "low" : effort, 4096, tools, listener);
         boolean wantsMore = "tool_use".equals(r.stopReason) || "pause_turn".equals(r.stopReason);
-        if (r.error == null && r.text.isEmpty() && effort != null && !wantsMore) {
-            r = request(apiKey, model, system, messages, "disabled", null, 1024, tools);
+        if (r.error == null && r.text.isEmpty() && !wantsMore && !"refusal".equals(r.stopReason)) {
+            // Nur Nachdenken, kein Text (Budget aufgebraucht): knapper nachdenken, doppelt so viel Platz.
+            // Vorher folgte hier „thinking: disabled“ – das lehnt Sonnet 5.5 mit 400 ab, der Rückfall scheiterte also immer.
+            r = request(apiKey, model, system, messages, "adaptive", "low", 8192, tools, listener);
         } else if (r.code == 400 && mentionsThinking(r.detail)) {
-            r = request(apiKey, model, system, messages, null, null, 1024, tools);
+            // Älteres Modell ohne adaptives Nachdenken oder effort: ganz ohne diese Felder.
+            r = request(apiKey, model, system, messages, null, null, 2048, tools, listener);
+        }
+        if (r.error == null && r.text.isEmpty() && "refusal".equals(r.stopReason)) {
+            r.error = "Dazu kann ich leider nichts sagen, Sir.";
         }
         return r;
     }
@@ -336,13 +358,17 @@ final class ClaudeClient {
         }
     }
 
-    /** thinking: "adaptive", "disabled" oder null (Feld weglassen); effort: "low"/"medium"/… oder null. */
+    /**
+     * thinking: "adaptive" oder null (Feld weglassen); effort: "low"/"medium"/… oder null.
+     * listener != null: als Strom anfordern und Textstücke sofort weiterreichen.
+     */
     private Result request(String apiKey, String model, String system, JSONArray messages,
-                           String thinking, String effort, int maxTokens, JSONArray tools) {
+                           String thinking, String effort, int maxTokens, JSONArray tools, TextListener listener) {
         Result result = new Result();
         HttpURLConnection conn;
         try {
             JSONObject body = body(model, maxTokens, thinking, effort, system, messages, tools);
+            if (listener != null) body.put("stream", true);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
 
             conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
@@ -361,6 +387,10 @@ final class ClaudeClient {
             int code = conn.getResponseCode();
             result.code = code;
             boolean ok = code >= 200 && code < 300;
+            if (ok && listener != null) {
+                readStream(conn.getInputStream(), listener, result);
+                return result;
+            }
             String response = readAll(ok ? conn.getInputStream() : conn.getErrorStream());
             if (!ok) {
                 result.error = describeError(code, response);
@@ -385,6 +415,30 @@ final class ClaudeClient {
         // Kein disconnect(): So bleibt die Verbindung offen und wird für die nächste Frage
         // wiederverwendet – das spart jedes Mal den Verbindungsaufbau (TLS-Handshake).
         return result;
+    }
+
+    /**
+     * Liest eine gestreamte Antwort (Server-Sent Events) bis zum Ende. Textstücke gehen sofort an den Haupt-Thread;
+     * am Ende steht in {@code result} dasselbe wie bei einer Antwort ohne Streaming.
+     */
+    private void readStream(InputStream in, TextListener listener, Result result) throws java.io.IOException, JSONException {
+        StreamAccumulator acc = new StreamAccumulator(delta -> main.post(() -> listener.onText(delta)));
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(in, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) acc.line(line);
+        }
+        result.content = acc.content();
+        result.stopReason = acc.stopReason();
+        result.usage = Usage.from(acc.usage());
+        result.text = spokenText(result.content);
+        if (acc.errorType() != null) {
+            result.code = "overloaded_error".equals(acc.errorType()) ? 529 : 500;
+            result.detail = acc.errorMessage();
+            result.error = Text.claudeError(result.code, acc.errorType(), acc.errorMessage());
+        } else if (!acc.complete()) {
+            result.error = "Die Verbindung ist mitten in der Antwort abgerissen. Fragen Sie mich bitte noch einmal.";
+        }
     }
 
     private static String describeError(int code, String response) {

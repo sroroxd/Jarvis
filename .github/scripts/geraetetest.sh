@@ -90,6 +90,16 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
   sleep 10
   ask "Rechnen" "Wie viel ist siebzehn mal drei? Antworte nur mit der Zahl." "(^|[^a-z])(51|einundf.nfzig)" "korrektur|moment"
   ask "Verlauf" "Und das Doppelte davon? Nur die Zahl." "(^|[^a-z])(102|einhundertzwei|hundertzwei)" "zweihundert|korrektur|moment"
+  # Streaming: Eine Antwort aus zwei Sätzen muss Satz für Satz an die Sprachausgabe gehen („satz:“ im Protokoll),
+  # nicht erst am Ende am Stück. Prüft das echte Datenformat der Claude-API, nicht nur nachgebaute Testdaten.
+  saetze_vorher=$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "satz:" || true)
+  ask "Streaming" "Erklaere in genau zwei kurzen Saetzen, was ein Toaster ist." "\\." "korrektur|moment"
+  saetze=$(( $(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "satz:" || true) - saetze_vorher ))
+  if [ "$saetze" -ge 2 ]; then
+    say "  Streaming: $saetze Saetze einzeln an die Sprachausgabe"
+  else
+    say "  FEHLER Streaming: nur $saetze Satz/Saetze einzeln gesprochen (erwartet mindestens 2)"; gfail=1
+  fi
   # Prompt-Caching: Ab der zweiten Frage muss die Grundanweisung aus dem Zwischenspeicher kommen.
   if echo "${LAST_LINE:-}" | grep -q "gelesen"; then
     say "  Cache: greift"
@@ -129,6 +139,6 @@ fi
 
 if [ "$fail" -eq 0 ]; then
   say "BESTANDEN: installiert, gestartet, Einstellungen geöffnet, 30 s gelaufen – kein Absturz, kein Hänger."
-  [ -n "${JARVIS_TESTKEY:-}" ] && say "BESTANDEN: Gespräch mit Claude (Rechnen, Verlauf)."
+  [ -n "${JARVIS_TESTKEY:-}" ] && say "BESTANDEN: Gespräch mit Claude (Rechnen, Verlauf, Streaming)."
 fi
 exit "$fail"

@@ -34,6 +34,14 @@ final class Timing {
         answered = now;
     }
 
+    /**
+     * Erstes Stück der Antwort (beim Streaming der erste fertige Satz, sonst die ganze Antwort).
+     * Spätere Aufrufe ändern nichts – „KI“ misst die Wartezeit bis Jarvis etwas zu sagen hat.
+     */
+    void firstAnswer(long now) {
+        if (answered == 0) answered = now;
+    }
+
     /** Erster Ton der Antwort. Liefert true, wenn eine vollständige Messung vorliegt. */
     boolean voiceStarted(long now) {
         if (voiceStart != 0 || answered == 0) return false;
