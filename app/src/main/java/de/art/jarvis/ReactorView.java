@@ -213,11 +213,23 @@ public class ReactorView extends View {
         float ty = cy - (textPaint.descent() + textPaint.ascent()) / 2f;
         canvas.drawText(label, cx, ty, textPaint);
 
+        // Genau EIN geplanter Takt: Ruft jemand von außen invalidate() (die Startseite aktualisiert sich laufend),
+        // darf daraus keine zweite Schleife werden. Mit postInvalidateDelayed stapelten sich die Schleifen –
+        // gemessen 55 statt 30 Bilder/s beim Zuhören (Build 109).
+        removeCallbacks(tick);
         if (getWindowVisibility() == VISIBLE && isAttachedToWindow()) {
             long gap = frameGapMs(mode);
             if (gap <= 0) postInvalidateOnAnimation();
-            else postInvalidateDelayed(gap);
+            else postDelayed(tick, gap);
         }
+    }
+
+    private final Runnable tick = this::invalidate;
+
+    @Override
+    protected void onDetachedFromWindow() {
+        removeCallbacks(tick);
+        super.onDetachedFromWindow();
     }
 
     /**
