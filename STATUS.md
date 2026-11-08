@@ -159,6 +159,127 @@ GitHub-Antworten geprüft.
    **Voraussetzung: erst den Signaturschlüssel tauschen** (siehe Vorschläge unten). Mit dem öffentlichen
    Schlüssel könnte jeder ein Update bauen, das sich über Jarvis installiert und diese Rechte erbt.
 
+## Gesamtanalyse vom 8. November (Arts Auftrag)
+
+Geprüft: Architektur, Stabilität, Latenz, Kosten, dazu gezielt Dauergespräch, Echo-Filter,
+Bildschirmfreigabe und Kalender. Gemessene Zahlen sind als solche gekennzeichnet, alles andere ist
+Schätzung oder Rechnung.
+
+### Architektur
+
+Der Zuschnitt stimmt: Alles, was sich rechnen oder entscheiden lässt, steckt in kleinen Klassen ohne
+Android (`SpeechGate`, `SpeechChunker`, `Costs`, `ProactiveCoach`, `Wishes`, `Meta`, `GameDetector`,
+`Text`, `Timing`, `StreamAccumulator`, `CaptureSize`, `GameReadout`) – daher 182 automatische Tests.
+
+Die eine Schwachstelle: **`JarvisService` ist mit 1.824 Zeilen die halbe App** und hält Zustandsmaschine,
+Mikrofon, Bildschirm, Netz, Coaching, Wünsche und Agent zugleich. Kein einziger Test deckt ihn ab – und
+genau dort saßen beide Fehler, die diese Durchsicht gefunden hat. Nächster sinnvoller Schnitt: den
+Gesprächs-Ablauf (zuhören → fragen → sprechen → weiter zuhören) als eigene, testbare Klasse herauslösen.
+
+### Kosten (gemessen auf Arts Handy, 8. Nov.)
+
+| Fall | Kosten |
+|---|---|
+| Frage mit Bildschirmfoto (Spielmodus, Cache greift) | 1,3 ct |
+| Frage ohne Bild, Folgefrage | 0,1–0,2 ct |
+| Erste Frage einer Sitzung (Cache wird geschrieben) | 1,6 ct |
+| Ein Blick des Phasen-Wächters (Haiku) | rund 0,013 ct |
+| Arts Testtag bis 13:36 Uhr | 46 ct |
+
+**Das größte Kostenrisiko ist seit heute „Immer zuhören“:** Jede erkannte Äußerung geht an Claude, auch
+die, auf die er mit `[STILL]` schweigt. Es gibt keinen Filter davor. Bei laufendem Fernseher sind das
+grob 1–2 € pro Stunde (Rechnung: 20 Äußerungen pro Minute à 0,1–0,2 ct). Ein vorgeschalteter Haiku-Wächter,
+wie ihn das Coaching schon nutzt, kostet rund 0,0015 ct je Äußerung – etwa siebzigmal weniger.
+
+### Latenz (gemessen)
+
+| Messung | erster vorlesbarer Text |
+|---|---|
+| Claude selbst, Spielmodus mit Bild (CI, USA) | 1,10 s |
+| Claude selbst, Alltag (CI, USA) | 0,63 s |
+| Arts Handy, „KI“ mit Bild | 5,2 s |
+| Arts Handy, „KI“ ohne Bild | 3,1 s |
+
+Die Lücke liegt also **nicht am Modell**. Seit PR #53 zerlegt die App die Wartezeit in „Senden (KB)“ und
+„Claude“; die nächste Messung auf dem Handy zeigt, welcher Teil es ist. Zwei Verdächtige:
+
+1. **Das Hochladen des Bildes.** Im Spielmodus 1920 Pixel lange Kante bei Qualität 82 – mehrere hundert KB
+   über den Mobilfunk-Upload.
+2. **Die stille Ablese-Zeile steht vor dem ersten Satz.** `[STAND: Phase … | Gold … | Plan …]` wird zuerst
+   geschrieben, und `SpeechChunker` liest Klammern nie vor. Jarvis schweigt also, bis diese Zeile fertig ist.
+   Das ist Absicht (der Befehl stützt sich auf die abgelesenen Werte), kostet aber messbar Zeit vor dem ersten
+   Ton. Vor einem Umbau einmal mit der Zeile am Ende messen und beide Antworten vergleichen.
+
+### Gefundene Schwachstellen
+
+1. **Dauerzuhören kann dauerhaft verstummen (schwer).** Meldet die Spracherkennung fünfmal hintereinander
+   einen echten Fehler, ruft die App `stopContinuous(false)`. Das setzt `continuous` auf aus, aber **nicht**
+   `listenPaused` – und `updateAlwaysListen()` läuft nur beim Ein- und Ausschalten des Bildschirms oder beim
+   Ändern einer Einstellung. Jarvis hört danach nicht mehr zu, obwohl „Immer zuhören“ an ist, bis Art den
+   Bildschirm aus- und wieder einschaltet. Die Ansage („Ich beende das Dauergespräch“) passt seit heute auch
+   nicht mehr. *Noch nicht behoben – siehe „Was zuerst“.*
+2. **Bildschirmfoto blockiert den Haupt-Thread (mittel).** Der Phasen-Wächter wurde heute auf einen eigenen
+   Thread verlegt, **Arts eigene Fragen nicht** (`JarvisService` Zeilen 661, 667, 1243, 1249). Pro Frage
+   laufen Bitmap-Kopie, Verkleinern und JPEG auf dem Haupt-Thread.
+3. **Zwei Vollbilder je Aufnahme (mittel).** `ScreenGrabber.toBitmap` legt erst ein gepolstertes, dann ein
+   zugeschnittenes Bitmap an – bei 1920 × 886 je rund 6,8 MB, dazu die verkleinerte Fassung. Alle 6 Sekunden
+   während einer Partie. Dazu hält die Methode dabei `lock`, sodass der Mitschnitt-Thread solange wartet.
+   Beides kostet Wärme und Akku in langen Partien.
+4. **Echo-Filter: in Ordnung.** Arts Messzeilen zeigen Echo −73 bis −90 dB bei Schwelle −40 dB, der
+   Telefonmodus filtert Jarvis' Stimme also fast ganz heraus; in Build 82 hat Art per Stimme unterbrochen.
+   Der eine echte Fehler (Neustart fiel aus, wenn der nächste Satz schneller kam als die Mikrofon-Freigabe)
+   ist heute behoben.
+5. **Bildschirmfreigabe und Kalender: in Ordnung.** Projektionsende, Drehung und fehlende Berechtigungen sind
+   überall abgefangen, Überlagerungen (`Subtitles`, `FloatingJ`) fangen `addView` ab – der klassische
+   Android-Absturz kann hier nicht passieren.
+
+### Die vier großen Bausteine
+
+Aufwand = meine Bauzeit bis zum bestandenen Gerätetest.
+
+| Baustein | Aufwand | Lage |
+|---|---|---|
+| **Offline-Spracherkennung (whisper.cpp)** | 2–3 Tage | Macht Jarvis unabhängig von Googles Erkennung (die heute fünfmal fehlschlagen kann) und spart die Netzrunde je Äußerung. Kostet dafür dauerhaft Rechenzeit und Akku. **Das Projekt hat heute keine NDK-Werkzeugkette** – die muss zuerst her. |
+| **Offline-Stimme (PocketTTS.cpp)** | 3–5 Tage, erst Machbarkeit | Siehe unten. |
+| **Agent-Rückgrat, Baustein 2** | 1–2 Tage | Zwischenstände während langer Aufträge (`--output-format stream-json`), eigener Skill-Ordner, selbst erkennen, was zum Agenten gehört. Baustein 1 läuft. |
+| **App-Steuerung (#44)** | 3–4 Tage | Bedienungshilfe. **Blockiert:** Der Signaturschlüssel liegt öffentlich im Repo; vorher tauschen, sonst erbt ein fremdes Update diese Rechte. |
+
+### PocketTTS.cpp – geprüft, bevor gebaut wird
+
+`VolgaGerm/PocketTTS.cpp` gibt es (MIT, einzelne C++-Datei, CMake, ONNX Runtime). Es fährt Kyutai Pocket TTS:
+100 Mio. Parameter, läuft laut Projekt in Echtzeit auf der CPU, INT8-ONNX, **und kann seit April 2026 Deutsch**
+(sechs Sprachen). Es beherrscht Stimmklonen aus einer kurzen Aufnahme – damit wäre Arts „Film-Jarvis“-Stimme
+(Wünsche #50–#52 und „Stimmklon Deutsch“) tatsächlich erreichbar, und die App wäre nicht mehr auf die
+SherpaTTS-App angewiesen.
+
+Vier Dinge, die den Auftrag teurer machen als er klingt:
+
+1. **Das Projekt nennt nur Linux, macOS und Windows.** Kein Android, kein ARM, kein JNI – nur eine C-Schnittstelle
+   (`ptt_create`, `ptt_stream_start`, `ptt_stream_read`) und `libpocket_tts.so`. Der Android-Teil ist unsere Arbeit.
+2. **Jarvis hat noch keine NDK-Werkzeugkette** (`app/build.gradle` hat kein `externalNativeBuild`).
+3. **Doppelte ONNX Runtime.** Die App bringt schon `onnxruntime-android:1.23.2` mit (fürs Wachwort-Modell);
+   PocketTTS holt sich per CMake seine eigene. Zwei `libonnxruntime.so` in einer APK gehen nicht gut – entweder
+   gegen die vorhandene linken oder die Java-Nutzung ablösen.
+4. **SentencePiece** muss ebenfalls für `arm64-v8a` übersetzt werden.
+
+Deshalb zuerst **ein Tag Machbarkeit**: NDK einrichten, PocketTTS für `arm64-v8a` übersetzen, eine deutsche
+Probeausgabe auf dem Gerät hören. Erst danach die restlichen Tage. Scheitert der Tag an Punkt 3 oder 4, ist das
+Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
+
+### Was zuerst – drei Punkte
+
+1. **Dauerzuhören absichern und eine Kostenbremse einziehen** (½–1 Tag). Behebt den Fehler, nach dem Jarvis
+   dauerhaft verstummt, und deckelt die offene Rechnung: ein Haiku-Wächter vor jeder Äußerung statt Sonnet für
+   alles. Beides betrifft das, was seit heute auf Arts Handy läuft – Stabilität und Geld zugleich.
+2. **Die Latenz-Lücke schließen** (1 Tag). Die Messung ist eingebaut, die nächste Partie zeigt den Posten.
+   Danach der größte Hebel: kleineres Bild, Ablese-Zeile ans Ende, oder beides – gemessen statt geraten.
+   Das ist Wunsch #43, Arts ältester offener Punkt.
+3. **PocketTTS: der Tag Machbarkeit** (1 Tag). Beantwortet die offene Frage (läuft es auf dem S24 Ultra?),
+   bevor drei bis fünf Tage daran hängen, und baut die NDK-Werkzeugkette, die whisper.cpp ebenfalls braucht.
+
+Danach in dieser Reihenfolge: Rest von PocketTTS, Agent-Rückgrat, whisper.cpp, App-Steuerung (nach dem
+Schlüsseltausch).
+
 ## Verfeinerung – Recherche vom 7. November
 
 Geprüft gegen den Code und die aktuelle Doku (Anthropic, Android). Reihenfolge nach Nutzen:
