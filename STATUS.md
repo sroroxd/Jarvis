@@ -136,6 +136,28 @@ GitHub-Antworten geprüft.
 **Lint:** keine Fehler mehr (`clearCommunicationDevice` braucht API 31), keine ungenutzte Ressource
 (`ic_mic.xml` entfernt). README auf den heutigen Stand gebracht.
 
+### Messung per USB direkt am S24 Ultra (8. Nov., 23:30–0:30 Uhr)
+
+Erstmals hing Arts Handy per `adb` am Rechner – gemessen statt geschätzt:
+
+- **Abstürze:** 10 echte Abstürze heute, alle in Build 100–103, alle dieselbe Ursache (fehlende Berechtigung
+  `ACCESS_NETWORK_STATE` beim Knopf „Offline-Stimme ausprobieren“). Seit Build 104 behoben; im Protokoll danach
+  keiner mehr.
+- **Kaltstart:** 161 ms. **Ruckler:** 0,2 % langsame Bilder. **Speicher:** 106 MB PSS, davon 77 MB Grafik.
+- **Reaktor-Knopf zeichnete durchgehend 55–61 Bilder/s, die App lag bei 20–28 % CPU.** Jetzt gedrosselt
+  (`ReactorView.frameGapMs`, ein einziger Zeichentakt): Nachdenken und Sprechen bleiben flüssig.
+  Nachgemessen auf dem Handy mit Build 110: aus 10 Bilder/s bei 6 % CPU, zuhören 23 Bilder/s bei 13–17 % CPU,
+  0 langsame Bilder. (Build 109 hatte noch gestapelte Zeichenschleifen – 55 Bilder/s beim Zuhören.)
+- **Kosten: 875 ct an einem Tag**, laut Netzstatistik rund 27 MB Upload (mehrere hundert Bildschirmfotos) – der
+  größte Teil vor der Kostenbremse aus PR #56. Wofür genau, ließ sich nicht sagen. Jetzt:
+  - Aufschlüsselung je Weg (Fragen, Filter, Wächter, Recherche) auf dem Startbildschirm (`Costs.Kind`).
+  - **Tagesgrenze** (Einstellungen → Sprachsteuerung, Standard 5 $, 0 = aus): darüber geht bei offenem Mikrofon
+    nur noch an Claude, was „Jarvis“ enthält oder Folgefrage ist; der Phasen-Wächter pausiert. Einmal am Tag
+    still eingeblendet. Arts eigene Fragen gehen immer durch.
+- **Handy selbst:** schon gut eingestellt (adaptive Bildrate, Animationen 0,5, Thermik unauffällig).
+  `handy/tuning.ps1` sichert die Werte, übersetzt Jarvis vorab (ART „speed“), leert auf Wunsch rund 10 GB
+  App-Cache und stellt Animationen auf 0,35 – jede Stufe mit Rückfrage, `-Zurueck` stellt her.
+
 ## Was als Nächstes kommt
 
 0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die
