@@ -1424,7 +1424,7 @@ public class JarvisService extends Service {
                 }
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
                 ClaudeClient.Usage used = prefs.isGemini() ? null : ClaudeClient.lastUsage;
-                testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + "]: " + answer);
+                testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + netSuffix() + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", GameReadout.forHistory(stand, answer));
                 finishStream(stream, answer);
@@ -1813,12 +1813,19 @@ public class JarvisService extends Service {
         if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
             ClaudeClient.Usage usage = prefs.isGemini() ? null : ClaudeClient.lastUsage;
             lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary())
-                    + costSuffix() + ")";
+                    + costSuffix() + netSuffix() + ")";
             notifyUi();
         }
     }
 
     /** „ · 0,6 ct“ – Kosten der letzten Antwort in US-Cent; leer bei Gemini oder unbekanntem Modell. */
+    /** „ · Senden 0,4 s (380 KB) · Claude 0,9 s“ – zerlegt die Wartezeit „KI“ (Wunsch #43); leer bei Gemini. */
+    private String netSuffix() {
+        ClaudeClient.Net net = prefs.isGemini() ? null : ClaudeClient.lastNet;
+        String n = net == null ? null : net.summary();
+        return n == null ? "" : " · " + n;
+    }
+
     private String costSuffix() {
         double usd = prefs.isGemini() ? -1 : ClaudeClient.lastCostUsd;
         return usd < 0 ? "" : " · " + Costs.cents(usd);
