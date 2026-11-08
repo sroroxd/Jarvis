@@ -197,8 +197,19 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             return;
         }
         Snackbar bar = Snackbar.make(b.getRoot(), "Build " + r.build + " wird geladen …", Snackbar.LENGTH_INDEFINITE);
-        boolean started = AppUpdater.install(this, r.url, r.build, text -> {
-            if (!isFinishing() && !isDestroyed()) bar.setText(text);
+        boolean started = AppUpdater.install(this, r.apiUrl, r.url, r.build, new AppUpdater.Progress() {
+            @Override
+            public void status(String text) {
+                if (!isFinishing() && !isDestroyed()) bar.setText(text);
+            }
+
+            @Override
+            public void failed(String text) {
+                if (isFinishing() || isDestroyed()) return;
+                // Vorher blieb nur der Fehlertext stehen – einen neuen Versuch gab es erst nach 30 Minuten.
+                bar.setText(text);
+                bar.setAction("Nochmal", v -> installUpdate(r));
+            }
         });
         if (started) {
             bar.show();

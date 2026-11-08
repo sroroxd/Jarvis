@@ -1,6 +1,8 @@
 package de.art.jarvis;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -47,6 +49,30 @@ public class UpdateCheckTest {
         UpdateCheck.Result r = UpdateCheck.newestTestApp(list);
         assertEquals(61, r.build);
         assertEquals("https://x/61/JarvisTest.apk", r.url);
+    }
+
+    @Test
+    public void downloadZuerstUeberDieApi() throws Exception {
+        String api = "https://api.github.com/repos/sroroxd/Jarvis/releases/assets/723452802";
+        String link = "https://github.com/sroroxd/Jarvis/releases/download/test-x/JarvisTest.apk";
+        org.json.JSONArray list = new org.json.JSONArray("[{\"tag_name\":\"test-x\",\"name\":\"Jarvis Test (Zweig x, Build 75)\","
+                + "\"assets\":[{\"name\":\"JarvisTest.apk\",\"url\":\"" + api + "\",\"browser_download_url\":\"" + link + "\"}]}]");
+        UpdateCheck.Result r = UpdateCheck.newestTestApp(list);
+        assertEquals(api, r.apiUrl);
+        assertArrayEquals(new String[] {api, link}, UpdateCheck.downloadUrls(r.apiUrl, r.url));
+        // Ohne API-Adresse (oder mit fremder) bleibt es beim normalen Link.
+        assertArrayEquals(new String[] {link}, UpdateCheck.downloadUrls("", link));
+        assertArrayEquals(new String[] {link}, UpdateCheck.downloadUrls("https://example.com/a", link));
+    }
+
+    @Test
+    public void neuerVersuchNurBeiStoerungen() {
+        assertTrue(UpdateCheck.retryable(504));
+        assertTrue(UpdateCheck.retryable(502));
+        assertTrue(UpdateCheck.retryable(429));
+        assertTrue(UpdateCheck.retryable(403));
+        assertFalse(UpdateCheck.retryable(404));
+        assertFalse(UpdateCheck.retryable(200));
     }
 
     @Test

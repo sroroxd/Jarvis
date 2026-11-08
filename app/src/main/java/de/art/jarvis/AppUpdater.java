@@ -26,7 +26,15 @@ final class AppUpdater {
     interface Progress {
         /** Kurzer Statustext für die Anzeige (läuft auf dem Haupt-Thread). */
         void status(String text);
+
+        /** Endgültig fehlgeschlagen – die Anzeige soll einen neuen Versuch anbieten (Haupt-Thread). */
+        default void failed(String text) {
+            status(text);
+        }
     }
+
+    /** Versuche insgesamt, abwechselnd über die Adressen aus {@link UpdateCheck#downloadUrls}. */
+    private static final int ATTEMPTS = 4;
 
     static final String ACTION_RESULT = "de.art.jarvis.UPDATE_RESULT";
 
@@ -36,7 +44,7 @@ final class AppUpdater {
      * @return false, wenn zuerst die Erlaubnis „Apps installieren“ fehlt – dann ist deren
      *         Einstellungsseite geöffnet und Art tippt danach noch einmal auf „Installieren“.
      */
-    static boolean install(Activity activity, String apkUrl, int build, Progress progress) {
+    static boolean install(Activity activity, String apiUrl, String apkUrl, int build, Progress progress) {
         if (!activity.getPackageManager().canRequestPackageInstalls()) {
             activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     Uri.parse("package:" + activity.getPackageName())));
@@ -44,14 +52,46 @@ final class AppUpdater {
         }
         Activity app = activity;
         new Thread(() -> {
-            String error = run(app, apkUrl, build, progress);
-            if (error != null) app.runOnUiThread(() -> progress.status(error));
+            String error = runWithRetries(app, UpdateCheck.downloadUrls(apiUrl, apkUrl), build, progress);
+            if (error != null) app.runOnUiThread(() -> progress.failed(error));
         }, "Jarvis-Update").start();
         return true;
     }
 
-    /** @return Fehlermeldung oder null, wenn die Sitzung übergeben wurde. */
-    private static String run(Activity activity, String apkUrl, int build, Progress progress) {
+    /** Ergebnis eines Versuchs: Fehlertext (null = übergeben) und ob ein neuer Versuch lohnt. */
+    private static final class Attempt {
+        final String error;
+        final boolean retry;
+
+        Attempt(String error, boolean retry) {
+            this.error = error;
+            this.retry = retry;
+        }
+    }
+
+    /** @return Fehlermeldung oder null, wenn die Installation übergeben wurde. */
+    private static String runWithRetries(Activity activity, String[] urls, int build, Progress progress) {
+        String last = null;
+        for (int i = 0; i < ATTEMPTS; i++) {
+            if (i > 0) {
+                final String why = last;
+                activity.runOnUiThread(() -> progress.status(why + " – neuer Versuch …"));
+                try {
+                    Thread.sleep(2000L * i); // 2, 4, 6 s
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return last;
+                }
+            }
+            Attempt a = run(activity, urls[i % urls.length], build, progress);
+            if (a.error == null) return null;
+            last = a.error;
+            if (!a.retry) return last;
+        }
+        return last + ". Bitte gleich noch einmal versuchen.";
+    }
+
+    private static Attempt run(Activity activity, String apkUrl, int build, Progress progress) {
         PackageInstaller installer = activity.getPackageManager().getPackageInstaller();
         PackageInstaller.SessionParams params =
                 new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
@@ -68,7 +108,13 @@ final class AppUpdater {
             conn.setReadTimeout(30000);
             conn.setInstanceFollowRedirects(true); // GitHub leitet auf seinen Dateispeicher weiter
             conn.setRequestProperty("user-agent", "Jarvis-App");
-            if (conn.getResponseCode() != 200) return "Download fehlgeschlagen (" + conn.getResponseCode() + ").";
+            // API-Adresse: liefert mit diesem Accept die Datei selbst (Weiterleitung zum Dateispeicher) statt JSON.
+            if (UpdateCheck.isApiUrl(apkUrl)) conn.setRequestProperty("accept", "application/octet-stream");
+            int code = conn.getResponseCode();
+            if (code != 200) {
+                return new Attempt(code >= 500 ? "GitHub antwortet gerade nicht (" + code + ")"
+                        : "Download fehlgeschlagen (" + code + ")", UpdateCheck.retryable(code));
+            }
             long total = conn.getContentLengthLong();
 
             sessionId = installer.createSession(params);
@@ -103,10 +149,10 @@ final class AppUpdater {
                 session.commit(pi.getIntentSender());
                 committed = true;
             }
-            return null;
+            return new Attempt(null, false);
         } catch (Exception e) {
             // Eine übergebene Installation nie verwerfen – Android meldet ihr Ergebnis an UpdateReceiver.
-            if (committed) return null;
+            if (committed) return new Attempt(null, false);
             if (sessionId != -1) {
                 try {
                     installer.abandonSession(sessionId);
@@ -114,7 +160,10 @@ final class AppUpdater {
                     // schon weg
                 }
             }
-            return "Update fehlgeschlagen: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+            // Netz weg, Zeitüberschreitung, abgerissener Download: neuer Versuch mit neuer Sitzung.
+            return new Attempt("Update fehlgeschlagen: "
+                    + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()),
+                    e instanceof java.io.IOException);
         } finally {
             if (conn != null) conn.disconnect();
         }

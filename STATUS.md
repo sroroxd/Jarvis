@@ -211,7 +211,16 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
     Einstellungs-Bildschirm an die echte API und erwartet „ANDERES“ (prüft Modellname und Format). **Ungeprüft:** ob Haiku die Phasen auf echten TFT-Bildern
     sicher erkennt – dafür braucht es ein paar echte Bildschirmfotos von Art (Planung, Kampf, Karussell).
 
-**Geprüft:** Build (Release und Debug), alle 165 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+17. **Selbst-Update übersteht GitHub-Störungen** (8. Nov., Art: „75 lässt sich nicht automatisch herunterladen“):
+    Der normale Download-Link github.com/…/releases/download/… antwortete zwei von drei Malen nach 11 s mit 504,
+    dieselbe Datei über die GitHub-API (`releases/assets/<id>`, „Accept: application/octet-stream“) sofort. Die App
+    lädt jetzt zuerst über die API, dann über den Link, insgesamt bis zu vier Versuche mit Pause. Schlägt alles
+    fehl, bietet der Hinweis „Nochmal“ an – vorher kam ein neuer Versuch erst nach 30 Minuten. Der Gerätetest
+    lädt die veröffentlichte Test-App ohne Anmeldung über die API und meldet das Ergebnis („Update-Weg“).
+    Alte Builds (bis 75) haben den neuen Weg noch nicht: bei 504 die App aus der Übersicht wischen, neu öffnen,
+    erneut „Installieren“.
+
+**Geprüft:** Build (Release und Debug), alle 167 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

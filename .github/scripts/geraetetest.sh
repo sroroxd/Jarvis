@@ -163,6 +163,33 @@ else
   say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
 fi
 
+# ---------------------------------------------------------------- Selbst-Update: Download-Weg
+# Die App lädt neue Builds zuerst über die GitHub-API (der normale Link antwortete am 8. Nov. meist mit 504).
+# Hier ohne Anmeldung geprüft, wie auf dem Handy – mit der APK, die gerade als Test-App veröffentlicht ist.
+if [ "${GITHUB_REF:-}" != "refs/heads/main" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
+  rel="https://api.github.com/repos/${GITHUB_REPOSITORY:-sroroxd/Jarvis}/releases/tags/test-${GITHUB_REF_NAME}"
+  asset=$(curl -sS --max-time 20 -A Jarvis-App "$rel" 2>/dev/null | python3 -c '
+import json, sys
+try:
+    a = [x for x in json.load(sys.stdin).get("assets", []) if x.get("name", "").endswith(".apk")]
+    print(a[0]["url"] if a else "")
+except Exception:
+    print("")' || true)
+  if [ -n "$asset" ]; then
+    code=$(curl -sS -L --max-time 120 -A Jarvis-App -H "Accept: application/octet-stream" \
+             -o /tmp/update_test.apk -w "%{http_code}" "$asset" 2>/dev/null || echo 000)
+    size=$(stat -c %s /tmp/update_test.apk 2>/dev/null || echo 0)
+    if [ "$code" = "200" ] && [ "$size" -gt 1000000 ]; then
+      say "Update-Weg (GitHub-API, ohne Anmeldung): HTTP 200, $((size / 1048576)) MB"
+    else
+      say "WARNUNG Update-Weg (GitHub-API, ohne Anmeldung): HTTP $code, $size Bytes – die App nimmt dann den normalen Link"
+    fi
+    rm -f /tmp/update_test.apk
+  else
+    say "Hinweis: Update-Weg nicht geprüft (noch keine Test-App für diesen Zweig veröffentlicht)"
+  fi
+fi
+
 # ---------------------------------------------------------------- Auswertung
 fail=$gfail
 crashes=$(adb logcat -d -b crash 2>/dev/null | grep -A25 "Process: $PKG" || true)

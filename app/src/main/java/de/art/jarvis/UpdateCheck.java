@@ -25,11 +25,41 @@ final class UpdateCheck {
     static final class Result {
         final int build;
         final String url;
+        /** Dieselbe Datei über die GitHub-API (leer, wenn unbekannt) – siehe {@link #downloadUrls}. */
+        final String apiUrl;
 
         Result(int build, String url) {
+            this(build, url, "");
+        }
+
+        Result(int build, String url, String apiUrl) {
             this.build = build;
             this.url = url;
+            this.apiUrl = apiUrl == null ? "" : apiUrl;
         }
+    }
+
+    private static final String API_ASSETS = API + "assets/";
+
+    /**
+     * Reihenfolge der Download-Adressen. Zuerst die API-Adresse der Datei (mit „Accept: application/octet-stream“),
+     * dann der normale Link. Anlass, 8. Nov.: Der normale Link github.com/…/releases/download/… antwortete zwei von
+     * drei Malen nach 11 s mit 504, die API-Adresse jedes Mal in unter 2 s – Art bekam Build 75 nicht aufs Handy.
+     */
+    static String[] downloadUrls(String apiUrl, String url) {
+        boolean api = apiUrl != null && apiUrl.startsWith(API_ASSETS);
+        if (api && url != null && !url.isEmpty()) return new String[] {apiUrl, url};
+        if (api) return new String[] {apiUrl};
+        return new String[] {url};
+    }
+
+    static boolean isApiUrl(String url) {
+        return url != null && url.startsWith(API_ASSETS);
+    }
+
+    /** Lohnt ein neuer Versuch? Serverfehler (5xx), „zu viele Anfragen“ (429) und Sperre wegen Abfragegrenze (403). */
+    static boolean retryable(int httpCode) {
+        return httpCode >= 500 || httpCode == 429 || httpCode == 403;
     }
 
     private UpdateCheck() {}
@@ -73,7 +103,8 @@ final class UpdateCheck {
                 org.json.JSONObject a = assets.optJSONObject(i);
                 if (a != null && a.optString("name", "").endsWith(".apk")) {
                     String url = a.optString("browser_download_url", "");
-                    if (!url.isEmpty()) return new Result(build, url);
+                    String api = a.optString("url", "");
+                    if (!url.isEmpty()) return new Result(build, url, isApiUrl(api) ? api : "");
                 }
             }
         }
