@@ -45,6 +45,27 @@ final class SpeechGate {
     static final double MIN_SPEECH_DB = -40;
     /** Wie schnell die Echo-Schätzung einem lauter werdenden Echo folgt (je 20-ms-Block). */
     static final double RISE = 0.1;
+    /** Standardstufe des Reglers „Empfindlichkeit beim Dazwischenreden“ (entspricht {@link #MARGIN_DB}). */
+    static final int DEFAULT_LEVEL = 5;
+
+    /**
+     * Abstand zum Echo für eine Reglerstufe (Wunsch #25): 1 = unempfindlich (14,8 dB, unterbricht sich praktisch nie
+     * selbst), 5 = Standard (10 dB), 10 = sehr empfindlich (4 dB, reagiert schon auf leises Sprechen).
+     */
+    static double marginFor(int level) {
+        int l = Math.max(1, Math.min(10, level));
+        return MARGIN_DB + (DEFAULT_LEVEL - l) * 1.2;
+    }
+
+    private final double margin;
+
+    SpeechGate() {
+        this(MARGIN_DB);
+    }
+
+    SpeechGate(double marginDb) {
+        margin = marginDb;
+    }
 
     private final double[] warmup = new double[WARMUP_FRAMES];
     private final boolean[] window = new boolean[WINDOW];
@@ -79,7 +100,7 @@ final class SpeechGate {
 
     /** Aktuelle Schwelle in dBFS (für Anzeige und Tests). */
     double thresholdDb() {
-        return Math.max(echoDb + MARGIN_DB, MIN_SPEECH_DB);
+        return Math.max(echoDb + margin, MIN_SPEECH_DB);
     }
 
     /**

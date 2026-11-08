@@ -187,6 +187,26 @@ public class SpeechGateTest {
         assertFalse(g.armed());
     }
 
+    /** Wunsch #25: Der Regler verschiebt die Schwelle – Stufe 5 ist der bisherige Standard. */
+    @Test
+    public void reglerVerschiebtDieSchwelle() {
+        assertEquals(SpeechGate.MARGIN_DB, SpeechGate.marginFor(5), 0.001);
+        assertEquals(14.8, SpeechGate.marginFor(1), 0.001);
+        assertEquals(4.0, SpeechGate.marginFor(10), 0.001);
+        assertEquals(SpeechGate.marginFor(1), SpeechGate.marginFor(-3), 0.001); // außerhalb → Rand
+
+        // Echo -30 dB, Art spricht nur 9 dB lauter: Standard (10 dB Abstand) reagiert nicht, Stufe 9 (5,2 dB) schon.
+        for (int level : new int[]{5, 9}) {
+            Random rnd = new Random(20);
+            SpeechGate g = new SpeechGate(SpeechGate.marginFor(level));
+            g.voiceStarted();
+            feed(g, -30, 1, SpeechGate.WARMUP_FRAMES, rnd);
+            int after = feed(g, -21, 1, 40, rnd);
+            if (level == 5) assertEquals(-1, after);
+            else assertTrue("Stufe 9 erkannt nach " + after, after >= 0);
+        }
+    }
+
     /** Fehlt das Startsignal ganz, lernt die Schranke nach der Wartezeit trotzdem und wird scharf. */
     @Test
     public void ohneStartsignalLerntSieNachDerWartezeit() {

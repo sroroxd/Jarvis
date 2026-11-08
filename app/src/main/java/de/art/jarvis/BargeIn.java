@@ -46,6 +46,8 @@ final class BargeIn {
     private Thread thread;
     private volatile boolean active;
     private volatile boolean echoCanceller;
+    /** Abstand zum Echo in dB (Regler „Empfindlichkeit beim Dazwischenreden“). */
+    private volatile double margin = SpeechGate.MARGIN_DB;
     /** Schwelle des Wachworts; negativ = Wachwort aus. */
     private volatile float wakeThreshold = -1f;
     /** Ist Jarvis' Stimme in dieser Antwort schon angelaufen? Siehe {@link SpeechGate#voiceStarted()}. */
@@ -85,6 +87,10 @@ final class BargeIn {
         voiceStarted = true;
         SpeechGate g = gate;
         if (g != null) g.voiceStarted();
+    }
+
+    void setMargin(double marginDb) {
+        margin = marginDb;
     }
 
     /** Wachwort-Schwelle wie beim normalen Wachwort; negativ schaltet es hier aus. */
@@ -143,7 +149,7 @@ final class BargeIn {
                 if (ns != null) ns.setEnabled(true);
             }
             record.startRecording();
-            SpeechGate g = new SpeechGate();
+            SpeechGate g = new SpeechGate(margin);
             gate = g;
             if (voiceStarted) g.voiceStarted(); // Stimme lief schon, bevor das Mikrofon frei war
             short[] frame = new short[SpeechGate.FRAME];
