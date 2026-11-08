@@ -113,6 +113,7 @@ jobs:
           files: |
             shots/*.png
             shots/*.txt
+            shots/*.wav
           body: |
             Gerätetest vom Arbeitsstand „${{ github.ref_name }}“ (Build ${{ github.run_number }}): Bildschirmfotos,
             Bericht (geraetetest.txt) und Fehlerprotokoll. Keine App zum Installieren.

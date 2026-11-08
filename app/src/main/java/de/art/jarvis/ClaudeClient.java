@@ -7,7 +7,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -51,6 +50,7 @@ final class ClaudeClient {
     }
 
     private static final String ENDPOINT = "https://api.anthropic.com/v1/messages";
+    private static final String WARM_URL = "https://api.anthropic.com/v1/models";
     /** Höchstzahl an Runden pro Frage – schützt vor Endlosschleifen und Kosten. */
     private static final int MAX_ROUNDS = 6;
     /** Höchstens so oft „pause_turn“ fortsetzen (lange Recherchen pausiert die API zwischendurch). */
@@ -66,6 +66,14 @@ final class ClaudeClient {
     private static final ExecutorService background = Executors.newSingleThreadExecutor();
     /** Kurze Nebenanfragen (Phasen-Wächter des proaktiven Coachings) – eigener Thread, hält weder Fragen noch Meta auf. */
     private static final ExecutorService quick = Executors.newSingleThreadExecutor();
+    /** Filter vor Claude bei offenem Mikrofon – eigener Thread, damit er nie hinter einem Wächter-Bild wartet. */
+    private static final ExecutorService gate = Executors.newSingleThreadExecutor();
+    /** Verbindungs-Vorlauf ({@link #warmUp}) – eigener Thread, hält nichts anderes auf. */
+    private static final ExecutorService warm = Executors.newSingleThreadExecutor();
+    /** Zuletzt mit Anthropic gesprochen ({@link Net#now}) – eine frische Verbindung braucht dann keinen Vorlauf. */
+    private static volatile long lastContact;
+    /** Vorlauf nur, wenn die Verbindung länger ungenutzt war. */
+    static final long WARM_IDLE_MS = 20_000;
     /** Lehnt das Konto die Websuche ab (in der Claude Console nicht freigeschaltet), lassen wir sie danach weg. */
     private static volatile boolean webSearchUnavailable;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -101,6 +109,7 @@ final class ClaudeClient {
     void send(String apiKey, String model, String system, JSONArray messages, String effort,
               ToolRunner tools, TextListener listener, Callback callback) {
         executor.execute(() -> {
+            answering.set(true);
             spentHere.get()[0] = 0;
             Result r = tools == null
                     ? ask(apiKey, model, system, messages, effort, null, listener)
@@ -145,11 +154,43 @@ final class ClaudeClient {
      * Adaptiv mit „low“ – bei so einfachen Fragen denkt das Modell laut Doku meist gar nicht nach.
      */
     void sendQuick(String apiKey, String model, String system, JSONArray messages, Callback callback) {
-        quick.execute(() -> {
-            Result r = request(apiKey, model, system, messages, "adaptive", "low", 1024, null, null);
-            if (r.code == 400 && mentionsThinking(r.detail)) r = request(apiKey, model, system, messages, null, null, 256, null, null);
-            deliver(r, "Keine Antwort.", callback);
+        quick.execute(() -> quickRequest(apiKey, model, system, messages, callback));
+    }
+
+    /** Wie {@link #sendQuick}, aber für den Filter vor Claude (siehe {@link ListenRules}) auf eigenem Thread. */
+    void sendGate(String apiKey, String model, String system, JSONArray messages, Callback callback) {
+        gate.execute(() -> quickRequest(apiKey, model, system, messages, callback));
+    }
+
+    /**
+     * Verbindungs-Vorlauf (Wunsch #43): Sobald Art zu sprechen beginnt, baut die App die Verbindung zu Anthropic
+     * schon auf (DNS, TCP, TLS – über Mobilfunk mehrere hundert Millisekunden). Die Frage nutzt sie danach wieder,
+     * statt erst nach Arts letztem Wort zu verbinden. Eine Anfrage ohne Schlüssel an die Modell-Liste: Antwort 401,
+     * kostet nichts, verrät nichts. Nur, wenn die Verbindung über {@link #WARM_IDLE_MS} ungenutzt war.
+     */
+    static void warmUp() {
+        long now = Net.now();
+        if (now - lastContact < WARM_IDLE_MS) return;
+        lastContact = now;
+        warm.execute(() -> {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(WARM_URL).openConnection();
+                c.setConnectTimeout(5000);
+                c.setReadTimeout(5000);
+                c.setRequestProperty("anthropic-version", "2023-06-01");
+                int code = c.getResponseCode();
+                // Antwort ganz lesen und nicht trennen – nur so kommt die Verbindung zurück in den Vorrat.
+                Io.readAll(code >= 400 ? c.getErrorStream() : c.getInputStream());
+            } catch (Exception ignored) {
+                // Nur ein Vorlauf – die echte Frage verbindet zur Not selbst.
+            }
         });
+    }
+
+    private void quickRequest(String apiKey, String model, String system, JSONArray messages, Callback callback) {
+        Result r = request(apiKey, model, system, messages, "adaptive", "low", 1024, null, null);
+        if (r.code == 400 && mentionsThinking(r.detail)) r = request(apiKey, model, system, messages, null, null, 256, null, null);
+        deliver(r, "Keine Antwort.", callback);
     }
 
     private void deliver(Result result, String emptyMessage, Callback callback) {
@@ -407,10 +448,6 @@ final class ClaudeClient {
     }
 
     /**
-     * thinking: "adaptive" oder null (Feld weglassen); effort: "low"/"medium"/… oder null.
-     * listener != null: als Strom anfordern und Textstücke sofort weiterreichen.
-     */
-    /**
      * Wo die Wartezeit der letzten Anfrage steckt (Wunsch #43): Senden = Verbindung plus Hochladen der Anfrage
      * (mit Bildschirmfoto mehrere hundert KB), Claude = vom fertigen Hochladen bis zum ersten Textstück.
      * Was danach bis zum ersten gesprochenen Satz fehlt, ist der Rest des Satzes und der Start der Stimme.
@@ -439,9 +476,19 @@ final class ClaudeClient {
         }
     }
 
-    /** Zeitpunkte der letzten Anfrage – für die Zeitmessung auf dem Startbildschirm und den Gerätetest. */
+    /**
+     * Zeitpunkte der letzten Antwort auf eine Frage – für die Zeitmessung auf dem Startbildschirm und den Gerätetest.
+     * Nur Anfragen aus {@link #send} zählen: Vorher überschrieben Phasen-Wächter (alle 6 s) und Meta-Recherche den
+     * Wert, und die Zeile zeigte deren Zeiten statt der von Arts Frage.
+     */
     static volatile Net lastNet;
+    /** Läuft dieser Thread Arts Fragen ({@link #send})? Nur dann wird {@link #lastNet} gesetzt. */
+    private static final ThreadLocal<Boolean> answering = ThreadLocal.withInitial(() -> false);
 
+    /**
+     * thinking: "adaptive" oder null (Feld weglassen); effort: "low"/"medium"/… oder null.
+     * listener != null: als Strom anfordern und Textstücke sofort weiterreichen.
+     */
     private Result request(String apiKey, String model, String system, JSONArray messages,
                            String thinking, String effort, int maxTokens, JSONArray tools, TextListener listener) {
         Result result = new Result();
@@ -451,7 +498,8 @@ final class ClaudeClient {
             if (listener != null) body.put("stream", true);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
             Net net = new Net(Net.now(), payload.length);
-            lastNet = net;
+            lastContact = net.start;
+            if (answering.get()) lastNet = net;
 
             conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
             conn.setRequestMethod("POST");
@@ -478,7 +526,7 @@ final class ClaudeClient {
                 account(model, result.usage);
                 return result;
             }
-            String response = readAll(ok ? conn.getInputStream() : conn.getErrorStream());
+            String response = Io.readAll(ok ? conn.getInputStream() : conn.getErrorStream());
             if (!ok) {
                 result.error = describeError(code, response);
                 try {
@@ -545,14 +593,4 @@ final class ClaudeClient {
         return Text.claudeError(code, type, detail);
     }
 
-    private static String readAll(InputStream in) throws java.io.IOException {
-        if (in == null) return "";
-        try (InputStream is = in) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = is.read(buf)) != -1) out.write(buf, 0, n);
-            return out.toString("UTF-8");
-        }
-    }
 }

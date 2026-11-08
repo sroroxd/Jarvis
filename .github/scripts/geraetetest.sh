@@ -103,7 +103,7 @@ answers() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "antwort \[|fehl
 ask() {  # ask <Name> <Frage> <Muster für die richtige Antwort> [Muster, das nicht vorkommen darf]
   local before line
   before=$(answers | wc -l)
-  adb shell "am start -n $ACT --es testfrage '$2'" > /dev/null 2>&1
+  adb shell "am start -n $ACT --es testfrage '$2' ${ASK_EXTRA:-}" > /dev/null 2>&1
   for _ in $(seq 1 45); do
     sleep 2
     [ "$(answers | wc -l)" -gt "$before" ] && break
@@ -140,6 +140,22 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
     say "  Cache: greift"
   else
     say "  Hinweis: Cache griff bei der zweiten Frage nicht"
+  fi
+  # Kostenbremse bei offenem Mikrofon: Nach einer Gesprächspause fragt erst Haiku, ob der Satz Jarvis galt.
+  # Eine echte Frage muss durchkommen (sonst bliebe Jarvis stumm) – das ist hart. Dass Fernseh-Gerede
+  # herausgefiltert wird, ist nur ein Hinweis: Durchgelassen kostet es Geld, schadet aber nicht.
+  filter_vorher=$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "filter: " || true)
+  ASK_EXTRA="--ez testoffen true" ask "Filter-ja" "Was ist die Hauptstadt von Frankreich?" "paris" "gefiltert"
+  if [ "$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "filter: " || true)" -le "$filter_vorher" ]; then
+    say "  FEHLER Filter: bei offenem Mikrofon nicht gefragt"; gfail=1
+  else
+    say "  Filter: $(adb logcat -d -s JarvisTest:I 2>/dev/null | grep "filter: " | tail -1 | sed 's/.*JarvisTest: //')"
+  fi
+  gfail_vorher=$gfail
+  ASK_EXTRA="--ez testoffen true" ask "Filter-nein" "und morgen wird es im Norden regnerisch bei zwoelf Grad, mehr dazu gleich nach der Werbung" "gefiltert"
+  if [ "$gfail" != "$gfail_vorher" ]; then
+    say "  Hinweis Filter: Fernseh-Satz wurde nicht herausgefiltert (kostet Geld, kein Absturz)"
+    gfail=$gfail_vorher
   fi
   adb exec-out screencap -p > shots/05_gespraech.png
   # Proaktives Coaching: Der Phasen-Wächter (Haiku) bekommt einen gemalten Einstellungs-Bildschirm – richtig ist
@@ -205,6 +221,68 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
   fi
 else
   say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
+fi
+
+# ---------------------------------------------------------------- Offline-Stimme (Pocket TTS, Machbarkeit)
+# Lädt Kyutais deutsches Pocket-TTS-Modell (sherpa-onnx-Paket, CC BY 4.0, rund 140 MB) und eine Sprachprobe
+# (VCTK p226, CC BY 4.0), legt beides in den App-Ordner „pocket“ und lässt drei Sätze sprechen. Zeigt, ob die
+# Bibliothek auf Android lädt und wie schnell sie im Emulator ist (x86, kein S24 Ultra). Nur Hinweis, kein
+# Abbruch – ein Absturz fiele trotzdem unten in der Auswertung auf. Der erste Satz kommt als pocket_probe.wav
+# in die Vorab-Version, zum Anhören.
+say "Offline-Stimme (Pocket TTS):"
+HF=https://huggingface.co/haex-space/pocket-tts-sherpa-onnx/resolve/d8f5915ed8bd94e1aa3dbd5a219360b3bb966190/de
+mkdir -p /tmp/pocket
+pok=1
+for f in lm_flow.int8.onnx lm_main.int8.onnx encoder.onnx decoder.int8.onnx text_conditioner.onnx vocab.json token_scores.json; do
+  curl -sSfL --retry 3 --max-time 300 -o "/tmp/pocket/$f" "$HF/$f" || pok=0
+done
+curl -sSfL --retry 3 --max-time 60 -o /tmp/pocket/stimme.wav \
+  https://huggingface.co/kyutai/tts-voices/resolve/main/vctk/p226_023_enhanced.wav || pok=0
+if [ "$pok" = 1 ]; then
+  for f in /tmp/pocket/*; do
+    name=$(basename "$f")
+    adb push "$f" "/data/local/tmp/pk_$name" > /dev/null 2>&1
+    adb shell "run-as $PKG sh -c 'mkdir -p files/pocket && cp /data/local/tmp/pk_$name files/pocket/$name'" > /dev/null 2>&1
+    adb shell rm -f "/data/local/tmp/pk_$name"
+  done
+  pocket() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "pocket" || true; }
+  adb shell "am start -n $ACT --ez testpocket true" > /dev/null 2>&1
+  # Der x86-Emulator rechnet Pocket TTS rund 50-mal langsamer als Echtzeit (Build 99: 114 s für 1,7 s Audio) –
+  # hier zählt nur, dass die Bibliothek lädt und der erste Satz entsteht. Das Tempo misst Arts Handy
+  # (Einstellungen → „Offline-Stimme ausprobieren“).
+  for _ in $(seq 1 80); do
+    sleep 3
+    pocket | grep -qE "pocket (fertig|fehler)" && break
+  done
+  if pocket | grep -q "pocket fertig"; then
+    pocket | grep -E "geladen|satz 1" | sed 's/.*JarvisTest: /  /' | while read -r l; do say "$l"; done
+    say "  Offline-Stimme läuft auf Android (Tempo im Emulator ohne Aussagekraft)"
+    adb exec-out run-as "$PKG" cat files/pocket/probe.wav > shots/pocket_probe.wav 2>/dev/null || true
+    # Ablauf als Jarvis' Stimme: Antwort → Satz erzeugen → abspielen → zurück in den Ruhezustand („sprache fertig“).
+    # Im Emulator dauert das ~1 Minute je Satz; hier zählt nur, dass es nicht hängt (Hinweis, kein Abbruch).
+    fertig_vorher=$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "sprache fertig" || true)
+    adb shell "am start -n $ACT --ez testpocketstimme true --es testfrage 'Sag nur: Hallo.'" > /dev/null 2>&1
+    for _ in $(seq 1 60); do
+      sleep 5
+      [ "$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c 'sprache fertig' || true)" -gt "$fertig_vorher" ] && break
+    done
+    if [ "$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c 'sprache fertig' || true)" -gt "$fertig_vorher" ]; then
+      say "  Offline-Stimme als Jarvis' Stimme: Antwort gesprochen, Ablauf endet sauber"
+    else
+      # Warum? Systemmeldungen zum Prozess (beendet, Speicherknappheit, Absturz in nativem Code).
+      adb logcat -d 2>/dev/null | grep -E "Fatal signal|has died|lowmemorykiller|lmkd|Killing|OutOfMemory|tombstone|SIGSEGV|SIGABRT" \
+        | grep -iE "jarvis|lowmem|lmkd" | tail -6 | sed 's/^/    system: /' | while read -r l; do say "$l"; done
+      say "  WARNUNG Offline-Stimme als Jarvis' Stimme: nach 5 Minuten kein „Sprache fertig“ (hängt oder im Emulator zu langsam)"
+      adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "pocket|satz:|sprechen:" | tail -5 | sed 's/.*JarvisTest: /    /' | while read -r l; do say "$l"; done
+    fi
+  elif pocket | grep -q "pocket fehler"; then
+    say "  Hinweis Offline-Stimme: $(pocket | grep 'pocket fehler' | tail -1 | sed 's/.*JarvisTest: //')"
+  else
+    say "  Hinweis Offline-Stimme: kein erster Satz nach 4 Minuten"
+    pocket | sed 's/.*JarvisTest: /    /' | while read -r l; do say "$l"; done
+  fi
+else
+  say "  Hinweis Offline-Stimme: Modell ließ sich nicht herunterladen"
 fi
 
 # ---------------------------------------------------------------- Selbst-Update: Download-Weg

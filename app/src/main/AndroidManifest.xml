@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Nur zu fragen, ob das Netz Mobilfunk ist (Warnung vor dem Modell-Download); wird ohne Nachfrage erteilt. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Selbst-Update: neue geprüfte Version direkt einspielen, ohne Datei im Download-Ordner -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />

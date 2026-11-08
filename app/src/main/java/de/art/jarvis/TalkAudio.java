@@ -61,7 +61,7 @@ final class TalkAudio {
     void exit() {
         if (!active || am == null) return;
         try {
-            am.clearCommunicationDevice();
+            if (android.os.Build.VERSION.SDK_INT >= 31) am.clearCommunicationDevice();
         } catch (RuntimeException ignored) {
             // schon zurückgesetzt
         }

@@ -12,7 +12,7 @@ public class TimingTest {
         Timing t = new Timing();
         t.speechEnded(1000);
         t.sent(1400);
-        t.answered(3200);
+        t.firstAnswer(3200);
         assertTrue(t.voiceStarted(3800));
         assertEquals("Zuhören 0,4 s · KI 1,8 s · Stimme 0,6 s · gesamt 2,8 s", t.summary());
     }
@@ -30,7 +30,7 @@ public class TimingTest {
         t.speechEndedIfUnknown(500);
         t.speechEndedIfUnknown(900); // erster Wert bleibt
         t.sent(500);
-        t.answered(1500);
+        t.firstAnswer(1500);
         assertTrue(t.voiceStarted(1700));
         assertEquals("Zuhören 0,0 s · KI 1,0 s · Stimme 0,2 s · gesamt 1,2 s", t.summary());
     }

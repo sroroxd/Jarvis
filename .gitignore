@@ -6,3 +6,6 @@ local.properties
 *.iml
 __pycache__/
 *.pyc
+
+# sherpa-onnx (Offline-Stimme), lädt app/build.gradle mit Prüfsumme
+.sherpa/

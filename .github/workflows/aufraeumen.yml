@@ -1,19 +1,21 @@
-name: Alte Releases aufräumen
+name: Aufräumen
 
-# Einmal von Hand starten: GitHub → Actions → „Alte Releases aufräumen“ → Run workflow.
-# WICHTIG: Bei „Use workflow from“ den Zweig ccr-4f440a4a-dx81et wählen – auf main liegt noch die alte Liste.
+# Von Hand starten: GitHub → Actions → „Aufräumen“ → Run workflow (Zweig main genügt).
 #
-# Löscht genau die Listen unten: alte Releases samt Git-Tag und alte Arbeitszweige. Ein Zweig wird nur gelöscht,
-# wenn jeder seiner Commits nachweislich im Zweig „sicher_in“ steckt – sonst bleibt er stehen und der Lauf wird rot.
-# Stehen bleiben immer: main, ccr-4f440a4a-dx81et, v1.0.43 (aktuelle normale App, Ziel des Download-Links),
-# vorschau (Gerätetest schreibt dorthin) und test-ccr-4f440a4a-dx81et (aktuelle Test-App).
-# Ein zweiter Lauf schadet nicht: Fehlendes wird übersprungen.
+# Löscht nur, was nachweislich nicht mehr gebraucht wird – ohne Listen, die jemand pflegen muss:
+#   1. Arbeitszweige, deren Commits alle schon in main stecken (main selbst nie),
+#   2. Test-Apps „test-<Zweig>“, deren Zweig es nicht mehr gibt,
+#   3. ältere normale Apps „v1.0.<Build>“ – die neueste bleibt, sie ist das Ziel des Download-Links.
+# Bleiben immer: main, vorschau (Bericht des Gerätetests), die neueste v1.0.x und Test-Apps vorhandener Zweige.
+# Ein Zweig mit eigenen, noch nicht übernommenen Commits bleibt stehen (gelbe Warnung im Lauf).
+# Erst schauen: „nur_anzeigen“ auf „ja“ – dann wird nichts gelöscht, nur aufgelistet.
+# (Bis 8. Nov. stand hier eine feste Liste vom Aufräumen am Morgen – längst abgearbeitet.)
 on:
   workflow_dispatch:
     inputs:
-      sicher_in:
-        description: "Zweig, der alle zu löschenden Zweige enthalten muss"
-        default: ccr-4f440a4a-dx81et
+      nur_anzeigen:
+        description: "Nur anzeigen, nichts löschen (ja/nein)"
+        default: "nein"
         required: true
 
 permissions:
@@ -25,20 +27,11 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      SICHER_IN: ${{ inputs.sicher_in }}
+      NUR_ANZEIGEN: ${{ inputs.nur_anzeigen }}
     steps:
-      - name: Releases, Tags und Zweige löschen
+      - name: Zweige und Releases aufräumen
         run: |
           set -u
-          behalten="main ccr-4f440a4a-dx81et v1.0.43 vorschau test-ccr-4f440a4a-dx81et"
-          releases_weg="test-selbst-update test-gespraechstest-ci test-geraetetest-schranke
-                        test-fix-dazwischenreden-abbruch test-feinschliff-cache test-sammeltest
-                        test test-wachwort-jarvis test-tft-coach test-jarvis-haende
-                        v1.0.29 v1.0.32"
-          zweige_weg="agent-ruckgrat feinschliff-cache fix-dazwischenreden-abbruch geraetetest-schranke
-                      gespraech-modus gespraechstest-ci jarvis-haende sammeltest selbst-update
-                      tft-coach wachwort-jarvis"
-
           # Direkt über die API mit Statuscode: GitHub antwortet beim Löschen gelegentlich mit
           # HTTP 500/502 (am 4. Nov. siebenmal). Das wird wiederholt – was übrig bleibt, macht den Lauf rot.
           api() { # Methode Pfad [Ausgabedatei]
@@ -46,7 +39,12 @@ jobs:
               -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/$GH_REPO/$2"
           }
+          weg() { # Beschreibung – im Probelauf nur ansagen
+            if [ "$NUR_ANZEIGEN" = "ja" ]; then echo "Würde löschen: $1"; return 1; fi
+            return 0
+          }
           loesche_release() { # Tag
+            weg "Release $1" || return 0
             for versuch in 1 2 3 4 5 6; do
               code=$(api GET "releases/tags/$1" /tmp/release.json)
               if [ "$code" = 200 ]; then
@@ -66,23 +64,21 @@ jobs:
             done
             return 1
           }
-          loesche_zweig() { # Zweig
+          loesche_zweig() { # Zweig – nur, wenn jeder seiner Commits in main steckt
             for versuch in 1 2 3 4 5 6; do
-              code=$(api GET "branches/$1")
-              if [ "$code" = 404 ]; then echo "Zweig schon weg: $1"; return 0; fi
-              # Sicherung: Steckt jeder Commit des Zweigs in SICHER_IN? (behind_by = Commits, die dort fehlen)
-              code=$(api GET "compare/$1...$SICHER_IN" /tmp/compare.json)
+              code=$(api GET "compare/main...$1" /tmp/compare.json)
               if [ "$code" != 200 ]; then
                 echo "  $1: Vergleich → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)); continue
               fi
-              fehlt=$(jq -r .behind_by /tmp/compare.json)
-              if [ "$fehlt" != 0 ]; then
-                echo "::warning title=Zweig bleibt::$1 hat $fehlt Commit(s), die nicht in $SICHER_IN stecken – nicht gelöscht."
-                return 1
+              eigen=$(jq -r .ahead_by /tmp/compare.json)   # Commits im Zweig, die main nicht hat
+              if [ "$eigen" != 0 ]; then
+                echo "::warning title=Zweig bleibt::$1 hat $eigen Commit(s), die noch nicht in main sind."
+                return 0
               fi
+              weg "Zweig $1 (vollständig in main)" || return 0
               code=$(api DELETE "git/refs/heads/$1")
               case "$code" in
-                204|404|422) echo "Zweig weg: $1 (vollständig in $SICHER_IN)"; return 0 ;;
+                204|404|422) echo "Zweig weg: $1 (vollständig in main)"; return 0 ;;
                 *) echo "  $1: Zweig löschen → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)) ;;
               esac
             done
@@ -90,13 +86,27 @@ jobs:
           }
 
           fehler=""
-          for t in $releases_weg; do
-            case " $behalten " in *" $t "*) echo "Geschützt, bleibt: $t"; continue ;; esac
-            loesche_release "$t" || fehler="$fehler $t"
-          done
-          for z in $zweige_weg; do
-            case " $behalten $SICHER_IN " in *" $z "*) echo "Geschützt, bleibt: $z"; continue ;; esac
+          # 1. Zweige, die ganz in main stecken
+          for z in $(gh api "repos/$GH_REPO/branches" --paginate --jq '.[].name'); do
+            [ "$z" = main ] && continue
             loesche_zweig "$z" || fehler="$fehler $z"
+          done
+          # 2./3. Releases – nach dem Zweige-Aufräumen, damit Test-Apps eben gelöschter Zweige mit weggehen
+          zweige=" $(gh api "repos/$GH_REPO/branches" --paginate --jq '.[].name' | tr '\n' ' ') "
+          tags=$(gh api "repos/$GH_REPO/releases" --paginate --jq '.[].tag_name')
+          neueste=$(printf '%s\n' $tags | grep -E '^v1\.0\.[0-9]+$' | sort -t. -k3 -n | tail -1)
+          echo "Neueste normale App: ${neueste:-keine} – bleibt."
+          for t in $tags; do
+            case "$t" in
+              vorschau) continue ;;
+              test-*)
+                zweig=${t#test-}
+                case "$zweige" in *" $zweig "*) continue ;; esac
+                loesche_release "$t" || fehler="$fehler $t" ;;
+              v1.0.*)
+                [ "$t" = "$neueste" ] && continue
+                loesche_release "$t" || fehler="$fehler $t" ;;
+            esac
           done
           echo
           echo "Was jetzt noch da ist:"

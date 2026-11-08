@@ -115,8 +115,7 @@ public class SettingsActivity extends AppCompatActivity {
                 showResult(b.keyResult, "✗ " + message);
             }
         };
-        if (prefs.isGemini()) new GeminiClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
-        else new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+        new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
     }
 
     // ---------------------------------------------------------------- Sprachsteuerung
@@ -208,6 +207,13 @@ public class SettingsActivity extends AppCompatActivity {
         b.elevenKeyField.setText(prefs.elevenKey());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());
         b.previewVoice.setOnClickListener(v -> preview());
+        b.pocketTry.setOnClickListener(v -> tryPocket());
+        if (PocketTrial.downloaded(this)) b.pocketTry.setText("Offline-Stimme anhören (schon geladen)");
+        updatePocketSwitch();
+        b.switchPocket.setOnCheckedChangeListener((v, on) -> {
+            prefs.setPocketVoice(on);
+            refreshService();
+        });
         loadPreviewEngine(active);
     }
 
@@ -229,6 +235,46 @@ public class SettingsActivity extends AppCompatActivity {
         b.voiceResult.setVisibility(View.GONE);
         Voices.apply(previewTts, prefs, previewEngine);
         previewTts.speak(Text.sirForDeviceVoice(PREVIEW_TEXT), TextToSpeech.QUEUE_FLUSH, null, "preview");
+    }
+
+    /** Beim zweiten Antippen im Mobilfunk wird trotzdem geladen. */
+    private boolean pocketMeteredConfirmed;
+
+    /** „Offline-Stimme ausprobieren“: lädt nur auf Arts Antippen, im Mobilfunk erst nach einem zweiten Tippen. */
+    private void tryPocket() {
+        if (!PocketTrial.downloaded(this) && !pocketMeteredConfirmed) {
+            android.net.ConnectivityManager cm = getSystemService(android.net.ConnectivityManager.class);
+            boolean metered;
+            try {
+                metered = cm != null && cm.isActiveNetworkMetered();
+            } catch (RuntimeException e) {
+                metered = false; // Auskunft nicht möglich – dann nicht blockieren
+            }
+            if (metered) {
+                pocketMeteredConfirmed = true;
+                showResult(b.pocketResult, "Du bist im Mobilfunk. Noch einmal tippen, um die " + (PocketTrial.totalBytes() >> 20)
+                        + " MB trotzdem zu laden – oder später im WLAN.");
+                return;
+            }
+        }
+        b.pocketTry.setEnabled(false);
+        showResult(b.pocketResult, "Starte …");
+        PocketTrial.start(this, (text, done) -> {
+            if (isFinishing() || isDestroyed()) return;
+            showResult(b.pocketResult, text);
+            if (done) {
+                b.pocketTry.setEnabled(true);
+                if (PocketTrial.downloaded(this)) b.pocketTry.setText("Offline-Stimme anhören (schon geladen)");
+                updatePocketSwitch();
+            }
+        });
+    }
+
+    /** Der Schalter geht erst, wenn das Modell auf dem Handy liegt. */
+    private void updatePocketSwitch() {
+        boolean ready = PocketTrial.downloaded(this);
+        b.switchPocket.setEnabled(ready);
+        b.switchPocket.setChecked(ready && prefs.pocketVoice());
     }
 
     /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */
@@ -668,7 +714,7 @@ public class SettingsActivity extends AppCompatActivity {
     /** Recherche sofort starten (z. B. nach einem neuen Patch). */
     private void updateMetaNow() {
         saveTextFields();
-        if (prefs.apiKey().isEmpty() || prefs.isGemini()) {
+        if (prefs.apiKey().isEmpty()) {
             b.metaInfo.setText("Die Meta-Recherche braucht einen Claude-Schlüssel (sk-ant-…).");
             return;
         }

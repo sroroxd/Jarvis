@@ -97,6 +97,45 @@ die Zweige `main` und `ccr-4f440a4a-dx81et`, die Releases und Tags `v1.0.43` (no
 Früher erledigt (4. Nov.): Repo geprüft – keine fremden Pushes, keine echten Schlüssel im Code;
 „Automatically delete head branches“ ist eingeschaltet.
 
+### Repo-Durchsicht am Nachmittag des 8. Nov. (Arts Auftrag: Doppeltes und Überbleibsel)
+
+**Zweige und PRs:** `zeitmessung-netz` (PR #53, Latenz-Messung und Zeitmessung) übernommen; `latenz-messung`
+steckt vollständig darin und kann weg. PR #49 geschlossen – sein einziger Commit kam mit #53 nach `main`.
+
+**Toter Code entfernt:**
+- *Gemini ganz raus* (`GeminiClient`, `isGemini`, Modell-Standard, Schlüsselerkennung): Jarvis fragt
+  ausschließlich Claude. Die Verzweigungen lagen an elf Stellen und machten jede Messung und jede
+  Kostenanzeige doppelt zu lesen.
+- *Wachwort als Aktivierung raus*: `WakeWordEngine` (eigenes Mikrofon, Fehler-Wiederholung,
+  „Wachwort pausiert“) ist seit „Immer zuhören“ unerreichbar. Geblieben ist `WakeModel` – nur noch das
+  Laden des Modells für `BargeIn`, damit „Jarvis“ weiter unterbricht. Auch `Prefs.wakeWord`,
+  der Sicherungseintrag und der tote Zweig in `Backup` sind weg.
+- Vier fast gleiche `readAll`-Kopien → `Io.readAll`; `BuildConfig.DEBUG` statt viermal `FLAG_DEBUGGABLE`;
+  tote Methoden (`echoCancellerActive`, `isSpeaking`, `lastYou`, `lastJarvis`, `wakeProblem`,
+  `isScreenAwake`, `setAgentPort`, `Timing.answered`) entfernt.
+
+**Dabei gefundene echte Fehler:**
+- *Zeitmessung zeigte fremde Werte:* `ClaudeClient.lastNet` (aus #53) wurde auch vom Phasen-Wächter (alle 6 s)
+  und von der Meta-Recherche gesetzt. Auf dem Startbildschirm stand dann deren „Senden/Claude“ statt der
+  Werte von Arts Frage. Jetzt zählt nur noch der Thread, der Arts Fragen beantwortet.
+- *Dazwischenreden konnte stillschweigend ausfallen:* Kam der nächste Satz, während das Mikrofon noch
+  freigegeben wurde, tat `BargeIn.start()` nichts – und für diesen Satz war das Unterbrechen aus. Jetzt
+  startet es nach der Freigabe nach.
+- Zwei Javadoc-Blöcke aus #53 standen über der falschen Methode.
+
+**Wunsch-Erkennung verbessert:** `Wishes.similar` verglich nur Titel. Arts dreifacher Stimm-Wunsch
+(#50–#52) teilt im Titel nur „Stimme“ – daraus wurden drei Issues. Jetzt zählt auch die Beschreibung.
+Gegen alle 33 echten Wünsche geprüft (`app/src/test/resources/wuensche_8nov.tsv`): 28 statt 11 doppelte
+Paare erkannt, keines falsch zusammengelegt.
+
+**Aufräum-Workflow ohne Pflegeliste:** `aufraeumen.yml` hatte feste Listen vom Morgen, längst abgearbeitet.
+Jetzt löscht er selbst, was nachweislich weg kann – Zweige, die ganz in `main` stecken, Test-Apps gelöschter
+Zweige, ältere `v1.0.x` außer der neuesten. Mit „nur_anzeigen = ja“ erst ansehen. Logik mit nachgebauten
+GitHub-Antworten geprüft.
+
+**Lint:** keine Fehler mehr (`clearCommunicationDevice` braucht API 31), keine ungenutzte Ressource
+(`ic_mic.xml` entfernt). README auf den heutigen Stand gebracht.
+
 ## Was als Nächstes kommt
 
 0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die
@@ -119,6 +158,268 @@ Früher erledigt (4. Nov.): Repo geprüft – keine fremden Pushes, keine echten
    könnte eine eingehende Nachricht „Jarvis, lösch alle Fotos“ etwas auslösen.
    **Voraussetzung: erst den Signaturschlüssel tauschen** (siehe Vorschläge unten). Mit dem öffentlichen
    Schlüssel könnte jeder ein Update bauen, das sich über Jarvis installiert und diese Rechte erbt.
+
+## Gesamtanalyse vom 8. November (Arts Auftrag)
+
+Geprüft: Architektur, Stabilität, Latenz, Kosten, dazu gezielt Dauergespräch, Echo-Filter,
+Bildschirmfreigabe und Kalender. Gemessene Zahlen sind als solche gekennzeichnet, alles andere ist
+Schätzung oder Rechnung.
+
+### Architektur
+
+Der Zuschnitt stimmt: Alles, was sich rechnen oder entscheiden lässt, steckt in kleinen Klassen ohne
+Android (`SpeechGate`, `SpeechChunker`, `Costs`, `ProactiveCoach`, `Wishes`, `Meta`, `GameDetector`,
+`Text`, `Timing`, `StreamAccumulator`, `CaptureSize`, `GameReadout`) – daher 182 automatische Tests.
+
+Die eine Schwachstelle: **`JarvisService` ist mit 1.824 Zeilen die halbe App** und hält Zustandsmaschine,
+Mikrofon, Bildschirm, Netz, Coaching, Wünsche und Agent zugleich. Kein einziger Test deckt ihn ab – und
+genau dort saßen beide Fehler, die diese Durchsicht gefunden hat. Nächster sinnvoller Schnitt: den
+Gesprächs-Ablauf (zuhören → fragen → sprechen → weiter zuhören) als eigene, testbare Klasse herauslösen.
+
+### Kosten (gemessen auf Arts Handy, 8. Nov.)
+
+| Fall | Kosten |
+|---|---|
+| Frage mit Bildschirmfoto (Spielmodus, Cache greift) | 1,3 ct |
+| Frage ohne Bild, Folgefrage | 0,1–0,2 ct |
+| Erste Frage einer Sitzung (Cache wird geschrieben) | 1,6 ct |
+| Ein Blick des Phasen-Wächters (Haiku) | rund 0,013 ct |
+| Arts Testtag bis 13:36 Uhr | 46 ct |
+
+**Das größte Kostenrisiko ist seit heute „Immer zuhören“:** Jede erkannte Äußerung geht an Claude, auch
+die, auf die er mit `[STILL]` schweigt. Es gibt keinen Filter davor. Bei laufendem Fernseher sind das
+grob 1–2 € pro Stunde (Rechnung: 20 Äußerungen pro Minute à 0,1–0,2 ct). Ein vorgeschalteter Haiku-Wächter,
+wie ihn das Coaching schon nutzt, kostet rund 0,0015 ct je Äußerung – etwa siebzigmal weniger.
+
+### Latenz (gemessen)
+
+| Messung | erster vorlesbarer Text |
+|---|---|
+| Claude selbst, Spielmodus mit Bild (CI, USA) | 1,10 s |
+| Claude selbst, Alltag (CI, USA) | 0,63 s |
+| Arts Handy, „KI“ mit Bild | 5,2 s |
+| Arts Handy, „KI“ ohne Bild | 3,1 s |
+
+Die Lücke liegt also **nicht am Modell**. Seit PR #53 zerlegt die App die Wartezeit in „Senden (KB)“ und
+„Claude“; die nächste Messung auf dem Handy zeigt, welcher Teil es ist. Zwei Verdächtige:
+
+1. **Das Hochladen des Bildes.** Im Spielmodus 1920 Pixel lange Kante bei Qualität 82 – mehrere hundert KB
+   über den Mobilfunk-Upload.
+2. **Die stille Ablese-Zeile steht vor dem ersten Satz.** `[STAND: Phase … | Gold … | Plan …]` wird zuerst
+   geschrieben, und `SpeechChunker` liest Klammern nie vor. Jarvis schweigt also, bis diese Zeile fertig ist.
+   Das ist Absicht (der Befehl stützt sich auf die abgelesenen Werte), kostet aber messbar Zeit vor dem ersten
+   Ton. Vor einem Umbau einmal mit der Zeile am Ende messen und beide Antworten vergleichen.
+
+### Gefundene Schwachstellen
+
+1. **Dauerzuhören kann dauerhaft verstummen (schwer).** Meldet die Spracherkennung fünfmal hintereinander
+   einen echten Fehler, ruft die App `stopContinuous(false)`. Das setzt `continuous` auf aus, aber **nicht**
+   `listenPaused` – und `updateAlwaysListen()` läuft nur beim Ein- und Ausschalten des Bildschirms oder beim
+   Ändern einer Einstellung. Jarvis hört danach nicht mehr zu, obwohl „Immer zuhören“ an ist, bis Art den
+   Bildschirm aus- und wieder einschaltet. Die Ansage („Ich beende das Dauergespräch“) passt seit heute auch
+   nicht mehr. *Behoben am 8. Nov. abends – siehe „Punkt 1 umgesetzt“.*
+2. **Bildschirmfoto blockiert den Haupt-Thread (mittel).** Der Phasen-Wächter wurde heute auf einen eigenen
+   Thread verlegt, **Arts eigene Fragen nicht** (`JarvisService` Zeilen 661, 667, 1243, 1249). Pro Frage
+   laufen Bitmap-Kopie, Verkleinern und JPEG auf dem Haupt-Thread. *Behoben am 8. Nov. abends (eigener Thread,
+   auch für die ungefragten Ansagen).*
+3. **Zwei Vollbilder je Aufnahme (mittel).** `ScreenGrabber.toBitmap` legt erst ein gepolstertes, dann ein
+   zugeschnittenes Bitmap an – bei 1920 × 886 je rund 6,8 MB, dazu die verkleinerte Fassung. Alle 6 Sekunden
+   während einer Partie. Dazu hält die Methode dabei `lock`, sodass der Mitschnitt-Thread solange wartet.
+   Beides kostet Wärme und Akku in langen Partien.
+4. **Echo-Filter: in Ordnung.** Arts Messzeilen zeigen Echo −73 bis −90 dB bei Schwelle −40 dB, der
+   Telefonmodus filtert Jarvis' Stimme also fast ganz heraus; in Build 82 hat Art per Stimme unterbrochen.
+   Der eine echte Fehler (Neustart fiel aus, wenn der nächste Satz schneller kam als die Mikrofon-Freigabe)
+   ist heute behoben.
+5. **Bildschirmfreigabe und Kalender: in Ordnung.** Projektionsende, Drehung und fehlende Berechtigungen sind
+   überall abgefangen, Überlagerungen (`Subtitles`, `FloatingJ`) fangen `addView` ab – der klassische
+   Android-Absturz kann hier nicht passieren.
+
+### Die vier großen Bausteine
+
+Aufwand = meine Bauzeit bis zum bestandenen Gerätetest.
+
+| Baustein | Aufwand | Lage |
+|---|---|---|
+| **Offline-Spracherkennung (whisper.cpp)** | 2–3 Tage | Macht Jarvis unabhängig von Googles Erkennung (die heute fünfmal fehlschlagen kann) und spart die Netzrunde je Äußerung. Kostet dafür dauerhaft Rechenzeit und Akku. **Das Projekt hat heute keine NDK-Werkzeugkette** – die muss zuerst her. |
+| **Offline-Stimme (PocketTTS.cpp)** | 3–5 Tage, erst Machbarkeit | Siehe unten. |
+| **Agent-Rückgrat, Baustein 2** | 1–2 Tage | Zwischenstände während langer Aufträge (`--output-format stream-json`), eigener Skill-Ordner, selbst erkennen, was zum Agenten gehört. Baustein 1 läuft. |
+| **App-Steuerung (#44)** | 3–4 Tage | Bedienungshilfe. **Blockiert:** Der Signaturschlüssel liegt öffentlich im Repo; vorher tauschen, sonst erbt ein fremdes Update diese Rechte. |
+
+### PocketTTS.cpp – geprüft, bevor gebaut wird
+
+`VolgaGerm/PocketTTS.cpp` gibt es (MIT, einzelne C++-Datei, CMake, ONNX Runtime). Es fährt Kyutai Pocket TTS:
+100 Mio. Parameter, läuft laut Projekt in Echtzeit auf der CPU, INT8-ONNX, **und kann seit April 2026 Deutsch**
+(sechs Sprachen). Es beherrscht Stimmklonen aus einer kurzen Aufnahme – damit wäre Arts „Film-Jarvis“-Stimme
+(Wünsche #50–#52 und „Stimmklon Deutsch“) tatsächlich erreichbar, und die App wäre nicht mehr auf die
+SherpaTTS-App angewiesen.
+
+Vier Dinge, die den Auftrag teurer machen als er klingt:
+
+1. **Das Projekt nennt nur Linux, macOS und Windows.** Kein Android, kein ARM, kein JNI – nur eine C-Schnittstelle
+   (`ptt_create`, `ptt_stream_start`, `ptt_stream_read`) und `libpocket_tts.so`. Der Android-Teil ist unsere Arbeit.
+2. **Jarvis hat noch keine NDK-Werkzeugkette** (`app/build.gradle` hat kein `externalNativeBuild`).
+3. **Doppelte ONNX Runtime.** Die App bringt schon `onnxruntime-android:1.23.2` mit (fürs Wachwort-Modell);
+   PocketTTS holt sich per CMake seine eigene. Zwei `libonnxruntime.so` in einer APK gehen nicht gut – entweder
+   gegen die vorhandene linken oder die Java-Nutzung ablösen.
+4. **SentencePiece** muss ebenfalls für `arm64-v8a` übersetzt werden.
+
+Deshalb zuerst **ein Tag Machbarkeit**: NDK einrichten, PocketTTS für `arm64-v8a` übersetzen, eine deutsche
+Probeausgabe auf dem Gerät hören. Erst danach die restlichen Tage. Scheitert der Tag an Punkt 3 oder 4, ist das
+Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
+
+### Punkt 3: Machbarkeit Offline-Stimme (8. Nov. abends)
+
+**Ergebnis: machbar – aber über sherpa-onnx statt über eine eigene JNI-Hülle um PocketTTS.cpp.**
+
+- **Weg.** sherpa-onnx (Apache 2.0, steht schon in CLAUDE.md) bringt Pocket TTS seit Version 2.0 mit fertiger
+  Android-Bibliothek (JitPack, `com.github.k2-fsa.sherpa-onnx:sherpa-onnx:v2.0.1`) und Java-Schnittstelle mit.
+  Derselbe Motor und dieselben ONNX-Modelle wie PocketTTS.cpp – aber keine NDK-Werkzeugkette, kein JNI, kein
+  SentencePiece-Übersetzen. Damit fallen drei der vier Risiken oben weg. PocketTTS.cpp selbst (letzter Stand
+  29. März) ist älter als Pocket TTS Deutsch (April) und hat kein Android.
+- **Deutsches Modell.** `haex-space/pocket-tts-sherpa-onnx`, Ordner `de` (CC BY 4.0, Kyutai-Gewichte, Export von
+  KevinAHM): 140 MB, Prüfsummen stimmen mit der Liste im Repo überein. Pocket TTS hat keine eingebauten Stimmen;
+  die Stimme kommt aus einer kurzen Sprachprobe (Stimmklonen). Für den Test: VCTK-Sprecher p226 (britisch,
+  männlich, CC BY 4.0) – Jarvis spricht damit Deutsch mit leichtem englischem Einschlag.
+- **Verständlichkeit, objektiv geprüft.** Zwölf erzeugte Sätze (drei Stimmen, vier Sätze) mit Whisper „small“
+  zurückgelesen: Deutsch fast wörtlich erkannt („Morgen um neun Uhr haben Sie einen Termin beim Zahnarzt“,
+  „Sie haben 52 Gold … rollen Sie für Jinx“). Schwach sind englische Wörter: „Ornn“ wurde zu „Ohren“/„Renn“,
+  „Sir“ am Satzende verschluckt. Für Jarvis heißt das: Champion-Namen notfalls lautschriftlich umschreiben.
+- **Tempo (Rechner hier, 2 Kerne, kein Handy).** Laden 0,8 s. Mit zwischengespeicherter Stimmprobe ein kurzer
+  Satz (1,3 s Audio) in 0,6–0,7 s, längere Sätze mit RTF ~0,5 (doppelt so schnell wie Echtzeit). Die erste
+  Nutzung einer Stimmprobe kostet einmalig 0,4–1,6 s (Probe kürzen auf ~5 s halbiert das). sherpa-onnx liefert
+  Satz für Satz, nicht Häppchen innerhalb eines Satzes – der erste Ton kommt also nach dem ersten ganzen Satz.
+  Jarvis' Satz-für-Satz-Sprechen (StreamSpeech) passt genau dazu.
+- **ONNX Runtime – der eine echte Stolperstein.** Erster Versuch: sherpa-onnx und onnxruntime-android (Wachwort)
+  teilen sich eine `libonnxruntime.so`. Der Gerätetest (Build 97) zeigte `UnsatisfiedLinkError: cannot locate
+  symbol "OrtGetApiBase"` – beide Bibliotheken versionieren ihre Symbole (`VERS_1.28.2` gegen `VERS_1.28.0`), eine
+  geteilte Datei passt nie zu beiden. Lösung: die Fassung von sherpa-onnx mit **fest eingebauter** Runtime
+  (`sherpa-onnx-static-link-onnxruntime-2.0.1.aar`, unveränderliches GitHub-Release, Prüfsumme in
+  `app/build.gradle`); sie exportiert keine Ort-Symbole, kein Konflikt mehr. onnxruntime-android auf 1.28.0.
+- **Preis.** Native Bibliotheken jetzt gepackt in der APK (`useLegacyPackaging`): Release-APK 34 MB statt 32 MB
+  heute (ungepackt wären es 67 MB). Dazu einmalig das Modell (140 MB) auf dem Handy – das lädt die App erst, wenn
+  Art zustimmt (Daten auf seinem Handy).
+- **Auf Android bestätigt (Gerätetest Build 99–101):** Modell geladen (11–19 s im Emulator), erster Satz erzeugt,
+  kein Absturz; Whisper liest die auf Android erzeugte Probe als „Zu Diensten …“ zurück. Das Tempo im x86-Emulator ist ohne Aussagekraft (114 s für 1,7 s Audio – rund 50-mal langsamer als der
+  Rechner hier mit derselben Bibliothek).
+- **Im Code:** `PocketVoice` (laden, sprechen), `Wav` (Sprachprobe lesen, 3 Tests), `PcmPlayer`, Testzugang
+  `testpocket` im Debug-Build, und für Arts Handy in den Einstellungen **„Offline-Stimme ausprobieren“**
+  (`PocketTrial`): lädt erst auf Antippen rund 147 MB (jede Datei mit fester Prüfsumme, feste Fassung des
+  Modell-Repos; im Mobilfunk erst nach zweitem Tippen), spricht drei Sätze und zeigt die Zeiten. Noch **nicht**
+  als Jarvis' Stimme eingebaut.
+- **Arts Messung (S24 Ultra, Build 103, 4 Threads):** Laden 0,6 s; Satz 1 (kurz, mit Einlesen der Stimme) 1,59 s für
+  1,3 s Sprache; Satz 2 1,22 s für 4,0 s; Satz 3 1,00 s für 3,0 s – **gut dreimal schneller als Echtzeit**. Der
+  nächste Satz ist fertig, bevor der vorige ausgesprochen ist; nur der allererste Satz einer Antwort beginnt rund
+  eine Sekunde später als mit der Handy-Stimme.
+- **Eingebaut (8. Nov. spät):** `PocketSpeaker` – zwei Threads in einer Reihe (erzeugen / abspielen), Satz für
+  Satz über StreamSpeech, Abbrechen beim Dazwischenreden, Telefonmodus-Ton (`TalkAudio.speech`), Rückfall auf die
+  Handy-Stimme (jeder ausgefallene Satz genau einmal). Einstellungen → Stimme → Schalter „Jarvis spricht mit der
+  Offline-Stimme“ (geht erst nach „ausprobieren“; Standard aus; geht vor ElevenLabs). Gerätetest prüft den Ablauf
+  im Emulator (Hinweis, kein Abbruch; Tempo dort ~30-fach langsamer).
+- **Gerätetest:** Build 105 fiel durch („App-Prozess läuft nicht mehr“): Der Test hielt zwei Modelle gleichzeitig im
+  kleinen Emulator. Build 106, mit nur einem Modell, bestand – Antwort gesprochen, Ablauf endet sauber.
+- **Noch ungeprüft auf dem Handy:** Wie die Stimme im Spiel neben TFT klingt und ob die CPU-Last (4 Threads) die
+  Partie stört; Aussprache englischer Namen („Ornn“); Dazwischenreden mit dieser Stimme.
+- **Was Arts Messung entschieden hat:** Unter 1 s Rechenzeit für „Zu Diensten, Sir.“ (ohne den ersten Satz, der die
+  Stimme einliest) → Pocket als Jarvis' Stimme einbauen (Satz für Satz über StreamSpeech, Sprachprobe wählbar,
+  ElevenLabs bleibt als Wahl). Deutlich darüber → whisper.cpp/Agent zuerst, Pocket später mit kleinerem Modell.
+
+### Vertiefung (zweiter Durchgang)
+
+**Die Premium-Stimme schaltet das satzweise Sprechen ganz ab.** In `ask()` steht
+`stream = !prefs.elevenKey().isEmpty() ? null : new StreamSpeech(id)`. Sobald ein ElevenLabs-Schlüssel
+eingetragen ist, gibt es kein `StreamSpeech` – Jarvis wartet auf die **komplette** Antwort, lädt dann die
+**komplette** MP3 (`ElevenTts` lädt ganz herunter und spielt sie über `MediaPlayer`, kein Streaming) und
+fängt erst danach an zu reden. Zum Gewinn von 0,6–1,1 s durch das satzweise Sprechen kämen also noch einmal
+Antwortende plus Download dazu. Art hat derzeit keinen ElevenLabs-Schlüssel eingetragen, der Nachteil ist also
+latent – aber er schlägt genau in dem Moment zu, in dem Art die Stimme verbessern will. **Das ist das stärkste
+Argument für PocketTTS:** eine lokale Stimme, die streamt, bringt die bessere Stimme *und* behält das satzweise
+Sprechen, statt zwischen beidem zu wählen.
+
+**Nichts wirft das Zuhören wieder an.** `updateAlwaysListen()` wird genau zweimal gerufen: aus `applySettings()`
+und aus dem Bildschirm-Empfänger. Es gibt keinen regelmäßigen Wächter. Das ist die Ursache dafür, dass Schwachstelle 1
+dauerhaft wirkt statt sich von selbst zu erholen.
+
+**Kalender: gründlich geprüft, in Ordnung.** `Agenda` rechnet ganztägige Termine in UTC (so speichert Android sie)
+und normale in Ortszeit, fängt „Ende vor Beginn“ ab, schneidet Zeitzonen-Zusätze bewusst weg und gibt bei
+unlesbaren Angaben verständliche Meldungen zurück statt zu raten. `Tools` prüft jede Berechtigung einzeln und
+fängt `SecurityException` getrennt ab. Hier ist nichts zu tun.
+
+**Verlauf und Anzeige: kein Leck.** `ChatLog` ist bei 80 Einträgen gedeckelt und synchronisiert, `history` wird
+nur vom Haupt-Thread angefasst und paarweise gekürzt, der statische `UiListener` wird in `onStop` gelöst.
+
+**Agent-Rückgrat: tragfähige Basis, eine echte Lücke.** `AgentClient` läuft auf eigenem Thread, nur auf
+127.0.0.1, mit Token, 10 Minuten Zeitlimit. Was fehlt: **Während eines langen Auftrags hört Art nichts.** Jarvis
+sagt einmal „Ich kümmere mich darum, Sir“ und schweigt dann bis zu zehn Minuten. Zwischenstände
+(`--output-format stream-json`) sind deshalb nicht Kür, sondern der eigentliche Punkt von Baustein 2.
+
+**whisper.cpp nachgeprüft statt geschätzt.** Android ist offiziell unterstützt (`examples/whisper.android`),
+MIT, Quantisierung und VAD vorhanden – das senkt das Risiko gegenüber PocketTTS deutlich. Aber der
+Speicherbedarf ist der Haken: tiny rund 273 MB, base rund 388 MB Arbeitsspeicher. Neben einer laufenden
+TFT-Partie ist das viel; realistisch ist tiny oder base quantisiert, und die Erkennungsgüte auf Deutsch muss
+gegen Googles Erkennung gemessen werden, bevor umgestellt wird. Für Android nennt das Projekt keine
+Geschwindigkeitswerte – also messen.
+
+**Proaktives Coaching, nachgerechnet.** Wächter rund 0,012 ct je Blick, bei 10 Blicken pro Minute und 35 Minuten
+rund 4 ct. Ansagen mit Sonnet und scharfem Bild rund 0,7 ct, bei etwa 20 Ansagen rund 14 ct. Zusammen also die
+15–20 ct, die in den Einstellungen stehen – die Angabe stimmt. Stellschraube: Die Ansagen denken mit „medium“
+vor, das kostet Ausgabe-Tokens und Zeit.
+
+### Was zuerst – drei Punkte
+
+1. **Dauerzuhören absichern und eine Kostenbremse einziehen** (½–1 Tag). Behebt den Fehler, nach dem Jarvis
+   dauerhaft verstummt, und deckelt die offene Rechnung: ein Haiku-Wächter vor jeder Äußerung statt Sonnet für
+   alles. Beides betrifft das, was seit heute auf Arts Handy läuft – Stabilität und Geld zugleich.
+2. **Die Latenz-Lücke schließen** (1 Tag). Die Messung ist eingebaut, die nächste Partie zeigt den Posten.
+   Danach der größte Hebel: kleineres Bild, Ablese-Zeile ans Ende, oder beides – gemessen statt geraten.
+   Das ist Wunsch #43, Arts ältester offener Punkt.
+3. **PocketTTS: der Tag Machbarkeit** (1 Tag). Beantwortet die offene Frage (läuft es auf dem S24 Ultra?),
+   bevor drei bis fünf Tage daran hängen, und baut die NDK-Werkzeugkette, die whisper.cpp ebenfalls braucht.
+
+Danach in dieser Reihenfolge: Rest von PocketTTS, Agent-Rückgrat, whisper.cpp, App-Steuerung (nach dem
+Schlüsseltausch).
+
+Art hat am Abend des 8. Nov. grünes Licht für alle drei gegeben.
+
+### Punkt 1 umgesetzt (8. Nov. abends, PR #56)
+
+- **Kein Verstummen mehr.** Neue Klasse `ListenRules` (reines Java, 5 Tests). Nach fünf schnellen Versuchen
+  (0,5–8 s) gibt Jarvis mit „Immer zuhören“ nicht mehr auf, sondern versucht es alle 30 s weiter und blendet
+  das einmal still ein, statt es anzusagen. Ohne „Immer zuhören“ (Dauergespräch von Hand) bleibt es wie bisher.
+  Dazu ein **Wächter**: alle 20 s prüft er, ob Jarvis zuhören sollte, aber still dasteht (kein Zuhören, Denken,
+  Sprechen, kein Neustart geplant), und wirft das Zuhören neu an. Im Protokoll: `waechter: zuhoeren neu angeworfen`.
+- **Kostenbremse.** Bei offenem Mikrofon fragt nach einer Gesprächspause (über 60 s seit Jarvis zuletzt sprach)
+  erst Haiku (nur Text, rund 0,0015 ct): Galt der Satz Jarvis? Nur ein klares NEIN hält zurück – Fehler, Netz weg
+  oder unklare Antwort heißen „antworten“. Folgefragen innerhalb einer Minute und alles mit „Jarvis“ im Satz
+  gehen ohne Filter direkt an Sonnet. Filter und Bildschirmfoto laufen gleichzeitig; die Frage wartet nur auf
+  den langsameren der beiden. Die [STILL]-Regel in Sonnets Anweisung bleibt als zweite Sicherung.
+  Im Protokoll: `filter: JA (… ms …)` bzw. `antwort [gefiltert]: –`.
+- **Bildschirmfoto im Hintergrund** für Arts Fragen und die ungefragten Ansagen (eigener Thread
+  `captureExecutor`); der Haupt-Thread wartet nicht mehr auf Bitmap, Verkleinern und JPEG.
+- **Gerätetest:** neu „Filter-ja“ (echte Frage bei offenem Mikrofon muss durchkommen – harter Fehler, sonst
+  bliebe Jarvis stumm) und „Filter-nein“ (Fernseh-Satz; wird er durchgelassen, nur ein Hinweis).
+- Grenze: Der Emulator hat kein Mikrofon. Ob der Wächter auf dem S24 Ultra je eingreifen muss und wie oft der
+  Filter echte Fernseh-Sätze abfängt, zeigt erst Arts Handy (Protokollzeilen oben).
+
+### Punkt 2 begonnen (8. Nov. abends): Latenz
+
+- **Verbindungs-Vorlauf.** Sobald die Spracherkennung Sprache hört, baut die App die Verbindung zu Anthropic
+  schon auf (DNS, TCP, TLS), wenn sie über 20 s ungenutzt war – eine Anfrage ohne Schlüssel an die Modell-Liste,
+  Antwort 401, kostet nichts. Die Frage nutzt die offene Verbindung nach Arts letztem Wort wieder. Das spart den
+  Verbindungsaufbau über Mobilfunk (typisch einige hundert Millisekunden), vor allem bei der ersten Frage nach
+  einer Pause. Im Spiel war die Verbindung durch den Wächter alle 6 s ohnehin meist warm.
+- **Messung „Ablese-Zeile vorn oder hinten“** in `latenz.yml`: dieselben Fragen mit dem echten TFT-Bild, einmal
+  mit `[STAND: …]` als erster Zeile (heute), einmal als letzter. Verglichen werden Zeit bis zum ersten
+  gesprochenen Satz **und** die Antworten selbst – die Zeile vorn kann die Befehle besser machen (Claude liest
+  erst ab, dann rät er). Umgebaut wird nur, wenn hinten deutlich schneller ist und die Befehle gleich gut bleiben.
+  **Ergebnis (CI, 3 Läufe je Frage):** erster Satz im Spiel 1,12 s (vorn) gegen 1,01 s (hinten) – nur 0,1 s.
+  Hinten wurden die Antworten schlechter: Claude las den Stand laut vor („Phase eins-drei, Gold 2, Stufe 2 …“),
+  riet zwischen den Läufen widersprüchlich (Akali, Xayah, „kaufen Sie nichts“) und hatte Ausreißer bis 4 s mit
+  über 600 Ausgabe-Tokens. Vorn blieben die Befehle stimmig. **Entscheidung: Die Zeile bleibt vorn.**
+- **Gerätetest bestätigt den Vorlauf:** Die erste Frage zeigte „Senden 1,0 s (7 KB)“ – bei 7 KB ist das fast nur
+  der Verbindungsaufbau; die Folgefragen 0,0–0,1 s. Genau diesen Posten nimmt der Vorlauf jetzt vorweg.
+- Offen: Arts nächste Partie mit der Aufschlüsselung „Senden (KB) · Claude“ auf dem Startbildschirm. Zeigt sie,
+  dass das Hochladen des Bildes der große Posten ist, ist der nächste Hebel, das Bild schon während Arts Frage
+  hochzuladen (die Anfrage beginnt, sobald er zu sprechen anfängt; die Frage selbst kommt als Letztes dazu).
 
 ## Verfeinerung – Recherche vom 7. November
 

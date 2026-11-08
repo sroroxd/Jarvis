@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     private void readDemo(Intent intent) {
-        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean debuggable = BuildConfig.DEBUG;
         String d = intent == null ? null : intent.getStringExtra("demo");
         demo = null;
         if (debuggable && d != null) {
@@ -130,11 +130,12 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     /**
      * Nur Debug-Builds, für den Gesprächstest in der CI (siehe .github/scripts/geraetetest.sh):
      * „testkey“ trägt den API-Schlüssel ein, „teststart“ startet Jarvis ohne Bildschirmfreigabe,
-     * „testfrage“ stellt eine Frage, als wäre sie gesprochen, „testwaechter“ fragt einmal den Phasen-Wächter des
+     * „testfrage“ stellt eine Frage, als wäre sie gesprochen (mit „testoffen“ wie bei offenem Mikrofon nach einer
+     * Gesprächspause), „testwaechter“ fragt einmal den Phasen-Wächter des
      * proaktiven Coachings mit einem Testbild. In der Handy-Version (Release) wirkungslos.
      */
     private void readTestHooks(Intent intent) {
-        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean debuggable = BuildConfig.DEBUG;
         if (!debuggable || intent == null) return;
         String key = intent.getStringExtra("testkey");
         if (key != null && !key.trim().isEmpty()) {
@@ -143,12 +144,19 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             // zwischen die Testfragen streuen. Die Fragen kommen über „testfrage“.
             prefs.setAlwaysListen(false);
         }
+        // „testpocketstimme“: Jarvis spricht mit der Offline-Stimme (Modell muss schon im App-Ordner liegen).
+        if (intent.getBooleanExtra("testpocketstimme", false)) prefs.setPocketVoice(true);
         if (intent.getBooleanExtra("teststart", false)) startJarvis(RESULT_CANCELED, null);
         String frage = intent.getStringExtra("testfrage");
         if (frage != null && !frage.trim().isEmpty()) {
             startService(new Intent(this, JarvisService.class)
                     .setAction(JarvisService.ACTION_TEST_ASK)
-                    .putExtra(JarvisService.EXTRA_TEXT, frage.trim()));
+                    .putExtra(JarvisService.EXTRA_TEXT, frage.trim())
+                    // „testoffen“: wie bei offenem Mikrofon nach einer Gesprächspause – der Filter vor Claude fragt mit.
+                    .putExtra("offen", intent.getBooleanExtra("testoffen", false)));
+        }
+        if (intent.getBooleanExtra("testpocket", false)) { // Offline-Stimme, siehe JarvisService.testPocket
+            startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_POCKET));
         }
         if (intent.getBooleanExtra("testwaechter", false)) {
             startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_WATCH));
@@ -176,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
      * Nummerierung und würden sonst immer einen Hinweis zeigen.
      */
     private void checkForUpdate() {
-        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean debuggable = BuildConfig.DEBUG;
         if (debuggable || demo != null) return;
         long now = android.os.SystemClock.elapsedRealtime();
         if (lastUpdateCheck != 0 && now - lastUpdateCheck < 30 * 60 * 1000L) return;

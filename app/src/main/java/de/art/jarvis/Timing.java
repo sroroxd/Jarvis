@@ -30,10 +30,6 @@ final class Timing {
         sent = now;
     }
 
-    void answered(long now) {
-        answered = now;
-    }
-
     /**
      * Erstes Stück der Antwort (beim Streaming der erste fertige Satz, sonst die ganze Antwort).
      * Spätere Aufrufe ändern nichts – „KI“ misst die Wartezeit bis Jarvis etwas zu sagen hat.

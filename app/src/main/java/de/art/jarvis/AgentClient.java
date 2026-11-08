@@ -3,8 +3,6 @@ package de.art.jarvis;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -113,7 +111,7 @@ final class AgentClient {
             int code = conn.getResponseCode();
             ergebnis.code = code;
             boolean ok = code >= 200 && code < 300;
-            ergebnis.body = readAll(ok ? conn.getInputStream() : conn.getErrorStream());
+            ergebnis.body = Io.readAll(ok ? conn.getInputStream() : conn.getErrorStream());
         } catch (Exception e) {
             ergebnis.code = 0;
             ergebnis.body = e.getMessage() == null ? "" : e.getMessage();
@@ -123,14 +121,4 @@ final class AgentClient {
         return ergebnis;
     }
 
-    private static String readAll(InputStream in) throws java.io.IOException {
-        if (in == null) return "";
-        try (InputStream is = in) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = is.read(buf)) != -1) out.write(buf, 0, n);
-            return out.toString("UTF-8");
-        }
-    }
 }

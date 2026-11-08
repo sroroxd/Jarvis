@@ -3,8 +3,6 @@ package de.art.jarvis;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -51,7 +49,7 @@ final class WishSender {
                     os.write(payload);
                 }
                 int code = conn.getResponseCode();
-                String response = readAll(code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream());
+                String response = Io.readAll(code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream());
                 if (code == 201) {
                     issue = (int) AgentReply.zahl(response, "number");
                     if (issue <= 0) error = "GitHub hat die Aufgabe angelegt, aber keine Nummer zurückgegeben.";
@@ -94,7 +92,7 @@ final class WishSender {
                     conn.setRequestProperty("authorization", "Bearer " + token.trim());
                 }
                 conn.setRequestProperty("user-agent", "Jarvis-App");
-                if (conn.getResponseCode() == 200) states = Wishes.issueStates(readAll(conn.getInputStream()));
+                if (conn.getResponseCode() == 200) states = Wishes.issueStates(Io.readAll(conn.getInputStream()));
             } catch (Exception ignored) {
                 // nicht erreichbar – Liste bleibt ohne Stand
             } finally {
@@ -105,14 +103,4 @@ final class WishSender {
         });
     }
 
-    private static String readAll(InputStream in) throws java.io.IOException {
-        if (in == null) return "";
-        try (InputStream is = in) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = is.read(buf)) != -1) out.write(buf, 0, n);
-            return out.toString(StandardCharsets.UTF_8.name());
-        }
-    }
 }
