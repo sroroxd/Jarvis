@@ -7,7 +7,7 @@ wird der zu lang, fängt er einen neuen an. Claude liest zu Beginn jeder Sitzung
 aktuellen Stand – egal, in welchem Fenster.
 
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
-8. November 2026.
+8. November 2026 (06 Uhr).
 
 ## Wo der aktuelle Stand liegt – ein Zweig, ein PR
 
@@ -47,14 +47,9 @@ zuverlässig), #21 (kürzere Antworten), #23 (TFT-Coaching hat Vorrang), #25 (Em
 Doppelten in der App behoben: Sie schickte jeden Wunsch, auch wenn derselbe Titel schon notiert war, und
 erkannte Umformulierungen desselben Themas nicht (`Wishes.similar`).
 
-**Für Art, ein Klick** (Löschen ist aus der Entwicklungsumgebung gesperrt): GitHub → Actions →
-„Alte Releases aufräumen“ → Run workflow → bei **„Use workflow from“ den Zweig
-`ccr-4f440a4a-dx81et` wählen** → Run workflow. Löscht die elf alten Zweige (nur wenn jeder Commit in
-`ccr-4f440a4a-dx81et` steckt – vorab geprüft: bei allen elf der Fall) und die Releases `test-selbst-update`,
-`test-gespraechstest-ci`, `test-geraetetest-schranke`, `test-fix-dazwischenreden-abbruch`,
-`test-feinschliff-cache`, `test-sammeltest`, `v1.0.29`, `v1.0.32` samt Tags. Danach stehen nur noch:
-Zweige `main` und `ccr-4f440a4a-dx81et`, Releases `v1.0.43` (normale App), `test-ccr-4f440a4a-dx81et`
-(Test-App) und `vorschau` (Gerätetest).
+**Erledigt (Art, 8. Nov. 04:11 UTC):** Aufräum-Workflow gelaufen, ohne Warnung. Seitdem gibt es nur noch
+die Zweige `main` und `ccr-4f440a4a-dx81et`, die Releases und Tags `v1.0.43` (normale App),
+`test-ccr-4f440a4a-dx81et` (Test-App) und `vorschau` (Gerätetest). Ein zweiter Lauf schadet nicht.
 
 Früher erledigt (4. Nov.): Repo geprüft – keine fremden Pushes, keine echten Schlüssel im Code;
 „Automatically delete head branches“ ist eingeschaltet.
