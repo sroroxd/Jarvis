@@ -72,7 +72,7 @@ public class SettingsActivity extends AppCompatActivity {
         setupAgent();
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
-        hideTicks(b.sliderSensitivity, b.sliderBargeIn, b.sliderPause, b.sliderRate, b.sliderPitch);
+        hideTicks(b.sliderSensitivity, b.sliderBargeIn, b.sliderPause, b.sliderCostLimit, b.sliderRate, b.sliderPitch);
     }
 
     /** Ohne die Rasterpunkte wirken die Regler ruhiger. */
@@ -163,6 +163,19 @@ public class SettingsActivity extends AppCompatActivity {
             b.pauseValue.setText(seconds(value));
             if (fromUser) prefs.setPauseMs(Math.round(value * 1000));
         });
+
+        setSlider(b.sliderCostLimit, prefs.costLimitCents() / 100f);
+        b.costLimitValue.setText(dollars(prefs.costLimitCents() / 100f));
+        b.sliderCostLimit.setLabelFormatter(this::dollars);
+        b.sliderCostLimit.addOnChangeListener((s, value, fromUser) -> {
+            b.costLimitValue.setText(dollars(value));
+            if (fromUser) prefs.setCostLimitCents(Math.round(value * 100));
+        });
+    }
+
+    /** „5 $“ oder „aus“ für die Tagesgrenze. */
+    private String dollars(float value) {
+        return value <= 0 ? "aus" : Math.round(value) + " $";
     }
 
     // ---------------------------------------------------------------- Stimme
@@ -615,6 +628,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.switchGameThink.setChecked(prefs.gameThinkDeep());
         b.switchProactive.setChecked(prefs.proactiveCoach());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
+        setSlider(b.sliderCostLimit, prefs.costLimitCents() / 100f);
         setSlider(b.sliderRate, prefs.rate());
         setSlider(b.sliderPitch, prefs.pitch());
         b.switchFloatingJ.setChecked(prefs.floatingJ());

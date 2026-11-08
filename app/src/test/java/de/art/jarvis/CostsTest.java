@@ -42,4 +42,25 @@ public class CostsTest {
         assertTrue(Costs.known("claude-sonnet-5-5"));
         assertTrue(Costs.known("claude-opus-5-5"));
     }
+
+    @Test
+    public void aufschluesselungGroessterPostenZuerstOhneNullen() {
+        // Reihenfolge wie Costs.Kind: Fragen, Filter, Wächter, Recherche.
+        double[] usd = {3.12, 0.0004, 0.041, 0};
+        assertEquals("Fragen 312 ct · Wächter 4,1 ct · Filter 0,0 ct", Costs.breakdown(usd));
+        assertEquals("", Costs.breakdown(new double[4]));
+        assertEquals("", Costs.breakdown(null));
+        // Kürzere Liste (ältere Speicherstände) bricht nicht.
+        assertEquals("Fragen 50 ct", Costs.breakdown(new double[] {0.5}));
+    }
+
+    @Test
+    public void tagesgrenze() {
+        assertFalse(Costs.overLimit(4.99, 500));
+        assertTrue(Costs.overLimit(5.0, 500));
+        assertTrue(Costs.overLimit(8.75, 500));
+        // 0 = keine Grenze, auch an einem teuren Tag.
+        assertFalse(Costs.overLimit(100, 0));
+        assertFalse(Costs.overLimit(0, 500));
+    }
 }

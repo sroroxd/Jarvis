@@ -39,6 +39,57 @@ final class Costs {
         return prices(model) != null;
     }
 
+    /**
+     * Wofür das Geld ausgegeben wurde. Arts Handy zeigte am 8. Nov. abends 875 ct an einem Tag – ohne Aufschlüsselung
+     * war nicht zu sagen, ob Fragen, Filter, Wächter oder Recherche den Posten trieben. Jeder Weg zu Claude läuft
+     * auf einem eigenen Thread ({@link ClaudeClient}); der Thread bestimmt die Art.
+     */
+    enum Kind {
+        /** Arts Fragen und die ungefragten Ansagen (Sonnet). */
+        FRAGEN("Fragen"),
+        /** Filter vor Claude bei offenem Mikrofon (Haiku, nur Text). */
+        FILTER("Filter"),
+        /** Phasen-Wächter des Coachings (Haiku mit Bild). */
+        WAECHTER("Wächter"),
+        /** Tägliche Meta-Recherche mit Websuche. */
+        RECHERCHE("Recherche");
+
+        final String label;
+
+        Kind(String label) {
+            this.label = label;
+        }
+    }
+
+    /** „Fragen 312 ct · Wächter 4,1 ct“ – nur Posten über null, größter zuerst; leer, wenn nichts ausgegeben wurde. */
+    static String breakdown(double[] usdByKind) {
+        Kind[] kinds = Kind.values();
+        Integer[] order = new Integer[kinds.length];
+        for (int i = 0; i < order.length; i++) order[i] = i;
+        java.util.Arrays.sort(order, (a, b) -> Double.compare(at(usdByKind, b), at(usdByKind, a)));
+        StringBuilder sb = new StringBuilder();
+        for (int i : order) {
+            double usd = at(usdByKind, i);
+            if (usd <= 0) continue;
+            if (sb.length() > 0) sb.append(" · ");
+            sb.append(kinds[i].label).append(' ').append(cents(usd));
+        }
+        return sb.toString();
+    }
+
+    private static double at(double[] a, int i) {
+        return a != null && i < a.length ? a[i] : 0;
+    }
+
+    /**
+     * Tagesgrenze erreicht? limitCents 0 = keine Grenze. Über der Grenze antwortet Jarvis bei offenem Mikrofon nur
+     * noch, wenn Art ihn beim Namen nennt oder ein Gespräch läuft, und der Phasen-Wächter pausiert – Arts eigene
+     * Fragen gehen immer durch.
+     */
+    static boolean overLimit(double spentUsd, int limitCents) {
+        return limitCents > 0 && spentUsd * 100 >= limitCents;
+    }
+
     /** „0,6 ct“, „12 ct“ – US-Cent, unter einem Cent mit einer Nachkommastelle. */
     static String cents(double usd) {
         double ct = usd * 100;

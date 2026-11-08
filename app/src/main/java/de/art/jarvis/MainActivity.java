@@ -322,8 +322,15 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (!report.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Dazwischenreden: ").append(report);
         // Tagessumme aller Claude-Anfragen (auch Phasen-Wächter und Meta) – Anthropic rechnet in US-Dollar.
         double today = prefs.costToday(JarvisService.today());
-        if (today > 0) hint.append(hint.length() > 0 ? "\n" : "").append("Heute bisher: ").append(Costs.cents(today))
-                .append(" (US-Cent)");
+        if (today > 0) {
+            String day = JarvisService.today();
+            hint.append(hint.length() > 0 ? "\n" : "").append("Heute bisher: ").append(Costs.cents(today))
+                    .append(" (US-Cent)");
+            // Wofür – damit ein teurer Tag erklärbar ist (8. Nov.: 875 ct ohne Aufschlüsselung).
+            String parts = Costs.breakdown(prefs.costTodayByKind(day));
+            if (!parts.isEmpty()) hint.append("\n").append(parts);
+            if (prefs.overCostLimit(day)) hint.append("\nTagesgrenze erreicht: Antwort nur auf „Jarvis“");
+        }
         b.hint.setVisibility(hint.length() > 0 ? View.VISIBLE : View.GONE);
         b.hint.setText(hint);
         b.stopButton.setVisibility(running ? View.VISIBLE : View.INVISIBLE);

@@ -213,7 +213,29 @@ public class ReactorView extends View {
         float ty = cy - (textPaint.descent() + textPaint.ascent()) / 2f;
         canvas.drawText(label, cx, ty, textPaint);
 
-        if (getWindowVisibility() == VISIBLE && isAttachedToWindow()) postInvalidateOnAnimation();
+        if (getWindowVisibility() == VISIBLE && isAttachedToWindow()) {
+            long gap = frameGapMs(mode);
+            if (gap <= 0) postInvalidateOnAnimation();
+            else postInvalidateDelayed(gap);
+        }
+    }
+
+    /**
+     * Pause bis zum nächsten Bild. Gemessen auf Arts S24 Ultra (Build 107): Der Knopf zeichnete im Ruhezustand
+     * durchgehend 61 Bilder pro Sekunde, die App lag dabei bei 27 % CPU, und das Display kam nicht in seine
+     * sparsame niedrige Bildrate. Langsame Drehungen (6–60 °/s) und das Atmen brauchen das nicht: aus 12, bereit
+     * und zuhören 30 Bilder pro Sekunde. Nur Nachdenken (220 °/s) und Sprechen bleiben flüssig.
+     */
+    static long frameGapMs(Mode m) {
+        switch (m) {
+            case THINKING:
+            case SPEAKING:
+                return 0;
+            case OFF:
+                return 83;
+            default:
+                return 33;
+        }
     }
 
     /** Farbverläufe nur neu bauen, wenn sich Farbe oder Größe ändert. */
