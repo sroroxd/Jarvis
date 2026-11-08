@@ -186,8 +186,12 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
       antwort=$(echo "$zeile" | sed -E 's/.*waechter-bild [^:]+: //')
       soll=$(echo "${name%%__*}" | tr '[:lower:]' '[:upper:]' | tr '_' ' ')
       gesehen=$((gesehen + 1))
-      # Antwort vereinheitlichen: Großbuchstaben, Gedankenstriche als Bindestrich, Zeichen davor („**“) weg.
-      ist=$(echo "$antwort" | tr '[:lower:]' '[:upper:]' | sed -E 's/–/-/g; s/‑/-/g; s/^[^A-Z]+//; s/ *- */-/g')
+      # Geprüft wird, was Jarvis aus der Antwort macht („=> PLANUNG 1-3“) – so zählen auch feste Regeln der App
+      # (Runde 1-1 ist nie Planung). Ältere Builds ohne „=>“: die Rohantwort.
+      entscheidung=$(echo "$antwort" | sed -n 's/.* => //p')
+      [ -n "$entscheidung" ] || entscheidung="$antwort"
+      # Vereinheitlichen: Großbuchstaben, Gedankenstriche als Bindestrich, Zeichen davor („**“) weg.
+      ist=$(echo "$entscheidung" | tr '[:lower:]' '[:upper:]' | sed -E 's/–/-/g; s/‑/-/g; s/^[^A-Z]+//; s/ *- */-/g')
       if [ "${ist#"$soll"}" != "$ist" ]; then
         richtig=$((richtig + 1))
         say "  Wächter, echtes Bild $name: $antwort"

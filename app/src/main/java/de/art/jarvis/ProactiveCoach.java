@@ -49,14 +49,16 @@ final class ProactiveCoach {
             + "Champion-Karten offen. <Phase> ist die Rundenanzeige oben in der Mitte, zum Beispiel 3-2, sonst ?\n"
             + "KAMPF – Gegner oder Monster mit ROTEN Lebensbalken sind auf dem Brett, Schadenszahlen, oder rechts die "
             + "Übersicht „Verursachter Schaden“\n"
-            + "ANDERES – Karussell oder Startinsel mit mehreren Spielern, Ladebildschirm, Menü, Lobby, Ergebnis oder gar "
-            + "nicht TFT\n"
+            + "ANDERES – Karussell oder Startinsel mit mehreren Spielern (auch Runde 1-1), Ladebildschirm, Menü, Lobby, "
+            + "Ergebnis oder gar nicht TFT\n"
             + "Im Zweifel zwischen PLANUNG und KAMPF: KAMPF.\n"
             + "Schreib NUR das Ergebnis, ohne Erklärung – also zum Beispiel „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.";
     /** Was die App Claude statt einer Frage schickt, wenn eine neue Planungsphase beginnt. */
     static final String AUTO_PREFIX = "[AUTO]";
 
     private static final Pattern STAGE = Pattern.compile("(\\d)\\s*[-–‑]\\s*(\\d)");
+    /** Die erste Runde: alle Spieler auf der Startinsel. */
+    static final String OPENING = "1-1";
     private static final Pattern STILL = Pattern.compile("\\[\\s*STILL\\s*\\]", Pattern.CASE_INSENSITIVE);
 
     private String lastStage;
@@ -72,7 +74,11 @@ final class ProactiveCoach {
         String t = reply == null ? "" : reply.trim().toUpperCase(Locale.GERMANY).replaceFirst("^[^A-ZÄÖÜ]+", "");
         if (t.startsWith("PLANUNG")) {
             Matcher m = STAGE.matcher(t);
-            return new Phase(Kind.PLANNING, m.find() ? m.group(1) + "-" + m.group(2) : null);
+            String stage = m.find() ? m.group(1) + "-" + m.group(2) : null;
+            // 1-1 ist der Start auf der gemeinsamen Insel – nichts zu planen. Der Wächter hielt Arts Startbild einmal
+            // für „PLANUNG 1-1“ (Gerätetest Build 84); hier entscheidet deshalb nicht das Modell.
+            if (OPENING.equals(stage)) return new Phase(Kind.OTHER, stage);
+            return new Phase(Kind.PLANNING, stage);
         }
         if (t.startsWith("KAMPF")) return new Phase(Kind.COMBAT, null);
         return new Phase(Kind.OTHER, null);
@@ -110,6 +116,18 @@ final class ProactiveCoach {
     void userAsked(long now) {
         if (lastSeen != null && lastSeen.kind == Kind.PLANNING && now - lastSeenAt <= 2 * CHECK_EVERY_MS) {
             coached(lastSeen, now);
+        }
+    }
+
+    /** Kurzform der Entscheidung für Protokoll und Gerätetest: „PLANUNG 3-2“, „PLANUNG ?“, „KAMPF“, „ANDERES“. */
+    static String label(Phase p) {
+        switch (p.kind) {
+            case PLANNING:
+                return "PLANUNG " + (p.stage == null ? "?" : p.stage);
+            case COMBAT:
+                return "KAMPF";
+            default:
+                return "ANDERES";
         }
     }
 

@@ -604,7 +604,9 @@ public class JarvisService extends Service {
         sendWatch(prefs.apiKey(), image, new ClaudeClient.Callback() {
             @Override
             public void onResult(String text) {
-                testLog("waechter-bild " + f.getName() + ": " + text.trim().replace('\n', ' '));
+                // Rohantwort und was Jarvis daraus macht – der Gerätetest prüft die Entscheidung („=> …“).
+                testLog("waechter-bild " + f.getName() + ": " + text.trim().replace('\n', ' ')
+                        + " => " + ProactiveCoach.label(ProactiveCoach.parse(text)));
                 testWatchFile(files, i + 1);
             }
 

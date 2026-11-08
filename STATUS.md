@@ -7,23 +7,20 @@ wird der zu lang, fängt er einen neuen an. Claude liest zu Beginn jeder Sitzung
 aktuellen Stand – egal, in welchem Fenster.
 
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
-8. November 2026 (06 Uhr).
+8. November 2026 (12 Uhr).
 
-## Wo der aktuelle Stand liegt – ein Zweig, ein PR
+## Wo der aktuelle Stand liegt
 
-Seit dem 8. November gibt es **einen** Arbeitszweig: `ccr-4f440a4a-dx81et`, **PR #22 nach `main`**.
-Er enthält alle früheren Zweige und PRs (#1–#7, #12–#16) plus die Korrekturen der Gesamtprüfung und das
-Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `feinschliff-cache` →
-`geraetetest-schranke` → `gespraechstest-ci` → `selbst-update`) wird nicht mehr weitergeführt.
+**`main` ist seit dem 8. Nov., 11:08 UTC, auf dem Stand von Build 82**: Art hat PR #22 mit Merge-Commit
+übernommen (alle früheren Zweige, Gesamtprüfung, Streaming, proaktives Coaching, Selbst-Update über die API).
+
+Weiter geht es auf demselben Arbeitszweig `ccr-4f440a4a-dx81et`, neu aufgesetzt auf `main`, mit einem
+**neuen PR** nach `main` (der gemergte #22 wird nicht wiederverwendet). Inhalt: Punkt 21 (Spielplan, Kosten,
+Akku) und die Startrunden-Regel des Wächters (Punkt 22).
 
 - **Test-App:** github.com/sroroxd/Jarvis/releases/download/test-ccr-4f440a4a-dx81et/JarvisTest.apk –
-  ab Build 63 aktualisiert sie sich selbst (Knopf „Installieren“ auf dem Startbildschirm).
-- **Zusammenführen** nach Arts Test: #22 mit **Merge-Commit, nicht Squash** – dann landen die
-  Original-Commits in `main`. Die alten PRs #1–#7 und #12–#16 sind seit dem 8. Nov. geschlossen
-  („in #22 aufgegangen“), ihre Commits stecken vollständig in #22.
-- Neue Arbeit kommt auf diesen Zweig, solange #22 offen ist – keine neue Kette.
-
-**`main`** ist noch die ältere Version (Wachwort „Hey Jarvis“, Spielmodus, Tages-Meta, Gedächtnis).
+  aktualisiert sich selbst (Knopf „Installieren“), ab Build 77 über die GitHub-API.
+- **Zusammenführen** nach Arts Test: mit **Merge-Commit, nicht Squash**.
 
 ### Gerätetest 8. Nov. mit Build 69 (Art)
 
@@ -271,7 +268,12 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
     - Bewusst nicht übernommen: frei editierbarer Systemprompt (Verbesserungen kämen sonst nicht mehr an).
       Verschlüsselter API-Schlüssel kommt mit dem Tausch des Signaturschlüssels.
 
-**Geprüft:** Build (Release und Debug), alle 178 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+22. **Startrunde 1-1 ist nie Planung** (Gerätetest Build 84): Der Wächter hielt Arts Startbild einmal für
+    „PLANUNG 1-1“ (vorher zweimal richtig „ANDERES“) – ein Sprachmodell antwortet nicht jedes Mal gleich. Jetzt
+    entscheidet die App selbst: 1-1 zählt nie als Planungsphase, also keine Ansage zum Start. Der Gerätetest prüft
+    die Entscheidung der App („=> ANDERES“), nicht nur die Rohantwort.
+
+**Geprüft:** Build (Release und Debug), alle 179 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben
