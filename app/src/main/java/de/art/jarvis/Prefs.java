@@ -287,6 +287,26 @@ public final class Prefs {
         sp.edit().putBoolean("barge_in", value).apply();
     }
 
+    /** Wie leicht Arts Stimme Jarvis unterbricht: 1 = schwer, 10 = sehr leicht (Wunsch #25). */
+    public int bargeInSensitivity() {
+        return clamp(sp.getInt("barge_in_sensitivity", SpeechGate.DEFAULT_LEVEL), 1, 10);
+    }
+
+    public void setBargeInSensitivity(int value) {
+        sp.edit().putInt("barge_in_sensitivity", clamp(value, 1, 10)).apply();
+    }
+
+    // ---------------------------------------------------------------- Spielerkennung
+
+    /** TFT im Vordergrund → Spielmodus an und ohne Wachwort zuhören. Braucht den Nutzungsdatenzugriff. */
+    public boolean gameAuto() {
+        return sp.getBoolean("game_auto", false);
+    }
+
+    public void setGameAuto(boolean value) {
+        sp.edit().putBoolean("game_auto", value).apply();
+    }
+
     // ---------------------------------------------------------------- Wünsche an die Entwicklung
 
     /** GitHub-Schlüssel (fine-grained, nur sroroxd/Jarvis, „Issues: Read and write“). */

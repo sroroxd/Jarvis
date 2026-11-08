@@ -50,6 +50,8 @@ final class Backup {
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
         o.put("bargeIn", p.bargeIn());
+        o.put("bargeInSensitivity", p.bargeInSensitivity());
+        o.put("gameAuto", p.gameAuto());
         o.put("floatingJ", p.floatingJ());
         o.put("subtitles", p.subtitles());
         o.put("subtitlesGame", p.subtitlesInGame());
@@ -86,6 +88,8 @@ final class Backup {
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));
         p.setBargeIn(o.optBoolean("bargeIn", true));
+        p.setBargeInSensitivity(o.optInt("bargeInSensitivity", SpeechGate.DEFAULT_LEVEL));
+        p.setGameAuto(o.optBoolean("gameAuto", false));
         p.setFloatingJ(o.optBoolean("floatingJ", false));
         p.setSubtitles(o.optBoolean("subtitles", true));
         p.setSubtitlesInGame(o.optBoolean("subtitlesGame", false));

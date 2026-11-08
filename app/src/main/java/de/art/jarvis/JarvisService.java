@@ -171,6 +171,11 @@ public class JarvisService extends Service {
     private final Runnable relisten = this::relistenIfContinuous;
     /** Dazwischenreden: lauscht, während Jarvis im Dauergespräch spricht. */
     private BargeIn bargeIn;
+    /** Automatische Spielerkennung: TFT vorne → Spielmodus und Dauergespräch (Einstellung „TFT automatisch erkennen“). */
+    private GameWatch gameWatch;
+    /** Was die Spielerkennung selbst eingeschaltet hat – nur das nimmt sie beim Verlassen des Spiels zurück. */
+    private boolean autoGameMode;
+    private boolean autoConversation;
     /** Wünsche an die Entwicklung → GitHub-Issues. */
     private WishSender wishSender;
     /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
@@ -231,6 +236,7 @@ public class JarvisService extends Service {
         public void onReceive(Context context, Intent intent) {
             screenAwake = Intent.ACTION_SCREEN_ON.equals(intent.getAction());
             updateWake();
+            updateGameWatch();
             notifyUi();
         }
     };
@@ -251,6 +257,7 @@ public class JarvisService extends Service {
         // Eigener Wachwort-Erkenner fürs Dazwischenreden: „Jarvis“ unterbricht auch im Dauergespräch.
         bargeIn = new BargeIn(this::onArtSpeaks, () -> WakeWordEngine.load(getAssets()));
         wishSender = new WishSender();
+        gameWatch = new GameWatch(this, this::onGameChanged);
         subtitles = new Subtitles(this);
         wm = getSystemService(WindowManager.class);
         wake = new WakeWordEngine(this, new WakeWordEngine.Listener() {
@@ -335,6 +342,7 @@ public class JarvisService extends Service {
             receiverRegistered = false;
         }
         wake.release();
+        gameWatch.stop();
         bargeIn.release();
         destroyRecognizer();
         eleven.stop();
@@ -390,9 +398,50 @@ public class JarvisService extends Service {
         wakeRetryMs = 2000;
         main.removeCallbacks(retryWake);
         updateWake();
+        updateGameWatch();
         updateNotification();
         maybeUpdateMeta();
         notifyUi();
+    }
+
+    // ---------------------------------------------------------------- Automatische Spielerkennung
+
+    /** Läuft nur, wenn eingeschaltet, erlaubt und der Bildschirm an ist (spart Akku). */
+    private void updateGameWatch() {
+        if (running && screenAwake && prefs.gameAuto() && GameWatch.permitted(this)) gameWatch.start();
+        else gameWatch.stop();
+    }
+
+    /**
+     * TFT ist vorne: Spielmodus an und ohne Wachwort zuhören (Arts Wunsch vom 2. Nov.: „nicht ständig Jarvis
+     * sagen, er soll erkennen, wenn ich im Spiel bin“). Verlassen: nur zurücknehmen, was hier eingeschaltet wurde.
+     */
+    private void onGameChanged(boolean inGame) {
+        if (!running) return;
+        if (inGame) {
+            if (!prefs.tftMode()) {
+                prefs.setTftMode(true);
+                autoGameMode = true;
+                applySettings();
+            }
+            if (!continuous && micGranted()) {
+                continuous = true;
+                autoConversation = true;
+                continuousLastSpeech = SystemClock.elapsedRealtime();
+                continuousErrors = 0;
+                notifyUi();
+                // Kurz Bescheid geben; danach hört das Dauergespräch von selbst zu.
+                if (state == State.IDLE) speak("TFT erkannt. Ich höre zu, Sir.");
+            }
+        } else {
+            if (autoConversation && continuous) stopContinuous(false);
+            autoConversation = false;
+            if (autoGameMode && prefs.tftMode()) {
+                prefs.setTftMode(false);
+                applySettings();
+            }
+            autoGameMode = false;
+        }
     }
 
     // ---------------------------------------------------------------- Tägliche TFT-Meta
@@ -535,6 +584,7 @@ public class JarvisService extends Service {
             bargeIn.newUtterance();
             if (bargeInWanted()) {
                 bargeIn.setWakeThreshold(prefs.wakeWord() ? Prefs.thresholdFor(prefs.sensitivity()) : -1f);
+                bargeIn.setMargin(SpeechGate.marginFor(prefs.bargeInSensitivity()));
                 wake.stop(() -> {
                     if (state == State.SPEAKING && bargeInWanted() && running) bargeIn.start();
                 });
@@ -1225,7 +1275,8 @@ public class JarvisService extends Service {
 
     private void relistenIfContinuous() {
         if (!continuous || !running || state != State.IDLE) return;
-        if (SystemClock.elapsedRealtime() - continuousLastSpeech > CONTINUOUS_IDLE_MS) {
+        // Während TFT vorne ist, keine Viertelstunden-Grenze – eine Partie hat lange stille Phasen.
+        if (!gameWatch.inGame() && SystemClock.elapsedRealtime() - continuousLastSpeech > CONTINUOUS_IDLE_MS) {
             stopContinuous(false);
             speak("Ich habe eine Viertelstunde nichts gehört und höre nicht mehr durchgehend zu. Tippen Sie, wenn Sie mich brauchen.");
             return;

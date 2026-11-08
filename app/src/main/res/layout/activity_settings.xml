@@ -167,7 +167,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Höher = reagiert leichter, löst aber auch öfter versehentlich aus. Standard: 5." />
+                        android:text="Höher = reagiert leichter, löst aber auch öfter versehentlich aus. Gilt auch, wenn du Jarvis beim Sprechen mit „Jarvis“ unterbrichst. Standard: 5." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchEarcon"
@@ -190,6 +190,41 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Im Dauergespräch: Sobald du sprichst, hört Jarvis auf zu reden und hört zu. Unterbricht er sich selbst (Lautsprecher sehr laut), hier ausschalten – dann unterbricht nur „Jarvis“." />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/Jarvis.Label"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Empfindlichkeit beim Dazwischenreden" />
+
+                        <TextView
+                            android:id="@+id/bargeInValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorPrimary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderBargeIn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:stepSize="1"
+                        android:valueFrom="1"
+                        android:valueTo="10" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Höher = deine Stimme unterbricht Jarvis schon, wenn du leiser sprichst. Unterbricht er sich dann selbst, wieder niedriger stellen. Standard: 5." />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -559,6 +594,29 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Nichts verdeckt das Spielbild, Jarvis antwortet nur per Stimme und denkt als TFT-Coach mit (Claude Sonnet 5.5). Umschalten auch per Sprache: „Spielmodus an“ oder „Spielmodus aus“." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchGameAuto"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="TFT automatisch erkennen" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Läuft TFT im Vordergrund, schaltet Jarvis den Spielmodus selbst ein und hört ohne „Jarvis“ zu. Bist du länger als 20 Sekunden aus dem Spiel, geht beides wieder aus. Braucht einmalig die Freigabe „Nutzungsdatenzugriff“ – damit sieht Jarvis nur, welche App gerade vorne ist." />
+
+                    <Button
+                        android:id="@+id/grantUsageAccess"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Nutzungsdatenzugriff erlauben"
+                        android:visibility="gone" />
 
                     <TextView
                         style="@style/Jarvis.Hint"

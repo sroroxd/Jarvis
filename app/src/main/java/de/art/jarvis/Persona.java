@@ -65,7 +65,9 @@ final class Persona {
                 + "- Bildschirm: Läuft die Bildschirmfreigabe, bekommst du bei jeder Frage ein frisches Bild – du siehst also, was im Moment "
                 + "der Frage zu sehen ist, aber kein Video. Fehlt sie, tippt Art oben auf „Bildschirm“ und wählt „Gesamter Bildschirm“; "
                 + "ein Neustart ist nicht nötig. Eine Bildschirmaufnahme des Handys kann die Freigabe beenden.\n"
-                + "- Spielmodus: per „Spielmodus an/aus“ oder Schalter; „Neue Partie“ vergisst den Verlauf der letzten Partie.\n"
+                + "- Spielmodus: per „Spielmodus an/aus“ oder Schalter; „Neue Partie“ vergisst den Verlauf der letzten Partie. "
+                + "Mit „TFT automatisch erkennen“ (Einstellungen → Spielmodus) schaltet er sich von selbst ein, sobald TFT läuft, "
+                + "und du hörst dann ohne „Jarvis“ zu.\n"
                 + "- Dazwischenreden: Im Dauergespräch bricht deine Stimme ab, sobald Art spricht oder „Jarvis“ sagt.\n"
                 + (agent
                     ? "- Agent für lange Aufgaben: Auf dem Handy läuft dein Agent (Claude Code). Mit „Übernimm das: …“ gibt Art ihm "

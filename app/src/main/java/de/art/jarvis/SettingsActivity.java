@@ -72,7 +72,7 @@ public class SettingsActivity extends AppCompatActivity {
         setupAgent();
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
-        hideTicks(b.sliderSensitivity, b.sliderPause, b.sliderRate, b.sliderPitch);
+        hideTicks(b.sliderSensitivity, b.sliderBargeIn, b.sliderPause, b.sliderRate, b.sliderPitch);
     }
 
     /** Ohne die Rasterpunkte wirken die Regler ruhiger. */
@@ -143,6 +143,13 @@ public class SettingsActivity extends AppCompatActivity {
         b.switchBargeIn.setOnCheckedChangeListener((v, on) -> {
             prefs.setBargeIn(on);
             refreshService();
+        });
+        setSlider(b.sliderBargeIn, prefs.bargeInSensitivity());
+        b.bargeInValue.setText(String.valueOf(prefs.bargeInSensitivity()));
+        b.sliderBargeIn.setLabelFormatter(v -> String.valueOf(Math.round(v)));
+        b.sliderBargeIn.addOnChangeListener((sl, value, fromUser) -> {
+            b.bargeInValue.setText(String.valueOf(Math.round(value)));
+            if (fromUser) prefs.setBargeInSensitivity(Math.round(value));
         });
 
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
@@ -302,6 +309,33 @@ public class SettingsActivity extends AppCompatActivity {
             prefs.setTftMode(on);
             refreshService();
         });
+        b.switchGameAuto.setChecked(prefs.gameAuto());
+        b.switchGameAuto.setOnCheckedChangeListener((v, on) -> {
+            prefs.setGameAuto(on);
+            if (on && !GameWatch.permitted(this)) openUsageAccess();
+            updateUsageAccess();
+            refreshService();
+        });
+        b.grantUsageAccess.setOnClickListener(v -> openUsageAccess());
+        updateUsageAccess();
+    }
+
+    /** Knopf „Nutzungsdatenzugriff erlauben“ nur, solange die Erkennung an ist und die Freigabe fehlt. */
+    private void updateUsageAccess() {
+        b.grantUsageAccess.setVisibility(prefs.gameAuto() && !GameWatch.permitted(this) ? View.VISIBLE : View.GONE);
+    }
+
+    /** Systemseite „Nutzungsdatenzugriff“ – möglichst direkt bei Jarvis, sonst die Liste aller Apps. */
+    private void openUsageAccess() {
+        try {
+            startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:" + getPackageName())));
+        } catch (Exception direct) {
+            try {
+                startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+            } catch (Exception ignored) {
+                // sehr ungewöhnlich – der Knopf bleibt sichtbar
+            }
+        }
     }
 
     // ---------------------------------------------------------------- Wünsche an die Entwicklung
@@ -473,6 +507,8 @@ public class SettingsActivity extends AppCompatActivity {
         setSlider(b.sliderSensitivity, prefs.sensitivity());
         b.switchEarcon.setChecked(prefs.earcon());
         b.switchBargeIn.setChecked(prefs.bargeIn());
+        setSlider(b.sliderBargeIn, prefs.bargeInSensitivity());
+        b.switchGameAuto.setChecked(prefs.gameAuto());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         setSlider(b.sliderRate, prefs.rate());
         setSlider(b.sliderPitch, prefs.pitch());
@@ -496,6 +532,8 @@ public class SettingsActivity extends AppCompatActivity {
         // Jarvis kann sich im Hintergrund Neues gemerkt haben.
         showMemory();
         updateOverlayWarning();
+        updateUsageAccess(); // zurück von der Systemseite: Freigabe erteilt?
+        refreshService();
     }
 
     @Override

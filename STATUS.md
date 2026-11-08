@@ -33,6 +33,10 @@ Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `f
    unterbricht „Jarvis“ zuverlässig?
 3. **Selbst-Update:** Läuft das nächste Update über den Knopf „Installieren“ durch?
 4. **Spielmodus:** Sind die Antworten jetzt kurz genug (#21)?
+5. **TFT automatisch erkennen** (Einstellungen → Spielmodus, einmal „Nutzungsdatenzugriff“ erlauben):
+   TFT öffnen → sagt Jarvis „TFT erkannt“ und hört ohne „Jarvis“ zu? Nach dem Spiel (20 s raus) wieder aus?
+6. **Empfindlichkeit beim Dazwischenreden** (Einstellungen → Sprachsteuerung, Wunsch #25): Unterbricht
+   Jarvis sich selbst → niedriger stellen; kommst du nicht durch → höher.
 
 ## Aufräumen (8. November)
 
@@ -57,10 +61,10 @@ Früher erledigt (4. Nov.): Repo geprüft – keine fremden Pushes, keine echten
 
 ## Was als Nächstes kommt
 
-0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** automatische
-   TFT-Erkennung (Jarvis merkt per „Nutzungsdatenzugriff“, dass TFT läuft, schaltet den Spielmodus
-   selbst ein und hört ohne Wachwort zu – von Art gewünscht am 2. Nov.), eigenes Symbol für die
-   Test-App und den Schnellstart („Jarvis zuhören“ mit Mikrofon-Symbol).
+0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die
+   Test-App und den Schnellstart („Jarvis zuhören“ mit Mikrofon-Symbol). Die automatische TFT-Erkennung
+   ist seit dem 8. Nov. gebaut. Wunsch #23 (TFT-Coaching schnell, sichere Bilderkennung, geprüfte Meta)
+   ist teilweise erledigt (Streaming, kürzere Antworten); offen sind Bilderkennung und Meta-Prüfung.
 1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 liegt in `sammeltest`
    (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
    Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
@@ -148,7 +152,15 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
     und der Schlüsseltest (lief nur über einen zweiten Versuch). Jetzt überall adaptives Nachdenken mit
     Stufe „low“, wie die Doku es empfiehlt.
 
-**Geprüft:** Build (Release und Debug), alle 143 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+12. **Automatische Spielerkennung** (8. Nov.): Einstellung „TFT automatisch erkennen“. Alle 3 s fragt Jarvis
+    per `UsageStatsManager.queryEvents` ab, welche App vorne ist (nur bei eingeschaltetem Bildschirm).
+    TFT (`com.riotgames.league.teamfighttactics`) vorne → Spielmodus an, Dauergespräch an, „TFT erkannt“.
+    20 s außerhalb → nur zurücknehmen, was die Erkennung selbst eingeschaltet hat. Während TFT vorne ist,
+    endet das Dauergespräch nicht nach 15 min Stille. Braucht einmalig „Nutzungsdatenzugriff“.
+13. **Empfindlichkeit beim Dazwischenreden** einstellbar (Wunsch #25): Stufe 1–10, 5 = 10 dB über dem
+    Echo (bisheriger Wert), 1 = 14,8 dB, 10 = 4 dB. Für „Jarvis“ gilt der vorhandene Regler „Empfindlichkeit“.
+
+**Geprüft:** Build (Release und Debug), alle 151 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben
