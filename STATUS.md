@@ -289,10 +289,15 @@ Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
   Nutzung einer Stimmprobe kostet einmalig 0,4–1,6 s (Probe kürzen auf ~5 s halbiert das). sherpa-onnx liefert
   Satz für Satz, nicht Häppchen innerhalb eines Satzes – der erste Ton kommt also nach dem ersten ganzen Satz.
   Jarvis' Satz-für-Satz-Sprechen (StreamSpeech) passt genau dazu.
-- **ONNX Runtime.** sherpa-onnx bringt ONNX Runtime 1.28 mit; die App hob ihre von 1.23.2 auf 1.28.0, beide
-  teilen jetzt eine `libonnxruntime.so` (`pickFirsts`). Wachwort-Tests grün.
-- **Preis.** Die Release-APK wächst von rund 32 auf 52 MB (ONNX Runtime 1.28 und sherpa-onnx). Dazu einmalig das
-  Modell (140 MB) auf dem Handy – das lädt die App erst, wenn Art zustimmt (Daten auf seinem Handy).
+- **ONNX Runtime – der eine echte Stolperstein.** Erster Versuch: sherpa-onnx und onnxruntime-android (Wachwort)
+  teilen sich eine `libonnxruntime.so`. Der Gerätetest (Build 97) zeigte `UnsatisfiedLinkError: cannot locate
+  symbol "OrtGetApiBase"` – beide Bibliotheken versionieren ihre Symbole (`VERS_1.28.2` gegen `VERS_1.28.0`), eine
+  geteilte Datei passt nie zu beiden. Lösung: die Fassung von sherpa-onnx mit **fest eingebauter** Runtime
+  (`sherpa-onnx-static-link-onnxruntime-2.0.1.aar`, unveränderliches GitHub-Release, Prüfsumme in
+  `app/build.gradle`); sie exportiert keine Ort-Symbole, kein Konflikt mehr. onnxruntime-android auf 1.28.0.
+- **Preis.** Native Bibliotheken jetzt gepackt in der APK (`useLegacyPackaging`): Release-APK 34 MB statt 32 MB
+  heute (ungepackt wären es 67 MB). Dazu einmalig das Modell (140 MB) auf dem Handy – das lädt die App erst, wenn
+  Art zustimmt (Daten auf seinem Handy).
 - **Im Code:** `PocketVoice` (laden, sprechen), `Wav` (Sprachprobe lesen, 3 Tests), Testzugang `testpocket` im
   Debug-Build. Noch **nicht** als Jarvis' Stimme eingebaut.
 

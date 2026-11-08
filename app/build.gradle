@@ -11,6 +11,31 @@ def branchName = (System.getenv('GITHUB_REF_NAME') ?: '').replaceAll('[^A-Za-z0-
 // Gedächtnis – die normale App wird dabei weder überschrieben noch verändert.
 def testApp = project.hasProperty('testApp')
 
+// Offline-Stimme (Pocket TTS) über sherpa-onnx, Fassung mit FEST EINGEBAUTER ONNX Runtime. Die normale Fassung
+// teilt sich libonnxruntime.so mit onnxruntime-android (Wachwort) – die Symbole sind aber versioniert
+// (VERS_1.28.2 gegen VERS_1.28.0), eine der beiden findet dann OrtGetApiBase nicht (Gerätetest Build 97).
+// Quelle: unveränderliches GitHub-Release von k2-fsa, Prüfsumme fest. Einmal geladen, liegt es in .sherpa/.
+def sherpaAar = file("${rootDir}/.sherpa/sherpa-onnx-static-link-onnxruntime-2.0.1.aar")
+def sherpaSha = '07e042d97f3a6bd5b7fe74d4eef0513dc01a714b16c15a903250095aba43a575'
+def sha256 = { File f ->
+    def md = java.security.MessageDigest.getInstance('SHA-256')
+    f.withInputStream { is -> byte[] buf = new byte[65536]; int n; while ((n = is.read(buf)) > 0) md.update(buf, 0, n) }
+    md.digest().encodeHex().toString()
+}
+if (!sherpaAar.isFile() || sha256(sherpaAar) != sherpaSha) {
+    sherpaAar.parentFile.mkdirs()
+    def tmp = new File(sherpaAar.path + '.part')
+    def url = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-static-link-onnxruntime-2.0.1.aar'
+    logger.lifecycle("Lade sherpa-onnx: $url")
+    new URL(url).withInputStream { input -> tmp.withOutputStream { it << input } }
+    def got = sha256(tmp)
+    if (got != sherpaSha) {
+        tmp.delete()
+        throw new GradleException("sherpa-onnx: falsche Prüfsumme $got")
+    }
+    tmp.renameTo(sherpaAar)
+}
+
 android {
     namespace 'de.art.jarvis'
     compileSdk 35
@@ -70,8 +95,12 @@ android {
 
     packaging {
         jniLibs {
-            // sherpa-onnx und onnxruntime-android bringen beide libonnxruntime.so mit (beide 1.28) – eine reicht.
+            // Nur für x86 (32 bit, ohne Bedeutung) bringt sherpa-onnx eine eigene libonnxruntime.so mit; arm64 und
+            // x86_64 haben die Runtime fest eingebaut. Die von onnxruntime-android gewinnt.
             pickFirsts += ['**/libonnxruntime.so']
+            // Native Bibliotheken gepackt in der APK: rund 50 MB ONNX Runtime und sherpa-onnx machen jedes Update
+            // sonst entsprechend größer. Kostet einmal Entpacken bei der Installation.
+            useLegacyPackaging = true
         }
     }
 
@@ -83,10 +112,9 @@ android {
 
 dependencies {
     implementation project(':wakeword')
-    // 1.28 – dieselbe Reihe wie die ONNX Runtime in sherpa-onnx 2.0.1, damit beide dieselbe libonnxruntime.so teilen.
     implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.28.0'
-    // Offline-Stimme: Kyutai Pocket TTS über sherpa-onnx (Apache 2.0), siehe PocketVoice.
-    implementation 'com.github.k2-fsa.sherpa-onnx:sherpa-onnx:v2.0.1'
+    // Offline-Stimme: Kyutai Pocket TTS über sherpa-onnx (Apache 2.0), siehe PocketVoice und oben.
+    implementation files(sherpaAar)
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.13.0'
     testImplementation 'junit:junit:4.13.2'

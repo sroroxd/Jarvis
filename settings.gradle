@@ -10,11 +10,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // sherpa-onnx (Offline-Stimme Pocket TTS) gibt es nur über JitPack – nur dieses Paket von dort holen.
-        maven {
-            url 'https://jitpack.io'
-            content { includeGroup 'com.github.k2-fsa.sherpa-onnx' }
-        }
     }
 }
 rootProject.name = 'Jarvis'
