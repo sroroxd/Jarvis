@@ -267,6 +267,35 @@ Deshalb zuerst **ein Tag Machbarkeit**: NDK einrichten, PocketTTS für `arm64-v8
 Probeausgabe auf dem Gerät hören. Erst danach die restlichen Tage. Scheitert der Tag an Punkt 3 oder 4, ist das
 Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
 
+### Punkt 3: Machbarkeit Offline-Stimme (8. Nov. abends)
+
+**Ergebnis: machbar – aber über sherpa-onnx statt über eine eigene JNI-Hülle um PocketTTS.cpp.**
+
+- **Weg.** sherpa-onnx (Apache 2.0, steht schon in CLAUDE.md) bringt Pocket TTS seit Version 2.0 mit fertiger
+  Android-Bibliothek (JitPack, `com.github.k2-fsa.sherpa-onnx:sherpa-onnx:v2.0.1`) und Java-Schnittstelle mit.
+  Derselbe Motor und dieselben ONNX-Modelle wie PocketTTS.cpp – aber keine NDK-Werkzeugkette, kein JNI, kein
+  SentencePiece-Übersetzen. Damit fallen drei der vier Risiken oben weg. PocketTTS.cpp selbst (letzter Stand
+  29. März) ist älter als Pocket TTS Deutsch (April) und hat kein Android.
+- **Deutsches Modell.** `haex-space/pocket-tts-sherpa-onnx`, Ordner `de` (CC BY 4.0, Kyutai-Gewichte, Export von
+  KevinAHM): 140 MB, Prüfsummen stimmen mit der Liste im Repo überein. Pocket TTS hat keine eingebauten Stimmen;
+  die Stimme kommt aus einer kurzen Sprachprobe (Stimmklonen). Für den Test: VCTK-Sprecher p226 (britisch,
+  männlich, CC BY 4.0) – Jarvis spricht damit Deutsch mit leichtem englischem Einschlag.
+- **Verständlichkeit, objektiv geprüft.** Zwölf erzeugte Sätze (drei Stimmen, vier Sätze) mit Whisper „small“
+  zurückgelesen: Deutsch fast wörtlich erkannt („Morgen um neun Uhr haben Sie einen Termin beim Zahnarzt“,
+  „Sie haben 52 Gold … rollen Sie für Jinx“). Schwach sind englische Wörter: „Ornn“ wurde zu „Ohren“/„Renn“,
+  „Sir“ am Satzende verschluckt. Für Jarvis heißt das: Champion-Namen notfalls lautschriftlich umschreiben.
+- **Tempo (Rechner hier, 2 Kerne, kein Handy).** Laden 0,8 s. Mit zwischengespeicherter Stimmprobe ein kurzer
+  Satz (1,3 s Audio) in 0,6–0,7 s, längere Sätze mit RTF ~0,5 (doppelt so schnell wie Echtzeit). Die erste
+  Nutzung einer Stimmprobe kostet einmalig 0,4–1,6 s (Probe kürzen auf ~5 s halbiert das). sherpa-onnx liefert
+  Satz für Satz, nicht Häppchen innerhalb eines Satzes – der erste Ton kommt also nach dem ersten ganzen Satz.
+  Jarvis' Satz-für-Satz-Sprechen (StreamSpeech) passt genau dazu.
+- **ONNX Runtime.** sherpa-onnx bringt ONNX Runtime 1.28 mit; die App hob ihre von 1.23.2 auf 1.28.0, beide
+  teilen jetzt eine `libonnxruntime.so` (`pickFirsts`). Wachwort-Tests grün.
+- **Preis.** Die Release-APK wächst von rund 32 auf 52 MB (ONNX Runtime 1.28 und sherpa-onnx). Dazu einmalig das
+  Modell (140 MB) auf dem Handy – das lädt die App erst, wenn Art zustimmt (Daten auf seinem Handy).
+- **Im Code:** `PocketVoice` (laden, sprechen), `Wav` (Sprachprobe lesen, 3 Tests), Testzugang `testpocket` im
+  Debug-Build. Noch **nicht** als Jarvis' Stimme eingebaut.
+
 ### Vertiefung (zweiter Durchgang)
 
 **Die Premium-Stimme schaltet das satzweise Sprechen ganz ab.** In `ask()` steht
