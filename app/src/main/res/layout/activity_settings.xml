@@ -73,7 +73,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:hint="Modell (leer = automatisch)"
-                        app:helperText="Leer = Claude Sonnet 5.5 (schnell, ohne Nachdenken). Sparen: claude-haiku-5-5">
+                        app:helperText="Leer = Claude Sonnet 5.5 (schnell, denkt nur bei kniffligen Fragen kurz nach). Sparen: claude-haiku-5-5">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/modelField"

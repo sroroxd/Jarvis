@@ -5,7 +5,7 @@ import android.content.SharedPreferences;
 
 /** Einstellungen. Liegen nur privat auf dem Handy und überstehen Neustarts. */
 public final class Prefs {
-    /** Alltag: Sonnet 5.5 ohne Nachdenken – schnell und genau. Haiku 5.5 bleibt als Sparoption wählbar. */
+    /** Alltag: Sonnet 5.5, Nachdenken nur bei Bedarf (Stufe „low“) – schnell und genau. Haiku 5.5 bleibt als Sparoption wählbar. */
     public static final String DEFAULT_MODEL = "claude-sonnet-5-5";
     public static final String BUDGET_MODEL = "claude-haiku-5-5";
     public static final String TFT_MODEL = "claude-sonnet-5-5";
