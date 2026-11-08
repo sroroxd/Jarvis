@@ -1,6 +1,8 @@
 package de.art.jarvis;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -46,5 +48,33 @@ public class MetaTest {
         String p = Meta.prompt("2026-11-02");
         assertTrue(p.contains("2026-11-02"));
         assertTrue(p.contains("deutschen Namen"));
+    }
+
+    /** 8. Nov.: Vor der Zusammenfassung stand englisches Vorgeplänkel – die Einstellungen zeigten es als „Stand“. */
+    @Test
+    public void vorgeplaenkelWirdAbgeschnitten() {
+        String body = "1. Comp A: Einheit X als Carry, Gegenstände Y und Z.\n2. Comp B: Einheit V, Gegenstände W.\n"
+                + "3. Augment Q ist stark, Mechanik R wurde abgeschwächt. Weitere Stichpunkte zur Länge der Recherche.";
+        String raw = "I have enough to answer for the current state. I'll note the limitation.\n"
+                + "Set 17 (Name), Patch 17.4, Stand 2026-11-07\n" + body;
+        String meta = Meta.extract(raw);
+        assertTrue(meta.startsWith("Set 17 (Name), Patch 17.4"));
+        assertFalse(meta.contains("I have enough"));
+        assertTrue(Meta.isPlausible(raw));
+        assertEquals(meta, Meta.clean(raw));
+        assertTrue(Meta.forPersona(raw, "2026-11-08").contains("Set 17 (Name)"));
+        assertFalse(Meta.forPersona(raw, "2026-11-08").contains("I have enough"));
+    }
+
+    @Test
+    public void ohneKopfzeileNichtPlausibel() {
+        // Set und Patch stehen zwar im Text, aber nie zusammen in einer Zeile wie verlangt.
+        StringBuilder filler = new StringBuilder();
+        for (int i = 0; i < 25; i++) filler.append("Stichpunkt ");
+        String raw = "Set 17 ist aktuell.\n" + filler + "\nPatch 17.4 brachte Änderungen.";
+        assertNull(Meta.extract(raw));
+        assertFalse(Meta.isPlausible(raw));
+        assertEquals(raw, Meta.clean(raw)); // alte Einträge ohne Kopfzeile bleiben lesbar
+        assertNull(Meta.extract(null));
     }
 }

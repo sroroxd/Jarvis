@@ -73,6 +73,38 @@ final class WishSender {
         });
     }
 
+    interface StatesCallback {
+        /** Stand der Issues, oder null, wenn GitHub nicht erreichbar war. Läuft auf dem Haupt-Thread. */
+        void onStates(java.util.Map<Integer, String> states);
+    }
+
+    /** Lädt den Stand aller Issues (offen, erledigt, zusammengelegt) – für die Liste in den Einstellungen. */
+    void fetchStates(String token, StatesCallback callback) {
+        executor.execute(() -> {
+            java.util.Map<Integer, String> states = null;
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection) new URL(URL_ISSUES + "?state=all&per_page=100").openConnection();
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(15000);
+                conn.setRequestProperty("accept", "application/vnd.github+json");
+                conn.setRequestProperty("x-github-api-version", "2022-11-28");
+                // Das Repo ist öffentlich; mit Schlüssel gilt nur die höhere Abfragegrenze.
+                if (token != null && !token.trim().isEmpty()) {
+                    conn.setRequestProperty("authorization", "Bearer " + token.trim());
+                }
+                conn.setRequestProperty("user-agent", "Jarvis-App");
+                if (conn.getResponseCode() == 200) states = Wishes.issueStates(readAll(conn.getInputStream()));
+            } catch (Exception ignored) {
+                // nicht erreichbar – Liste bleibt ohne Stand
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+            final java.util.Map<Integer, String> result = states;
+            main.post(() -> callback.onStates(result));
+        });
+    }
+
     private static String readAll(InputStream in) throws java.io.IOException {
         if (in == null) return "";
         try (InputStream is = in) {

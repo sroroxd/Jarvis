@@ -192,16 +192,87 @@ final class Wishes {
         return "{\"title\":" + AgentReply.jsonText(TITLE_PREFIX + title) + ",\"body\":" + AgentReply.jsonText(text) + "}";
     }
 
-    /** Zeilen für die Anzeige in den Einstellungen. */
+    /** Zeilen für die Anzeige in den Einstellungen, solange der Stand auf GitHub noch nicht geladen ist. */
     static String display(String stored) {
+        return display(stored, null);
+    }
+
+    /** Stand eines Issues auf GitHub, wie {@link #display(String, java.util.Map)} ihn braucht. */
+    static final String ISSUE_OPEN = "offen";
+    static final String ISSUE_DONE = "erledigt";
+    static final String ISSUE_MERGED = "zusammengelegt";
+
+    /**
+     * Zeilen für die Anzeige, mit dem echten Stand auf GitHub. Vorher stand vor jedem gesendeten Wunsch ein „✓“ –
+     * gemeint war „gesendet“, Art las „erledigt“ (8. Nov.: 35 Häkchen, obwohl vieles noch offen war). Jetzt zuerst
+     * die offenen, dann die erledigten; zusammengelegte Doppelte nur als Anzahl.
+     *
+     * @param states Nummer des Issues → {@link #ISSUE_OPEN}, {@link #ISSUE_DONE} oder {@link #ISSUE_MERGED};
+     *               null = noch nicht geladen
+     */
+    static String display(String stored, java.util.Map<Integer, String> states) {
         List<Wish> list = load(stored);
         if (list.isEmpty()) return "Noch keine Wünsche notiert.";
-        StringBuilder sb = new StringBuilder();
+        StringBuilder unsent = new StringBuilder();
+        StringBuilder open = new StringBuilder();
+        StringBuilder done = new StringBuilder();
+        int merged = 0;
         for (Wish w : list) {
-            sb.append(w.open() ? "○ " : "✓ ").append(w.title);
-            sb.append(w.open() ? " (noch nicht gesendet)" : " (Aufgabe " + w.status + ")").append('\n');
+            if (w.open()) {
+                unsent.append("✎ ").append(w.title).append(" (noch nicht gesendet)\n");
+                continue;
+            }
+            String state = states == null ? null : states.get(issueNumber(w.status));
+            if (ISSUE_MERGED.equals(state)) {
+                merged++;
+            } else if (ISSUE_DONE.equals(state)) {
+                done.append("✓ ").append(w.title).append(" (").append(w.status).append(", erledigt)\n");
+            } else if (ISSUE_OPEN.equals(state)) {
+                open.append("○ ").append(w.title).append(" (").append(w.status).append(", offen)\n");
+            } else {
+                open.append("↗ ").append(w.title).append(" (").append(w.status).append(", gesendet)\n");
+            }
+        }
+        StringBuilder sb = new StringBuilder().append(unsent).append(open).append(done);
+        if (merged > 0) {
+            sb.append("≈ ").append(merged).append(merged == 1 ? " doppelter Wunsch" : " doppelte Wünsche")
+                    .append(" mit anderen zusammengelegt\n");
         }
         return sb.toString().trim();
+    }
+
+    /** „#17“ → 17, sonst 0. */
+    static int issueNumber(String status) {
+        if (status == null || !status.startsWith("#")) return 0;
+        try {
+            return Integer.parseInt(status.substring(1).trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Stand der Issues aus der Antwort von GET /repos/{owner}/{repo}/issues?state=all (Felder number, state,
+     * state_reason; Pull Requests haben zusätzlich „pull_request“ und werden übersprungen).
+     */
+    static java.util.Map<Integer, String> issueStates(String json) {
+        java.util.Map<Integer, String> out = new java.util.HashMap<>();
+        try {
+            org.json.JSONArray arr = new org.json.JSONArray(json);
+            for (int i = 0; i < arr.length(); i++) {
+                org.json.JSONObject o = arr.optJSONObject(i);
+                if (o == null || o.has("pull_request")) continue;
+                int n = o.optInt("number", 0);
+                if (n <= 0) continue;
+                String reason = o.optString("state_reason", "");
+                if ("open".equals(o.optString("state"))) out.put(n, ISSUE_OPEN);
+                else if ("not_planned".equals(reason) || "duplicate".equals(reason)) out.put(n, ISSUE_MERGED);
+                else out.put(n, ISSUE_DONE);
+            }
+        } catch (org.json.JSONException ignored) {
+            // kaputte Antwort – dann eben ohne Stand
+        }
+        return out;
     }
 
     private static String clean(String s) {

@@ -970,7 +970,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:text="Wiederherstellen" />
+                            android:maxLines="1"
+                            android:text="Zurückholen" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -998,7 +999,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="• „Jarvis“ sagen – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: „Jarvis“ oder Antippen unterbricht.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
+                        android:text="• TFT: Bildschirm freigeben und spielen. Jarvis erkennt das Spiel, hört ohne „Jarvis“ zu und sagt in jeder Planungsphase von selbst den wichtigsten Befehl.\n• Sonst: „Jarvis“ sagen (wenn „Freihändig“ an ist) – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: Antippen unterbricht immer; im Dauergespräch auch „Jarvis“ oder einfach losreden.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

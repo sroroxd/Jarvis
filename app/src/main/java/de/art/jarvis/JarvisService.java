@@ -665,7 +665,7 @@ public class JarvisService extends Service {
                             testLog("meta verworfen: " + text);
                             return;
                         }
-                        prefs.setMeta(text, today);
+                        prefs.setMeta(Meta.extract(text), today);
                         notifyUi();
                     }
 
@@ -785,7 +785,9 @@ public class JarvisService extends Service {
             // Die Echo-Schranke lernt erst, wenn die Stimme wirklich zu hören ist (siehe onVoiceStarted).
             bargeIn.newUtterance();
             if (bargeInWanted()) {
-                bargeIn.setWakeThreshold(prefs.wakeWord() ? Prefs.thresholdFor(prefs.sensitivity()) : -1f);
+                // „Jarvis“ unterbricht immer, auch wenn „Freihändig mit Jarvis“ aus ist – so versprechen es Hilfe und
+                // Einstellungen. Vorher hing es am Schalter; bei Art (Schalter aus) unterbrach „Jarvis“ nie.
+                bargeIn.setWakeThreshold(Prefs.thresholdFor(prefs.sensitivity()));
                 bargeIn.setMargin(SpeechGate.marginFor(prefs.bargeInSensitivity()));
                 wake.stop(() -> {
                     if (state == State.SPEAKING && bargeInWanted() && running) bargeIn.start();
@@ -1358,8 +1360,18 @@ public class JarvisService extends Service {
         // Spielmodus standardmäßig „low“ wie im Alltag (Wunsch #23: Tempo zuerst) – das genaue Hinsehen übernimmt die
         // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
         // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
-        else claude.send(key, prefs.model(), system, messages, prefs.tftMode() && prefs.gameThinkDeep() ? "medium" : "low",
+        else claude.send(key, prefs.model(), system, messages, effortFor(text),
                 withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
+    }
+
+    /**
+     * Nachdenk-Stufe: Arts Fragen „low“ (Tempo), mit „Gründlicher nachdenken“ „medium“. Ungefragte Ansagen des
+     * proaktiven Coachings immer „medium“ – darauf wartet niemand, und Art ist die Qualität wichtiger (Gedächtnis).
+     */
+    private String effortFor(String text) {
+        if (!prefs.tftMode()) return "low";
+        if (text.startsWith(ProactiveCoach.AUTO_PREFIX) || prefs.gameThinkDeep()) return "medium";
+        return "low";
     }
 
     // ---------------------------------------------------------------- Streaming: satzweise sprechen

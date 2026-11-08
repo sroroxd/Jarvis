@@ -63,7 +63,7 @@ public class WishesTest {
         assertFalse(list.get(0).open());
         assertEquals("#12", list.get(0).status);
         assertTrue(list.get(1).open());
-        assertTrue(Wishes.display(s).contains("Aufgabe #12"));
+        assertTrue(Wishes.display(s).contains("(#12, gesendet)"));
     }
 
     @Test
@@ -115,5 +115,44 @@ public class WishesTest {
         assertNull(Wishes.similar(s, "Kürzere Antworten"));
         assertNull(Wishes.similar(s, "Tiefere Stimme"));
         assertNull(Wishes.similar("", "Kürzere Antworten"));
+    }
+
+    /** 8. Nov.: „✓“ hieß „gesendet“, Art las „erledigt“. Jetzt der echte Stand von GitHub. */
+    @Test
+    public void listeZeigtDenEchtenStand() {
+        String s = "#17\tDazwischenreden zuverlässig\t\n#19\tDazwischenreden reparieren\t\n"
+                + "#21\tKürzere Antworten\t\n#50\tNeu gesendet\t\n" + Wishes.OPEN + "\tNoch lokal\t";
+        java.util.Map<Integer, String> st = new java.util.HashMap<>();
+        st.put(17, Wishes.ISSUE_OPEN);
+        st.put(19, Wishes.ISSUE_MERGED);
+        st.put(21, Wishes.ISSUE_DONE);
+        String d = Wishes.display(s, st);
+        assertTrue(d.contains("○ Dazwischenreden zuverlässig (#17, offen)"));
+        assertTrue(d.contains("✓ Kürzere Antworten (#21, erledigt)"));
+        assertTrue(d.contains("↗ Neu gesendet (#50, gesendet)"));   // Stand noch unbekannt
+        assertTrue(d.contains("✎ Noch lokal (noch nicht gesendet)"));
+        assertTrue(d.contains("≈ 1 doppelter Wunsch"));
+        assertFalse(d.contains("Dazwischenreden reparieren"));
+        assertTrue(d.indexOf("(#17, offen)") < d.indexOf("(#21, erledigt)")); // offene zuerst
+        // Ohne geladenen Stand kein falsches Häkchen.
+        assertFalse(Wishes.display(s).contains("✓"));
+    }
+
+    @Test
+    public void standAusGithubAntwort() {
+        java.util.Map<Integer, String> st = Wishes.issueStates("["
+                + "{\"number\":17,\"state\":\"open\",\"state_reason\":null},"
+                + "{\"number\":19,\"state\":\"closed\",\"state_reason\":\"not_planned\"},"
+                + "{\"number\":20,\"state\":\"closed\",\"state_reason\":\"duplicate\"},"
+                + "{\"number\":21,\"state\":\"closed\",\"state_reason\":\"completed\"},"
+                + "{\"number\":22,\"state\":\"open\",\"pull_request\":{}}]");
+        assertEquals(Wishes.ISSUE_OPEN, st.get(17));
+        assertEquals(Wishes.ISSUE_MERGED, st.get(19));
+        assertEquals(Wishes.ISSUE_MERGED, st.get(20));
+        assertEquals(Wishes.ISSUE_DONE, st.get(21));
+        assertNull(st.get(22)); // Pull Request, kein Wunsch
+        assertTrue(Wishes.issueStates("kaputt").isEmpty());
+        assertEquals(17, Wishes.issueNumber("#17"));
+        assertEquals(0, Wishes.issueNumber(Wishes.OPEN));
     }
 }

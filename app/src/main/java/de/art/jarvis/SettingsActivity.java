@@ -365,10 +365,27 @@ public class SettingsActivity extends AppCompatActivity {
             + "&description=Jarvis+legt+W%C3%BCnsche+als+Aufgaben+in+sroroxd%2FJarvis+an"
             + "&target_name=sroroxd&expires_in=365&issues=write";
 
+    /** Stand der Issues auf GitHub (null = noch nicht geladen). */
+    private java.util.Map<Integer, String> wishStates;
+    private boolean wishStatesLoading;
+
+    /** Wunschliste anzeigen; den echten Stand auf GitHub einmal pro Öffnen der Einstellungen nachladen. */
+    private void showWishes() {
+        b.wishList.setText(Wishes.display(prefs.wishes(), wishStates));
+        if (wishStates != null || wishStatesLoading) return;
+        wishStatesLoading = true;
+        new WishSender().fetchStates(prefs.githubToken(), states -> {
+            wishStatesLoading = false;
+            if (states == null || isFinishing() || isDestroyed()) return;
+            wishStates = states;
+            b.wishList.setText(Wishes.display(prefs.wishes(), wishStates));
+        });
+    }
+
     private void setupWishes() {
         b.githubTokenField.setText(prefs.githubToken());
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
-        b.wishList.setText(Wishes.display(prefs.wishes()));
+        showWishes();
         b.wishSend.setOnClickListener(v -> sendOpenWishes());
         b.githubTokenCreate.setOnClickListener(v -> {
             try {
@@ -404,7 +421,8 @@ public class SettingsActivity extends AppCompatActivity {
                 else lastError[0] = error;
                 if (--left[0] == 0) {
                     Backup.autoSave(this, prefs);
-                    b.wishList.setText(Wishes.display(prefs.wishes()));
+                    wishStates = null; // neue Aufgaben: Stand neu laden
+                    showWishes();
                     showResult(b.wishResult, lastError[0] == null ? "✓ Alle gesendet." : "✗ " + lastError[0]);
                 }
             });
@@ -505,7 +523,7 @@ public class SettingsActivity extends AppCompatActivity {
     /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
     private void refreshFromPrefs() {
         updateAgentInfo();
-        b.wishList.setText(Wishes.display(prefs.wishes()));
+        showWishes();
         b.switchBackupKeys.setChecked(prefs.backupKeys());
         showMemory();
         // Auch die Schlüssel neu anzeigen: Sonst schrieb das Verlassen der Einstellungen (saveTextFields) die
@@ -618,7 +636,7 @@ public class SettingsActivity extends AppCompatActivity {
             b.metaInfo.setText("Noch keine Meta recherchiert.");
             return;
         }
-        String text = prefs.metaText().replaceAll("\\s+", " ").trim();
+        String text = Meta.clean(prefs.metaText()).replaceAll("\\s+", " ").trim();
         if (text.length() > 160) text = text.substring(0, 160) + " …";
         b.metaInfo.setText("Stand " + date + ": " + text);
     }

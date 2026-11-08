@@ -222,7 +222,19 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
     Alte Builds (bis 75) haben den neuen Weg noch nicht: bei 504 die App aus der Übersicht wischen, neu öffnen,
     erneut „Installieren“.
 
-**Geprüft:** Build (Release und Debug), alle 167 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+18. **Nach Arts Blick auf die Einstellungen (8. Nov., Build 77):**
+    - *Meta zeigte englisches Vorgeplänkel* („I have enough to answer …“) statt der Recherche. Die Prüfung fand
+      Set und Patch irgendwo im Text und speicherte alles. Jetzt zählt die Meta erst ab der Kopfzeile
+      „Set …, Patch …“ (`Meta.extract`); alte Einträge werden beim Anzeigen und in der Grundanweisung bereinigt.
+    - *„Jarvis“ unterbrach beim Sprechen nie*, wenn „Freihändig mit Jarvis“ aus war (bei Art aus) – obwohl Hilfe und
+      Einstellungen es versprechen. Jetzt hört das Dazwischenreden-Mikrofon im Dauergespräch immer auch auf „Jarvis“.
+    - *Wunschliste:* „✓“ hieß „gesendet“, Art las „erledigt“. Jetzt mit echtem Stand von GitHub (offen, erledigt,
+      Doppelte nur als Anzahl).
+    - *Ungefragte Ansagen denken gründlicher* („medium“): Darauf wartet niemand, und laut Gedächtnis ist Art
+      Qualität wichtiger als Tempo. Arts eigene Fragen bleiben schnell („low“).
+    - Knopf „Wiederherstellen“ brach um → „Zurückholen“; Hilfe „So nutzt du Jarvis“ beschreibt TFT und Coaching.
+
+**Geprüft:** Build (Release und Debug), alle 171 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

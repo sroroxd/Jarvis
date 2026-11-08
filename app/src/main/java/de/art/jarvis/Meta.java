@@ -34,7 +34,8 @@ final class Meta {
                 + "2. Starke Augments oder Mechaniken dieses Patches.\n"
                 + "3. Was zuletzt deutlich verstärkt oder abgeschwächt wurde.\n"
                 + "Verwende die deutschen Namen des deutschen Spiel-Clients. Wenn du eine deutsche Bezeichnung nicht sicher "
-                + "kennst, schreib den englischen Namen in Klammern dazu. Keine Einleitung, kein Schlusssatz.";
+                + "kennst, schreib den englischen Namen in Klammern dazu. Keine Einleitung, kein Schlusssatz, und kein "
+                + "Satz über deine Suche – beginne direkt mit der ersten Zeile. Alles auf Deutsch.";
     }
 
     private static final java.util.regex.Pattern SET = java.util.regex.Pattern.compile(
@@ -49,8 +50,33 @@ final class Meta {
      * Jarvis coacht dann lieber mit dem Hinweis „Stand kann veraltet sein“ als mit einer halben Recherche.
      */
     static boolean isPlausible(String meta) {
-        if (meta == null || meta.trim().length() < 200) return false;
-        return SET.matcher(meta).find() && PATCH.matcher(meta).find();
+        String m = extract(meta);
+        return m != null && m.length() >= 200;
+    }
+
+    /**
+     * Die eigentliche Meta ab der Kopfzeile „Set …, Patch …“ – ohne das, was das Modell davor schreibt.
+     * Anlass, 8. Nov.: Gespeichert war „I have enough to answer for the current state. I'll note …“ vor der
+     * Zusammenfassung; die Einstellungen zeigten genau diesen Satz als „Stand“. Null, wenn keine Zeile Set UND
+     * Patch nennt.
+     */
+    static String extract(String text) {
+        if (text == null) return null;
+        String[] lines = text.trim().split("\\r?\\n");
+        for (int i = 0; i < lines.length; i++) {
+            if (SET.matcher(lines[i]).find() && PATCH.matcher(lines[i]).find()) {
+                StringBuilder sb = new StringBuilder();
+                for (int j = i; j < lines.length; j++) sb.append(lines[j]).append('\n');
+                return sb.toString().trim();
+            }
+        }
+        return null;
+    }
+
+    /** Für Anzeige und Grundanweisung: die bereinigte Meta, bei alten Einträgen ohne Kopfzeile der ganze Text. */
+    static String clean(String stored) {
+        String m = extract(stored);
+        return m != null ? m : (stored == null ? "" : stored.trim());
     }
 
     /** Block für die Grundanweisung im Spielmodus – leer, wenn keine Meta vorliegt. */
@@ -60,6 +86,6 @@ final class Meta {
                     + "Patch-Details sag offen, dass dein Stand veraltet sein kann.";
         }
         return "AKTUELLE TFT-META (recherchiert am " + metaDate + ", aus dem Internet). Sie hat Vorrang vor deinem "
-                + "älteren Wissen über Comps, Augments und Patches:\n" + meta.trim();
+                + "älteren Wissen über Comps, Augments und Patches:\n" + clean(meta);
     }
 }
