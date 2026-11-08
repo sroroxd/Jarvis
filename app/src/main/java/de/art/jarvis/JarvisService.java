@@ -88,6 +88,8 @@ public class JarvisService extends Service {
     private static String lastYou = "";
     private static String lastJarvis = "";
     private static volatile String lastTiming = "";
+    /** Messzeile des letzten Dazwischenreden-Durchgangs (Startbildschirm, Gerätetest). */
+    private static volatile String lastBargeInReport = "";
     /** Ganzer Gesprächsverlauf für den Startbildschirm (überlebt das Schließen der App, solange Jarvis läuft). */
     private static final ChatLog chatLog = new ChatLog();
     /** Läuft gerade das Dauergespräch? Für die Anzeige auf dem Startbildschirm. */
@@ -125,6 +127,10 @@ public class JarvisService extends Service {
 
     static String lastTiming() {
         return lastTiming;
+    }
+
+    static String bargeInReport() {
+        return lastBargeInReport;
     }
 
     static boolean isScreenShared() {
@@ -173,6 +179,10 @@ public class JarvisService extends Service {
     private BargeIn bargeIn;
     /** Automatische Spielerkennung: TFT vorne → Spielmodus und Dauergespräch (Einstellung „TFT automatisch erkennen“). */
     private GameWatch gameWatch;
+    /** Telefonmodus im Dauergespräch, damit die Echo-Unterdrückung Jarvis' eigene Stimme herausfiltert. */
+    private TalkAudio talkAudio;
+    /** Zuletzt an Sprachausgabe und ElevenLabs gegebene Einstellung (Telefonmodus ja/nein). */
+    private boolean speechAsCall;
     /** Was die Spielerkennung selbst eingeschaltet hat – nur das nimmt sie beim Verlassen des Spiels zurück. */
     private boolean autoGameMode;
     private boolean autoConversation;
@@ -258,6 +268,12 @@ public class JarvisService extends Service {
         bargeIn = new BargeIn(this::onArtSpeaks, () -> WakeWordEngine.load(getAssets()));
         wishSender = new WishSender();
         gameWatch = new GameWatch(this, this::onGameChanged);
+        talkAudio = new TalkAudio(this);
+        bargeIn.setReportListener(report -> {
+            lastBargeInReport = report + " · Telefonmodus " + (talkAudio.active() ? "an" : "aus");
+            testLog("dazwischenreden: " + lastBargeInReport);
+            notifyUi();
+        });
         subtitles = new Subtitles(this);
         wm = getSystemService(WindowManager.class);
         wake = new WakeWordEngine(this, new WakeWordEngine.Listener() {
@@ -343,6 +359,7 @@ public class JarvisService extends Service {
         }
         wake.release();
         gameWatch.stop();
+        talkAudio.exit();
         bargeIn.release();
         destroyRecognizer();
         eleven.stop();
@@ -399,9 +416,31 @@ public class JarvisService extends Service {
         main.removeCallbacks(retryWake);
         updateWake();
         updateGameWatch();
+        updateTalkAudio();
         updateNotification();
         maybeUpdateMeta();
         notifyUi();
+    }
+
+    // ---------------------------------------------------------------- Telefonmodus (Echo-Unterdrückung)
+
+    /**
+     * Im Dauergespräch mit Dazwischenreden läuft Jarvis' Stimme wie ein Videoanruf (siehe {@link TalkAudio}) – nur so
+     * filtert das Handy sein Echo heraus, und Art kommt mit normaler Stimme darüber. Sonst wie bisher.
+     */
+    private void updateTalkAudio() {
+        boolean want = running && continuous && prefs.bargeIn() && prefs.echoCallMode() && micGranted();
+        boolean on;
+        if (want) {
+            on = talkAudio.enter();
+        } else {
+            talkAudio.exit();
+            on = false;
+        }
+        if (on == speechAsCall) return;
+        speechAsCall = on;
+        if (tts != null) tts.setAudioAttributes(TalkAudio.speech(on));
+        eleven.setVoiceCall(on);
     }
 
     // ---------------------------------------------------------------- Automatische Spielerkennung
@@ -575,6 +614,7 @@ public class JarvisService extends Service {
         State old = state;
         state = s;
         uiState = s;
+        updateTalkAudio(); // vor dem Sprechen: Telefonmodus passend zum Dauergespräch
         if (floatingJ != null) floatingJ.setState(s);
         if (ui != null) ui.onStateChanged(s);
         if (old == State.LISTENING && s != State.LISTENING) {
@@ -1405,6 +1445,7 @@ public class JarvisService extends Service {
                 return;
             }
             ttsReady = true;
+            if (speechAsCall) tts.setAudioAttributes(TalkAudio.speech(true));
             Voices.apply(tts, prefs, engine);
             appliedVoiceKey = null; // neue Engine → beim nächsten Satz sicher neu einstellen
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {

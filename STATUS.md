@@ -25,6 +25,16 @@ Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `f
 
 **`main`** ist noch die ältere Version (Wachwort „Hey Jarvis“, Spielmodus, Tages-Meta, Gedächtnis).
 
+### Gerätetest 8. Nov. mit Build 69 (Art)
+
+- **Selbst-Update über „Installieren“: klappt.**
+- **Dazwischenreden: klappt noch nicht.** Vermutete Ursache: Ohne Telefonmodus filtert das Handy Jarvis' Stimme
+  nicht heraus, sie kommt am Mikrofon lauter an als Art. Ab Build 70: Telefonmodus im Dauergespräch (Punkt 15)
+  und eine Messzeile auf dem Startbildschirm nach jeder Antwort: „Dazwischenreden: Echo … · Schwelle … ·
+  lautester Moment … · Echo-Filter an/aus · unterbrochen: … · Telefonmodus an/aus“. So liest man sie:
+  lautester Moment unter der Schwelle, obwohl Art geredet hat → Art kam nicht über das Echo (Regler höher
+  oder Echo noch zu laut); Echo-Filter „aus“ → das Handy bietet keine Echo-Unterdrückung an.
+
 ### Was Art auf dem Handy prüfen muss (Test-Build ab 64)
 
 1. **Satzweises Sprechen:** Fängt Jarvis bei längeren Antworten spürbar früher an zu sprechen? Klingen die
@@ -167,7 +177,15 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
       wird nicht gespeichert und nach 30 Minuten wiederholt; Jarvis sagt bis dahin, dass sein Stand veraltet
       sein kann.
 
-**Geprüft:** Build (Release und Debug), alle 156 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+15. **Telefonmodus fürs Dazwischenreden** (8. Nov., nach Arts Gerätetest): Im Dauergespräch mit Dazwischenreden
+    schaltet Jarvis in den Kommunikationsmodus (`MODE_IN_COMMUNICATION` + `setCommunicationDevice(Lautsprecher)`,
+    laut Android-Doku) und spielt seine Stimme als Sprachkommunikation ab – wie ein Videoanruf. Nur dort filtert
+    die Echo-Unterdrückung laut Berichten auf Samsung-Geräten das eigene Abspielen heraus. Nicht mit
+    Kopfhörern (kein Echo; Bluetooth würde auf Telefon-Ton wechseln), erst ab Android 12. Schalter
+    „Echo-Filter wie beim Telefonieren“ (Standard an). Dazu die Messzeile (siehe Gerätetest oben).
+    Ungeprüft: Klang, Lautstärke (jetzt Anruflautstärke), Spielsound von TFT im Telefonmodus.
+
+**Geprüft:** Build (Release und Debug), alle 157 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

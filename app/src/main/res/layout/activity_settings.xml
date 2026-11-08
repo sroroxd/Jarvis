@@ -191,6 +191,20 @@
                         android:layout_height="wrap_content"
                         android:text="Im Dauergespräch: Sobald du sprichst, hört Jarvis auf zu reden und hört zu. Unterbricht er sich selbst (Lautsprecher sehr laut), hier ausschalten – dann unterbricht nur „Jarvis“." />
 
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchEchoCall"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Echo-Filter wie beim Telefonieren" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Im Dauergespräch spricht Jarvis wie bei einem Videoanruf über den Lautsprecher – nur so filtert das Handy seine eigene Stimme heraus und du kannst ihn unterbrechen. Klingt etwas nach Telefon; die Lautstärke stellst du dann mit den Lautstärketasten ein, während er spricht. Mit Kopfhörern nicht nötig." />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

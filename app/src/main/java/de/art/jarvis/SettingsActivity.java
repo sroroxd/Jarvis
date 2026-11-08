@@ -144,6 +144,11 @@ public class SettingsActivity extends AppCompatActivity {
             prefs.setBargeIn(on);
             refreshService();
         });
+        b.switchEchoCall.setChecked(prefs.echoCallMode());
+        b.switchEchoCall.setOnCheckedChangeListener((v, on) -> {
+            prefs.setEchoCallMode(on);
+            refreshService();
+        });
         setSlider(b.sliderBargeIn, prefs.bargeInSensitivity());
         b.bargeInValue.setText(String.valueOf(prefs.bargeInSensitivity()));
         b.sliderBargeIn.setLabelFormatter(v -> String.valueOf(Math.round(v)));
@@ -513,6 +518,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.switchEarcon.setChecked(prefs.earcon());
         b.switchBargeIn.setChecked(prefs.bargeIn());
         setSlider(b.sliderBargeIn, prefs.bargeInSensitivity());
+        b.switchEchoCall.setChecked(prefs.echoCallMode());
         b.switchGameAuto.setChecked(prefs.gameAuto());
         b.switchGameThink.setChecked(prefs.gameThinkDeep());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);

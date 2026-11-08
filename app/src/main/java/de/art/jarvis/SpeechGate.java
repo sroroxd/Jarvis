@@ -98,6 +98,22 @@ final class SpeechGate {
         return learned >= WARMUP_FRAMES;
     }
 
+    /** Gelerntes Echo in dBFS (für die Messanzeige). */
+    double echoDb() {
+        return echoDb;
+    }
+
+    /**
+     * Messzeile für den Startbildschirm, damit ein Gerätetest zeigt, woran das Dazwischenreden hängt:
+     * Liegt der lauteste Moment (auch Arts Stimme) unter der Schwelle, kam Art nicht über Jarvis' Echo.
+     */
+    static String report(boolean armed, double echoDb, double thresholdDb, double peakDb, boolean echoFilter, String trigger) {
+        if (!armed) return "zu kurz zum Messen";
+        return String.format(java.util.Locale.GERMANY, "Echo %.0f dB · Schwelle %.0f dB · lautester Moment %.0f dB · "
+                        + "Echo-Filter %s · unterbrochen: %s",
+                echoDb, thresholdDb, peakDb, echoFilter ? "an" : "aus", trigger == null ? "nein" : trigger);
+    }
+
     /** Aktuelle Schwelle in dBFS (für Anzeige und Tests). */
     double thresholdDb() {
         return Math.max(echoDb + margin, MIN_SPEECH_DB);

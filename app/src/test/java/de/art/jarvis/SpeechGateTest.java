@@ -207,6 +207,15 @@ public class SpeechGateTest {
         }
     }
 
+    @Test
+    public void messzeileFuerDenGeraetetest() {
+        assertEquals("Echo -31 dB · Schwelle -21 dB · lautester Moment -24 dB · Echo-Filter an · unterbrochen: nein",
+                SpeechGate.report(true, -31.2, -21.2, -24.4, true, null));
+        assertEquals("Echo -40 dB · Schwelle -30 dB · lautester Moment -12 dB · Echo-Filter aus · unterbrochen: Stimme",
+                SpeechGate.report(true, -40, -30, -12, false, "Stimme"));
+        assertEquals("zu kurz zum Messen", SpeechGate.report(false, -90, -40, -90, true, null));
+    }
+
     /** Fehlt das Startsignal ganz, lernt die Schranke nach der Wartezeit trotzdem und wird scharf. */
     @Test
     public void ohneStartsignalLerntSieNachDerWartezeit() {

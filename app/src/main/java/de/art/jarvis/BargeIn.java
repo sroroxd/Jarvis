@@ -34,6 +34,11 @@ final class BargeIn {
         void onArtSpeaks();
     }
 
+    /** Messzeile nach jedem Durchgang (siehe {@link SpeechGate#report}). */
+    interface ReportListener {
+        void onReport(String report);
+    }
+
     /** Lädt den Wachwort-Erkenner (läuft auf dem Aufnahme-Thread, darf werfen). */
     interface DetectorLoader {
         WakeWordDetector load() throws Exception;
@@ -62,6 +67,7 @@ final class BargeIn {
     private WakeWordDetector detector;
     private boolean detectorFailed;
     private boolean releaseRequested;
+    private ReportListener reportListener;
 
     BargeIn(Listener listener, DetectorLoader loader) {
         this.listener = listener;
@@ -87,6 +93,10 @@ final class BargeIn {
         voiceStarted = true;
         SpeechGate g = gate;
         if (g != null) g.voiceStarted();
+    }
+
+    void setReportListener(ReportListener l) {
+        reportListener = l;
     }
 
     void setMargin(double marginDb) {
@@ -129,6 +139,10 @@ final class BargeIn {
         AcousticEchoCanceler aec = null;
         NoiseSuppressor ns = null;
         boolean heard = false;
+        String trigger = null;
+        String report = "Mikrofon nicht verfügbar";
+        SpeechGate g = null;
+        double peak = -90;
         try {
             WakeWordDetector wakeWord = wakeThreshold >= 0 ? detector() : null;
             if (wakeWord != null) wakeWord.reset();
@@ -149,7 +163,7 @@ final class BargeIn {
                 if (ns != null) ns.setEnabled(true);
             }
             record.startRecording();
-            SpeechGate g = new SpeechGate(margin);
+            g = new SpeechGate(margin);
             gate = g;
             if (voiceStarted) g.voiceStarted(); // Stimme lief schon, bevor das Mikrofon frei war
             short[] frame = new short[SpeechGate.FRAME];
@@ -164,7 +178,11 @@ final class BargeIn {
                     filled += n;
                 }
                 if (!active) break;
-                if (g.feed(frame, 0, frame.length)) heard = true;
+                if (g.feed(frame, 0, frame.length)) {
+                    heard = true;
+                    trigger = "Stimme";
+                }
+                if (g.armed()) peak = Math.max(peak, SpeechGate.dbfs(frame, 0, frame.length));
                 if (!heard && wakeWord != null) {
                     System.arraycopy(frame, 0, chunk, chunkFill, frame.length);
                     chunkFill += frame.length;
@@ -172,7 +190,10 @@ final class BargeIn {
                         chunkFill = 0;
                         float threshold = wakeThreshold;
                         try {
-                            if (threshold >= 0 && wakeWord.process(chunk) >= threshold) heard = true;
+                            if (threshold >= 0 && wakeWord.process(chunk) >= threshold) {
+                                heard = true;
+                                trigger = "„Jarvis“";
+                            }
                         } catch (Exception e) {
                             wakeWord = null; // nur das Wachwort fällt aus, die Lautstärke-Schranke läuft weiter
                         }
@@ -183,6 +204,7 @@ final class BargeIn {
         } catch (Throwable ignored) {
             // Kein Dazwischenreden ist besser als ein Absturz: Jarvis spricht dann einfach zu Ende.
         } finally {
+            if (g != null) report = SpeechGate.report(g.armed(), g.echoDb(), g.thresholdDb(), peak, echoCanceller, trigger);
             gate = null;
             if (aec != null) aec.release();
             if (ns != null) ns.release();
@@ -195,7 +217,11 @@ final class BargeIn {
                 record.release();
             }
             final boolean speech = heard;
-            main.post(() -> finished(speech));
+            final String line = report;
+            main.post(() -> {
+                if (reportListener != null) reportListener.onReport(line);
+                finished(speech);
+            });
         }
     }
 

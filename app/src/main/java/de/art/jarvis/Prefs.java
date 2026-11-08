@@ -287,6 +287,18 @@ public final class Prefs {
         sp.edit().putBoolean("barge_in", value).apply();
     }
 
+    /**
+     * Im Dauergespräch wie bei einem Videoanruf abspielen (Telefonmodus über den Lautsprecher), damit die
+     * Echo-Unterdrückung des Handys Jarvis' Stimme herausfiltert. Standard an.
+     */
+    public boolean echoCallMode() {
+        return sp.getBoolean("echo_call_mode", true);
+    }
+
+    public void setEchoCallMode(boolean value) {
+        sp.edit().putBoolean("echo_call_mode", value).apply();
+    }
+
     /** Wie leicht Arts Stimme Jarvis unterbricht: 1 = schwer, 10 = sehr leicht (Wunsch #25). */
     public int bargeInSensitivity() {
         return clamp(sp.getInt("barge_in_sensitivity", SpeechGate.DEFAULT_LEVEL), 1, 10);

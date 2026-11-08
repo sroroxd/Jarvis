@@ -290,7 +290,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         } else if (timing.isEmpty() || s != JarvisService.State.IDLE) {
             b.hint.setText("Tippen: Dauergespräch · Lang drücken: neues Gespräch");
         } else {
-            b.hint.setText("Letzte Antwort: " + timing);
+            String report = JarvisService.bargeInReport();
+            b.hint.setText("Letzte Antwort: " + timing + (report.isEmpty() ? "" : "\nDazwischenreden: " + report));
         }
         b.stopButton.setVisibility(running ? View.VISIBLE : View.INVISIBLE);
         if (demo != null) {
