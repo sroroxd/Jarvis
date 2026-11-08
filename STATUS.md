@@ -150,7 +150,12 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
    Testskript. Die Grundanweisung verlangte ausgeschriebene Zahlwörter, dabei verhaspelt sich das Modell.
    Jetzt Ziffern (jede Sprachausgabe liest sie vor); das Vorlesen verschluckt keine Zahl am Satzanfang
    mehr („51. …“ galt als Nummerierung).
-8. Kleinkram: Cache-Anzeige wurde von der Meta-Recherche überschrieben; Kalender-Werkzeug verwies
+8. **Selbst-Update scheiterte** („write failed: EBADF“, dann „INSTALL_FAILED_ABORTED“, Arts Test mit
+   Build 59): Der Schreib-Stream wurde nach dem Übergeben der Installation ein zweites Mal geschlossen;
+   der Fehler daraus ließ die Fehlerbehandlung die schon übergebene Installation verwerfen. Jetzt
+   genau einmal schließen, dann übergeben (Reihenfolge laut Android-Doku); Übergebenes wird nie
+   verworfen. Test-Apps bis Build 62 haben noch den alten Fehler – einmal von Hand installieren.
+9. Kleinkram: Cache-Anzeige wurde von der Meta-Recherche überschrieben; Kalender-Werkzeug verwies
    auf die Uhrzeit „in der Systemanweisung“ (steht seit #13 in der `[KONTEXT]`-Zeile).
 
 **Geprüft:** Build (Release und Debug), alle 130 Unit-Tests inklusive Wachwort mit echten Aufnahmen.

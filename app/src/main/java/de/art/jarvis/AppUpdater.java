@@ -60,6 +60,7 @@ final class AppUpdater {
             params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
         }
         int sessionId = -1;
+        boolean committed = false;
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(apkUrl).openConnection();
@@ -71,34 +72,41 @@ final class AppUpdater {
             long total = conn.getContentLengthLong();
 
             sessionId = installer.createSession(params);
-            try (PackageInstaller.Session session = installer.openSession(sessionId);
-                 InputStream in = conn.getInputStream();
-                 OutputStream out = session.openWrite("jarvis.apk", 0, total)) {
-                byte[] buf = new byte[64 * 1024];
-                long done = 0;
-                int lastPercent = -1;
-                int n;
-                while ((n = in.read(buf)) != -1) {
-                    out.write(buf, 0, n);
-                    done += n;
-                    int percent = total > 0 ? (int) (done * 100 / total) : -1;
-                    if (percent >= 0 && percent / 10 != lastPercent / 10) {
-                        lastPercent = percent;
-                        final int p = percent;
-                        activity.runOnUiThread(() -> progress.status("Build " + build + " wird geladen: " + p + " %"));
+            try (PackageInstaller.Session session = installer.openSession(sessionId)) {
+                // Reihenfolge laut Android-Doku: schreiben, fsync, Stream EINMAL schließen, dann commit.
+                // Vorher schloss try-with-resources den Stream nach dem commit ein zweites Mal. Der Stream
+                // des Systems verträgt das nicht („write failed: EBADF“), und der Fehlerzweig unten verwarf
+                // daraufhin die schon übergebene Installation („INSTALL_FAILED_ABORTED“, Arts Test am 8. Nov.).
+                try (InputStream in = conn.getInputStream();
+                     OutputStream out = session.openWrite("jarvis.apk", 0, total)) {
+                    byte[] buf = new byte[64 * 1024];
+                    long done = 0;
+                    int lastPercent = -1;
+                    int n;
+                    while ((n = in.read(buf)) != -1) {
+                        out.write(buf, 0, n);
+                        done += n;
+                        int percent = total > 0 ? (int) (done * 100 / total) : -1;
+                        if (percent >= 0 && percent / 10 != lastPercent / 10) {
+                            lastPercent = percent;
+                            final int p = percent;
+                            activity.runOnUiThread(() -> progress.status("Build " + build + " wird geladen: " + p + " %"));
+                        }
                     }
-                }
-                session.fsync(out);
-                out.close();
+                    session.fsync(out);
+                } // hier wird der Stream genau einmal geschlossen
                 Intent result = new Intent(activity, UpdateReceiver.class).setAction(ACTION_RESULT);
                 // MUTABLE: Android trägt Status und ggf. den Bestätigungsdialog als Extras ein.
                 PendingIntent pi = PendingIntent.getBroadcast(activity, sessionId, result,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
                 activity.runOnUiThread(() -> progress.status("Build " + build + " wird installiert …"));
                 session.commit(pi.getIntentSender());
+                committed = true;
             }
             return null;
         } catch (Exception e) {
+            // Eine übergebene Installation nie verwerfen – Android meldet ihr Ergebnis an UpdateReceiver.
+            if (committed) return null;
             if (sessionId != -1) {
                 try {
                     installer.abandonSession(sessionId);
