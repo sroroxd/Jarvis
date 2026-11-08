@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Das Herz von Jarvis: hört auf „Jarvis“ (oder Antippen), sieht den Bildschirm,
+ * Das Herz von Jarvis: hört durchgehend zu („Immer zuhören“, sonst nach Antippen), sieht den Bildschirm,
  * fragt Claude und spricht die Antwort.
  *
  * <p>Sichtbar ist nur, was eingeschaltet ist: das schwebende J (Standard aus) und die
@@ -99,7 +99,6 @@ public class JarvisService extends Service {
     private static String lastModel = "";
     private final Timing timing = new Timing();
     private static boolean screenShared;
-    private static String wakeProblem;
     private static boolean screenAwake = true;
 
     public static boolean isRunning() {
@@ -108,14 +107,6 @@ public class JarvisService extends Service {
 
     static State currentState() {
         return uiState;
-    }
-
-    static String lastYou() {
-        return lastYou;
-    }
-
-    static String lastJarvis() {
-        return lastJarvis;
     }
 
     /** Zeitmessung der letzten Antwort, z. B. „Zuhören 0,4 s · KI 1,8 s · Stimme 0,6 s · gesamt 2,8 s“. */
@@ -139,15 +130,6 @@ public class JarvisService extends Service {
         return running && screenShared;
     }
 
-    /** Fehlertext der Wachwort-Erkennung oder {@code null}. */
-    static String wakeProblem() {
-        return wakeProblem;
-    }
-
-    static boolean isScreenAwake() {
-        return screenAwake;
-    }
-
     static void setUiListener(UiListener listener) {
         ui = listener;
     }
@@ -161,7 +143,6 @@ public class JarvisService extends Service {
     private State state = State.IDLE;
     private Prefs prefs;
     private ClaudeClient claude;
-    private GeminiClient gemini;
     /** Websuche und Kalender – nur im Alltag mit Claude (der Spielmodus bleibt unverändert schnell). */
     private Tools tools;
     private AgentClient agent;
@@ -213,10 +194,7 @@ public class JarvisService extends Service {
 
     private FloatingJ floatingJ;
     private Subtitles subtitles;
-    private WakeWordEngine wake;
     private Earcon earcon;
-    private long wakeRetryMs = 2000;
-    private boolean wakeErrorSpoken;
     private boolean receiverRegistered;
 
     /** Nach der Sprechpause ist niemand mehr zu hören → abschicken. */
@@ -232,22 +210,10 @@ public class JarvisService extends Service {
         finishListening();
     };
 
-    /** Nach dem Zuhören das Wachwort wieder scharf schalten (kurz warten, bis die Spracherkennung das Mikrofon frei gibt). */
-    private final Runnable resumeWake = () -> {
-        if (state != State.LISTENING) updateWake();
-    };
-
-    private final Runnable retryWake = () -> {
-        wakeProblem = null;
-        updateWake();
-        notifyUi();
-    };
-
     private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             screenAwake = Intent.ACTION_SCREEN_ON.equals(intent.getAction());
-            updateWake();
             updateGameWatch();
             updateProactive();
             updateAlwaysListen();
@@ -265,13 +231,12 @@ public class JarvisService extends Service {
         claude = new ClaudeClient();
         // Tagessumme der Kosten: jede Anfrage zählt, auch Phasen-Wächter und Meta-Recherche (Arts Plan vom 30. Okt.).
         ClaudeClient.costListener = usd -> prefs.addCost(today(), usd);
-        gemini = new GeminiClient();
         tools = new Tools(this);
         agent = new AgentClient();
         eleven = new ElevenTts(this);
         earcon = new Earcon();
-        // Eigener Wachwort-Erkenner fürs Dazwischenreden: „Jarvis“ unterbricht auch im Dauergespräch.
-        bargeIn = new BargeIn(this::onArtSpeaks, () -> WakeWordEngine.load(getAssets()));
+        // Eigener „Jarvis“-Erkenner fürs Dazwischenreden: „Jarvis“ unterbricht, während Jarvis spricht.
+        bargeIn = new BargeIn(this::onArtSpeaks, () -> WakeModel.load(getAssets()));
         wishSender = new WishSender();
         gameWatch = new GameWatch(this, this::onGameChanged);
         talkAudio = new TalkAudio(this);
@@ -282,17 +247,6 @@ public class JarvisService extends Service {
         });
         subtitles = new Subtitles(this);
         wm = getSystemService(WindowManager.class);
-        wake = new WakeWordEngine(this, new WakeWordEngine.Listener() {
-            @Override
-            public void onWakeWord() {
-                JarvisService.this.onWakeWord();
-            }
-
-            @Override
-            public void onWakeError(String message) {
-                JarvisService.this.onWakeError(message);
-            }
-        });
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Jarvis", NotificationManager.IMPORTANCE_LOW));
         screenAwake = getSystemService(PowerManager.class).isInteractive();
@@ -368,7 +322,6 @@ public class JarvisService extends Service {
             unregisterReceiver(screenReceiver);
             receiverRegistered = false;
         }
-        wake.release();
         gameWatch.stop();
         watchExecutor.shutdown();
         talkAudio.exit();
@@ -402,7 +355,7 @@ public class JarvisService extends Service {
         return null;
     }
 
-    /** Übernimmt geänderte Einstellungen (J, Untertitel, Wachwort, Spielmodus) sofort. */
+    /** Übernimmt geänderte Einstellungen (J, Untertitel, Zuhören, Spielmodus) sofort. */
     private void applySettings() {
         // Moduswechsel (per Sprache, Schalter auf dem Startbildschirm oder in den Einstellungen) = neues Gespräch:
         // Alltagsgespräche gehören nicht ins TFT-Coaching – und Pläne der letzten Partie nicht in die nächste.
@@ -422,11 +375,6 @@ public class JarvisService extends Service {
             floatingJ = null;
         }
         if (!subtitlesWanted()) subtitles.hide();
-        wake.setSensitivity(prefs.sensitivity());
-        wakeProblem = null;
-        wakeRetryMs = 2000;
-        main.removeCallbacks(retryWake);
-        updateWake();
         updateGameWatch();
         updateTalkAudio();
         updateProactive();
@@ -541,7 +489,7 @@ public class JarvisService extends Service {
 
     private boolean proactiveWanted() {
         return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
-                && !prefs.isGemini() && !prefs.apiKey().isEmpty();
+                && !prefs.apiKey().isEmpty();
     }
 
     /** Wächter an, wenn Spielmodus, Bildschirmfreigabe und Einstellung passen; sonst aus. */
@@ -739,7 +687,7 @@ public class JarvisService extends Service {
      * Nach einem Fehlschlag frühestens nach 30 Minuten erneut.
      */
     private void maybeUpdateMeta() {
-        if (metaRunning || !prefs.tftMode() || prefs.isGemini() || prefs.apiKey().isEmpty()) return;
+        if (metaRunning || !prefs.tftMode() || prefs.apiKey().isEmpty()) return;
         final String today = today();
         if (Meta.isFresh(prefs.metaDate(), today)) return;
         long now = SystemClock.elapsedRealtime();
@@ -865,24 +813,15 @@ public class JarvisService extends Service {
         updateTalkAudio(); // vor dem Sprechen: Telefonmodus passend zum Dauergespräch
         if (floatingJ != null) floatingJ.setState(s);
         if (ui != null) ui.onStateChanged(s);
-        if (old == State.LISTENING && s != State.LISTENING) {
-            main.removeCallbacks(resumeWake);
-            main.postDelayed(resumeWake, 350);
-        }
         // Dazwischenreden: Spricht Jarvis im Dauergespräch, lauscht ein eigenes Mikrofon mit
-        // Echo-Unterdrückung, ob Art anfängt zu reden. Es ersetzt dann das Wachwort-Mikrofon,
-        // weil zwei Aufnahmen gleichzeitig sich gegenseitig stören können – und hört dafür selbst auf „Jarvis“.
+        // Echo-Unterdrückung, ob Art anfängt zu reden – und hört dabei auf „Jarvis“.
         if (s == State.SPEAKING && old != State.SPEAKING) {
             // Die Echo-Schranke lernt erst, wenn die Stimme wirklich zu hören ist (siehe onVoiceStarted).
             bargeIn.newUtterance();
             if (bargeInWanted()) {
-                // „Jarvis“ unterbricht immer, auch wenn „Freihändig mit Jarvis“ aus ist – so versprechen es Hilfe und
-                // Einstellungen. Vorher hing es am Schalter; bei Art (Schalter aus) unterbrach „Jarvis“ nie.
                 bargeIn.setWakeThreshold(Prefs.thresholdFor(prefs.sensitivity()));
                 bargeIn.setMargin(SpeechGate.marginFor(prefs.bargeInSensitivity()));
-                wake.stop(() -> {
-                    if (state == State.SPEAKING && bargeInWanted() && running) bargeIn.start();
-                });
+                bargeIn.start();
             }
         } else if (s != State.SPEAKING) {
             bargeIn.stop(null);
@@ -912,46 +851,6 @@ public class JarvisService extends Service {
         if (you != null && !you.isEmpty()) chatLog.art(you);
         if (jarvis != null && !jarvis.isEmpty()) chatLog.jarvis(jarvis);
         if (ui != null) ui.onExchange(lastYou, lastJarvis);
-    }
-
-    // ---------------------------------------------------------------- Wachwort „Jarvis“
-
-    private void updateWake() {
-        boolean should = running && prefs.wakeWord() && micGranted() && screenAwake
-                && state != State.LISTENING && wakeProblem == null
-                && !(state == State.SPEAKING && bargeInWanted()); // dann lauscht das Dazwischenreden
-        if (should) wake.start();
-        else wake.stop(null);
-    }
-
-    private void onWakeWord() {
-        if (!running) return;
-        wakeRetryMs = 2000;
-        switch (state) {
-            case LISTENING:
-                return;
-            case SPEAKING:
-                stopSpeaking();
-                break;
-            case THINKING:
-                requestId++; // laufende Antwort verwerfen – Art hat eine neue Frage
-                break;
-            default:
-                break;
-        }
-        startListening();
-    }
-
-    private void onWakeError(String message) {
-        wakeProblem = message;
-        notifyUi();
-        if (!wakeErrorSpoken) {
-            wakeErrorSpoken = true;
-            statusBriefly("Wachwort pausiert: " + message);
-        }
-        main.removeCallbacks(retryWake);
-        main.postDelayed(retryWake, wakeRetryMs);
-        wakeRetryMs = Math.min(30000, wakeRetryMs * 2);
     }
 
     // ---------------------------------------------------------------- Ablauf
@@ -1026,10 +925,10 @@ public class JarvisService extends Service {
         if (prefs.earcon() && !quiet) earcon.play();
         if (prefs.tftMode()) subtitles.hide(); // alte Antwort weg, Spielbild frei
         status("Ich höre …");
-        // Erst die Mikrofone freigeben (Dazwischenreden, Wachwort), dann übernimmt die Spracherkennung.
-        bargeIn.stop(() -> wake.stop(() -> {
+        // Erst das Dazwischenreden-Mikrofon freigeben, dann übernimmt die Spracherkennung.
+        bargeIn.stop(() -> {
             if (state == State.LISTENING) beginRecognition();
-        }));
+        });
     }
 
     /**
@@ -1380,12 +1279,12 @@ public class JarvisService extends Service {
         }
 
         // Werkzeuge (Websuche, Kalender) nur im Alltag mit Claude – der Spielmodus bleibt schnell und nutzt die Tages-Meta.
-        boolean withTools = !prefs.tftMode() && !prefs.isGemini();
+        boolean withTools = !prefs.tftMode();
         String system = Persona.system(prefs.tftMode(), prefs.memory(), prefs.metaText(), prefs.metaDate(),
                 withTools, prefs.agentReady());
         // Satzweise sprechen, während Claude noch schreibt (Handy-Stimme). ElevenLabs bekommt die Antwort weiter am
-        // Stück – dort wäre jeder Satz eine eigene Anfrage. Gemini streamt hier nicht.
-        final StreamSpeech stream = prefs.isGemini() || !prefs.elevenKey().isEmpty() ? null : new StreamSpeech(id);
+        // Stück – dort wäre jeder Satz eine eigene Anfrage.
+        final StreamSpeech stream = !prefs.elevenKey().isEmpty() ? null : new StreamSpeech(id);
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
@@ -1423,7 +1322,7 @@ public class JarvisService extends Service {
                     Backup.autoSave(JarvisService.this, prefs);
                 }
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
-                ClaudeClient.Usage used = prefs.isGemini() ? null : ClaudeClient.lastUsage;
+                ClaudeClient.Usage used = ClaudeClient.lastUsage;
                 testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + netSuffix() + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", GameReadout.forHistory(stand, answer));
@@ -1448,13 +1347,12 @@ public class JarvisService extends Service {
         };
         timing.sent(SystemClock.elapsedRealtime());
         lastModel = prefs.model();
-        if (prefs.isGemini()) gemini.send(key, prefs.model(), system, messages, callback);
         // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
         // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
         // Spielmodus standardmäßig „low“ wie im Alltag (Wunsch #23: Tempo zuerst) – das genaue Hinsehen übernimmt die
         // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
         // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
-        else claude.send(key, prefs.model(), system, messages, effortFor(text),
+        claude.send(key, prefs.model(), system, messages, effortFor(text),
                 withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
     }
 
@@ -1635,7 +1533,7 @@ public class JarvisService extends Service {
     private void noteWish(String title, String body, boolean confirm) {
         // Schon notiert (gleicher Titel oder dasselbe Thema)? Dann kein zweites Issue. Vorher wurde jeder Wunsch
         // gesendet, auch wenn derselbe Titel schon gespeichert war – am 8. Nov. neun Issues für drei Wünsche.
-        Wishes.Wish known = Wishes.similar(prefs.wishes(), title);
+        Wishes.Wish known = Wishes.similar(prefs.wishes(), title, body);
         if (known == null) {
             prefs.setWishes(Wishes.add(prefs.wishes(), title, body));
             Backup.autoSave(this, prefs);
@@ -1757,7 +1655,7 @@ public class JarvisService extends Service {
     }
 
     private boolean debuggable() {
-        return (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        return BuildConfig.DEBUG;
     }
 
     /** Protokollzeile für den Gesprächstest in der CI; in der Handy-Version (Release) passiert nichts. */
@@ -1811,23 +1709,23 @@ public class JarvisService extends Service {
     private void onVoiceStarted() {
         bargeIn.voiceStarted(); // ab jetzt lernt die Echo-Schranke Jarvis' eigene Stimme
         if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
-            ClaudeClient.Usage usage = prefs.isGemini() ? null : ClaudeClient.lastUsage;
+            ClaudeClient.Usage usage = ClaudeClient.lastUsage;
             lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary())
                     + costSuffix() + netSuffix() + ")";
             notifyUi();
         }
     }
 
-    /** „ · 0,6 ct“ – Kosten der letzten Antwort in US-Cent; leer bei Gemini oder unbekanntem Modell. */
-    /** „ · Senden 0,4 s (380 KB) · Claude 0,9 s“ – zerlegt die Wartezeit „KI“ (Wunsch #43); leer bei Gemini. */
+    /** „ · Senden 0,4 s (380 KB) · Claude 0,9 s“ – zerlegt die Wartezeit „KI“ (Wunsch #43). */
     private String netSuffix() {
-        ClaudeClient.Net net = prefs.isGemini() ? null : ClaudeClient.lastNet;
+        ClaudeClient.Net net = ClaudeClient.lastNet;
         String n = net == null ? null : net.summary();
         return n == null ? "" : " · " + n;
     }
 
+    /** „ · 0,6 ct“ – Kosten der letzten Antwort in US-Cent; leer bei unbekanntem Modell. */
     private String costSuffix() {
-        double usd = prefs.isGemini() ? -1 : ClaudeClient.lastCostUsd;
+        double usd = ClaudeClient.lastCostUsd;
         return usd < 0 ? "" : " · " + Costs.cents(usd);
     }
 

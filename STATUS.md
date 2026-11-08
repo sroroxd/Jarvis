@@ -97,6 +97,45 @@ die Zweige `main` und `ccr-4f440a4a-dx81et`, die Releases und Tags `v1.0.43` (no
 Früher erledigt (4. Nov.): Repo geprüft – keine fremden Pushes, keine echten Schlüssel im Code;
 „Automatically delete head branches“ ist eingeschaltet.
 
+### Repo-Durchsicht am Nachmittag des 8. Nov. (Arts Auftrag: Doppeltes und Überbleibsel)
+
+**Zweige und PRs:** `zeitmessung-netz` (PR #53, Latenz-Messung und Zeitmessung) übernommen; `latenz-messung`
+steckt vollständig darin und kann weg. PR #49 geschlossen – sein einziger Commit kam mit #53 nach `main`.
+
+**Toter Code entfernt:**
+- *Gemini ganz raus* (`GeminiClient`, `isGemini`, Modell-Standard, Schlüsselerkennung): Jarvis fragt
+  ausschließlich Claude. Die Verzweigungen lagen an elf Stellen und machten jede Messung und jede
+  Kostenanzeige doppelt zu lesen.
+- *Wachwort als Aktivierung raus*: `WakeWordEngine` (eigenes Mikrofon, Fehler-Wiederholung,
+  „Wachwort pausiert“) ist seit „Immer zuhören“ unerreichbar. Geblieben ist `WakeModel` – nur noch das
+  Laden des Modells für `BargeIn`, damit „Jarvis“ weiter unterbricht. Auch `Prefs.wakeWord`,
+  der Sicherungseintrag und der tote Zweig in `Backup` sind weg.
+- Vier fast gleiche `readAll`-Kopien → `Io.readAll`; `BuildConfig.DEBUG` statt viermal `FLAG_DEBUGGABLE`;
+  tote Methoden (`echoCancellerActive`, `isSpeaking`, `lastYou`, `lastJarvis`, `wakeProblem`,
+  `isScreenAwake`, `setAgentPort`, `Timing.answered`) entfernt.
+
+**Dabei gefundene echte Fehler:**
+- *Zeitmessung zeigte fremde Werte:* `ClaudeClient.lastNet` (aus #53) wurde auch vom Phasen-Wächter (alle 6 s)
+  und von der Meta-Recherche gesetzt. Auf dem Startbildschirm stand dann deren „Senden/Claude“ statt der
+  Werte von Arts Frage. Jetzt zählt nur noch der Thread, der Arts Fragen beantwortet.
+- *Dazwischenreden konnte stillschweigend ausfallen:* Kam der nächste Satz, während das Mikrofon noch
+  freigegeben wurde, tat `BargeIn.start()` nichts – und für diesen Satz war das Unterbrechen aus. Jetzt
+  startet es nach der Freigabe nach.
+- Zwei Javadoc-Blöcke aus #53 standen über der falschen Methode.
+
+**Wunsch-Erkennung verbessert:** `Wishes.similar` verglich nur Titel. Arts dreifacher Stimm-Wunsch
+(#50–#52) teilt im Titel nur „Stimme“ – daraus wurden drei Issues. Jetzt zählt auch die Beschreibung.
+Gegen alle 33 echten Wünsche geprüft (`app/src/test/resources/wuensche_8nov.tsv`): 28 statt 11 doppelte
+Paare erkannt, keines falsch zusammengelegt.
+
+**Aufräum-Workflow ohne Pflegeliste:** `aufraeumen.yml` hatte feste Listen vom Morgen, längst abgearbeitet.
+Jetzt löscht er selbst, was nachweislich weg kann – Zweige, die ganz in `main` stecken, Test-Apps gelöschter
+Zweige, ältere `v1.0.x` außer der neuesten. Mit „nur_anzeigen = ja“ erst ansehen. Logik mit nachgebauten
+GitHub-Antworten geprüft.
+
+**Lint:** keine Fehler mehr (`clearCommunicationDevice` braucht API 31), keine ungenutzte Ressource
+(`ic_mic.xml` entfernt). README auf den heutigen Stand gebracht.
+
 ## Was als Nächstes kommt
 
 0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die

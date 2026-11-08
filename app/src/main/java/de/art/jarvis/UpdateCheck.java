@@ -1,10 +1,7 @@
 package de.art.jarvis;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -141,7 +138,7 @@ final class UpdateCheck {
             conn.setRequestProperty("accept", "application/vnd.github+json");
             conn.setRequestProperty("user-agent", "Jarvis-App"); // GitHub verlangt einen User-Agent
             if (conn.getResponseCode() != 200) return null;
-            String body = readAll(conn.getInputStream());
+            String body = Io.readAll(conn.getInputStream());
             Result r = testApp
                     ? newestTestApp(new org.json.JSONArray(body))
                     : fromRelease(new org.json.JSONObject(body));
@@ -161,13 +158,4 @@ final class UpdateCheck {
         }
     }
 
-    private static String readAll(InputStream in) throws java.io.IOException {
-        try (InputStream is = in) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = is.read(buf)) != -1) out.write(buf, 0, n);
-            return out.toString(StandardCharsets.UTF_8.name());
-        }
-    }
 }

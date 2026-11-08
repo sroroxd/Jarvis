@@ -1,6 +1,6 @@
 # Jarvis
 
-Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude als Gehirn. Freihändig per „Jarvis“ oder als Dauergespräch, sieht den Bildschirm und antwortet mit Stimme. Lange Aufgaben übernimmt ein Agent auf dem Handy (Claude Code in Termux).
+Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude als Gehirn. Hört zu, sobald man losredet, sieht den Bildschirm und antwortet mit Stimme. Hauptaufgabe: Live-Coach für Teamfight Tactics, der sich in jeder Planungsphase von selbst meldet. Lange Aufgaben übernimmt ein Agent auf dem Handy (Claude Code in Termux).
 
 ## Herunterladen
 
@@ -8,33 +8,35 @@ Persönlicher Android-Assistent für das Galaxy S24 Ultra – mit Claude als Geh
 
 Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentlicht. Sie lässt sich direkt über die alte installieren; Schlüssel, Gedächtnis und Einstellungen bleiben erhalten.
 
-**Test-Apps von Arbeitszweigen:** Jeder andere Zweig baut die separate App **„Jarvis Test“** (Vorab-Version `test-<Zweig>`, z. B. https://github.com/sroroxd/Jarvis/releases/download/test-sammeltest/JarvisTest.apk). Sie installiert sich neben der normalen App, hat eigene Einstellungen und überschreibt nichts. Immer nur eine der beiden Apps einschalten, sonst reagieren beide auf das Wachwort.
+**Test-Apps von Arbeitszweigen:** Jeder andere Zweig baut die separate App **„Jarvis Test“** (Vorab-Version `test-<Zweig>`). Sie installiert sich neben der normalen App, hat eigene Einstellungen und überschreibt nichts. Immer nur eine der beiden Apps laufen lassen, sonst hören beide zu.
 
-**Welche Version läuft?** Steht oben auf dem Startbildschirm („Build N“ bzw. „Test-Build N“). Liegt auf GitHub eine neuere, meldet die App das beim Öffnen und bietet „Laden“ an.
+**Welche Version läuft?** Steht oben auf dem Startbildschirm („Build N“ bzw. „Test-Build N“). Liegt auf GitHub eine neuere, meldet die App das beim Öffnen; **„Installieren“** spielt sie direkt ein (über die GitHub-API, bis zu vier Versuche, sonst „Nochmal“).
 
 ## Einrichten
 
 1. APK installieren („Aus dieser Quelle erlauben“ bestätigen).
-2. Jarvis öffnen → **Zahnrad** (Einstellungen) → API-Schlüssel einfügen → **Schlüssel testen**. Jarvis erkennt den Anbieter selbst:
-   - **Claude:** platform.claude.com → API Keys (beginnt mit `sk-ant-`)
-   - Ein Gemini-Schlüssel (`AIza…`) funktioniert als Notlösung ebenfalls, ist aber nicht der vorgesehene Weg.
-3. Das Feld **Modell** leer lassen: Claude Sonnet 5.5 – im Alltag denkt er nur bei kniffligen Fragen kurz nach (schnell), im Spielmodus etwas gründlicher. Antworten kommen Satz für Satz, während Claude noch schreibt. Sparvariante: `claude-haiku-5-5` eintragen.
-4. Zurück zum Startbildschirm, auf den **Kern** tippen → Mikrofon, Mitteilungen und „Über anderen Apps anzeigen“ (für Untertitel) erlauben → **Gesamter Bildschirm** teilen.
-5. Optional: Seitentaste → Zweimal drücken → App öffnen → **Jarvis sprechen**.
+2. Jarvis öffnen → **Zahnrad** (Einstellungen) → Claude-API-Schlüssel einfügen (platform.claude.com → API Keys, beginnt mit `sk-ant-`) → **Schlüssel testen**.
+3. Das Feld **Modell** leer lassen: Claude Sonnet 5.5. Sparvariante: `claude-haiku-5-5`.
+4. Zurück zum Startbildschirm, auf den **Kern** tippen → Mikrofon, Mitteilungen und „Über anderen Apps anzeigen“ erlauben → **Gesamter Bildschirm** teilen.
+5. Einstellungen → Spielmodus: **„TFT automatisch erkennen“** (einmal „Nutzungsdatenzugriff“ erlauben) und **„Im Hintergrund weiterlaufen lassen“** (sonst beendet Samsung Jarvis gern mitten in der Partie).
+6. Optional: Seitentaste → Zweimal drücken → App öffnen → **Jarvis sprechen**.
 
 ## Bedienung
 
-- **Dauergespräch:** einmal auf den **Kern** tippen (oder „Sprechen“ in der Benachrichtigung, Seitentaste, schwebendes J). Danach hört Jarvis nach jeder Antwort von selbst weiter zu – kein erneutes Tippen. Beenden: nochmal tippen oder „Gespräch beenden“; nach 15 Minuten ohne ein Wort endet es von selbst. Auch per Sprache: „Hör durchgehend zu“ oder „Dauergespräch an/aus“ – sagt man es in eigenen Worten, schaltet Claude selbst um.
-- **„Jarvis“** sagen und lossprechen – für eine einzelne Frage. „Hey Jarvis“ geht auch. Pausen sind erlaubt – abgeschickt wird nach der eingestellten Sprechpause.
-- **Während Jarvis spricht:** „Jarvis“ unterbricht und hört neu zu.
-- **Kern lange drücken:** neues Gespräch (Verlauf und Zusammenhang werden geleert).
-- **Bildschirm:** Chip „Bildschirm“ oben gibt den Bildschirm frei, ohne Neustart; ab Android 14 wird nur „Gesamter Bildschirm“ angeboten. Jede Frage bekommt ein frisches Bild vom Moment der Frage. Eine Bildschirmaufnahme des Handys kann die Freigabe beenden – das steht dann im Verlauf.
-- **Verlauf:** unter dem Kern steht das ganze Gespräch, scrollbar.
-- **Lange Aufgaben:** „Übernimm das: …“, „Auftrag: …“, „Kümmere dich um …“ gibt sie an den Agenten auf dem Handy (siehe `agent/README.md`).
-- **Termine und Websuche:** „Was steht morgen an?“, „Trag mir Freitag 18 Uhr Training ein“; aktuelle Fragen beantwortet Claude mit Websuche.
-- **„Spielmodus an“ / „Spielmodus aus“** schaltet per Sprache um – oder der Schalter auf dem Startbildschirm. Jeder Moduswechsel beginnt ein frisches Gespräch.
-- **„Neue Partie“** (oder „neues Spiel“): Jarvis vergisst den Verlauf der letzten Partie, damit alte Pläne nicht weiterwirken; der Spielmodus geht dabei an.
+- **Einfach losreden:** Mit „Immer zuhören“ (Standard, Chip „Zuhören“) hört Jarvis durchgehend zu, solange er läuft und der Bildschirm an ist – ohne Wachwort, ohne Antippen. Was nicht an ihn gerichtet ist (Gespräch mit anderen, Fernseher), lässt er unbeantwortet. Bildschirm aus: Zuhören pausiert, beim Einschalten geht es weiter.
+- **Kern antippen:** pausiert das Zuhören; nochmal tippen hört wieder zu. „Gespräch beenden“ pausiert ebenso.
+- **Während Jarvis spricht:** losreden oder „Jarvis“ sagen unterbricht ihn. Damit seine eigene Stimme nicht als Unterbrechung zählt, spricht er im Dauergespräch wie bei einem Videoanruf (Telefonmodus mit Echo-Unterdrückung).
+- **Kern lange drücken:** neues Gespräch (Verlauf wird geleert).
+- **Bildschirm:** Chip „Bildschirm“ gibt den Bildschirm frei, ohne Neustart. Jede Frage bekommt ein frisches Bild vom Moment der Frage.
 - **„Merk dir …“** speichert dauerhaft, **„Vergiss …“** löscht. Alles einsehbar unter Einstellungen → Gedächtnis.
+- **„Notier für die Entwicklung: …“** – oder einfach über einen Wunsch reden: Jarvis legt ihn als GitHub-Issue an (gleiche Wünsche nur einmal).
+- **Lange Aufgaben:** „Übernimm das: …“ gibt sie an den Agenten auf dem Handy (siehe `agent/README.md`).
+- **Termine und Websuche** im Alltag: „Was steht morgen an?“, „Trag mir Freitag 18 Uhr Training ein“.
+
+**Messzeilen auf dem Startbildschirm** (nach jeder Antwort):
+- *Letzte Antwort:* Zuhören · KI · Stimme · gesamt, dazu Modell, Cache, Kosten der Antwort und „Senden … (KB) · Claude …“ – zeigt, wo die Sekunden liegen.
+- *Dazwischenreden:* Echo, Schwelle, lautester Moment, ob und wodurch unterbrochen, Telefonmodus.
+- *Heute bisher:* alle Claude-Anfragen des Tages in US-Cent, auch Phasen-Wächter und Meta-Recherche.
 
 | Farbe des Kerns | Bedeutung |
 |---|---|
@@ -46,80 +48,70 @@ Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentl
 
 ### Spielmodus (TFT)
 
-Nichts verdeckt das Spielbild: kein J, keine Fenster, Antworten nur per Stimme (kurz und knapp, TFT-Coach mit Claude Sonnet 5.5). Optional zeigt eine schmale, halbtransparente Untertitelleiste die Antwort – sie ist nicht anklickbar (Fingertipps gehen durch sie hindurch ins Spiel) und verschwindet nach wenigen Sekunden. Einstellbar unter Einstellungen → Anzeige.
+- **Automatisch:** Läuft TFT im Vordergrund, schaltet Jarvis den Spielmodus selbst ein und hört zu; 20 s nach dem Spiel nimmt er das zurück. Per Sprache: „Spielmodus an/aus“, „Neue Partie“.
+- **Von selbst coachen:** Ein günstiger Phasen-Wächter (Claude Haiku, alle 6 s, Bild in Alltagsgröße) erkennt Planung, Kampf oder Sonstiges. Zu Beginn jeder neuen Planungsphase schaut Sonnet aufs scharfe Bild und sagt den wichtigsten Befehl, wenn nötig mit Aufstellung – oder schweigt. Höchstens eine Ansage pro Runde, nie im Kampf, nie in Runde 1-1. Geschätzt 15–20 Cent pro Partie.
+- **Spielplan:** Beim ersten lesbaren Brett legt Jarvis Comp, Carry und Gegenstandsträger fest und hält den Plan. „Plan?“ nennt ihn, „Warum?“ begründet den letzten Rat.
+- **Erst lesen, dann befehlen:** Zu jedem Bild schreibt Claude eine stille Zeile (Phase, Gold, Stufe, Leben, Plan), die nie vorgelesen wird, aber im Verlauf bleibt.
+- **Nichts verdeckt das Spielbild:** Antworten nur per Stimme, kurz (höchstens zwei Sätze). Optional eine nicht anklickbare Untertitelleiste.
+- **Scharfes Bild:** 1920 statt 1280 Pixel an der langen Kante, damit Gold, Stufe und Gegenstände lesbar bleiben.
+- **Aktuelle Meta:** einmal am Tag recherchiert Jarvis mit Claudes Websuche Set, Patch und stärkste Comps (wenige Cent). Manuell: Einstellungen → Spielmodus → „Meta jetzt aktualisieren“.
 
-Im Spielmodus schickt Jarvis ein schärferes Bildschirmfoto (1920 statt 1280 Pixel an der langen Kante, weniger Kompression), damit Gold, Stufe, Händler und kleine Gegenstände lesbar bleiben – Claude-Modelle ab 4.7 verarbeiten bis 2576 Pixel. Der Bildschirm-Mitschnitt selbst läuft dauerhaft nur in dieser Größe statt in voller Auflösung (weniger Akku und Wärme in langen Partien). Fehlt die Bildschirmfreigabe, sagt Jarvis das bei Fragen zur Partie zuerst, statt blind zu raten. Begriffe wie im deutschen Client: Phase, Stufe, Händler, Taktikerleben, Attribute.
-
-### Anzeige
-
-- **Schwebendes J:** Standard aus. Im Spielmodus immer ausgeblendet.
-- **Untertitel:** im Alltag Standard an, im Spielmodus Standard aus; Position oben oder unten.
-
-## Wachwort „Jarvis“
-
-Die Erkennung läuft komplett offline auf dem Handy mit [openWakeWord](https://github.com/dscripka/openWakeWord) (ONNX Runtime) – ohne Konto, ohne Schlüssel, ohne Kosten. Bei ausgeschaltetem Bildschirm pausiert sie (spart Akku, keine Fehlauslöser in der Tasche). Die Empfindlichkeit ist in den Einstellungen regelbar (Standard 5).
-
-Für „Jarvis“ allein gibt es kein fertiges Modell, deshalb ist es selbst trainiert (`app/src/main/assets/wakeword/jarvis.onnx`, Messwerte in `training/wakeword/ergebnis/`):
-
-- **Positiv:** zehntausende künstliche Sprecher (Piper-Stimmen, Englisch, Deutsch, Niederländisch) sagen „Jarvis“ – englisch und deutsch ausgesprochen („Dschaawis“), auch „Hey/Okay Jarvis“ und direkt weitergesprochen („Jarvis, was …“), mit Hall, Störgeräuschen und Handy-Klang.
-- **Negativ:** ähnlich klingende Wörter („Ja, was …“, „Ja, wieso“, Travis, Service, Jahr …), Alltagssätze und rund 370 Stunden echtes Alltagsaudio (ACAV100M-Merkmale aus dem openWakeWord-Projekt).
-- **Prüfung:** mit Stimmen, die im Training nie vorkamen, und mit 11 Stunden Validierungsaudio (Fehlalarme pro Stunde).
-
-Neu trainieren: in einem **bestehenden Arbeitszweig** `training/wakeword/start.txt` ändern und pushen (oder GitHub → *Actions* → **Wachwort „Jarvis“ trainieren** → *Run workflow*). Nie auf `main` und nicht beim Anlegen eines Zweigs – das Training läuft stundenlang und committet sein Ergebnis in den Zweig. Drei Varianten laufen parallel; Modelle und Messwerte landen in `training/wakeword/ergebnis/`.
-
-Reagiert Jarvis zu selten, die Empfindlichkeit in den Einstellungen auf 6 stellen; springt er grundlos an, auf 4.
-
-Picovoice Porcupine wurde bewusst nicht genommen: Das kostenlose Angebot wurde zum 30.06.2026 eingestellt, ohne gültigen Schlüssel läuft es nicht.
-
-Modelle: `melspectrogram.onnx` und `embedding_model.onnx` (Apache 2.0), `jarvis.onnx` mit openWakeWord-Daten trainiert (nur nicht-kommerziell). Das frühere `hey_jarvis_v0.1.onnx` von David Scripka (CC BY-NC-SA 4.0) liegt nur noch zum Vergleich unter `training/wakeword/referenz/`.
-
-## Aktuelle TFT-Meta
-
-Im Spielmodus recherchiert Jarvis **einmal am Tag** mit Claudes Websuche die aktuelle Meta (Set, Patch, stärkste Comps, Augments, Buffs/Nerfs) und nutzt sie den ganzen Tag als Wissensstand. Die Recherche läuft im Hintergrund, Fragen warten nicht darauf. Kosten: wenige Cent pro Tag. Manuell: Einstellungen → Spielmodus → „Meta jetzt aktualisieren“. Braucht einen Claude-Schlüssel.
+Begriffe wie im deutschen Client: Phase, Stufe, Händler, Taktikerleben, Attribute.
 
 ## Stimme
 
-**Premium (empfohlen, am nächsten am Film-Jarvis):** ElevenLabs-Schlüssel in den Einstellungen eintragen. Standardstimme ist „Daniel“ (britisch, tief, ruhig), die mit dem Modell *Multilingual v2* Deutsch mit leichtem britischem Einschlag spricht. Alternativ in ElevenLabs unter *Voice Design* eine eigene Stimme beschreiben und deren ID eintragen. Fällt ElevenLabs aus oder ist das Kontingent leer, spricht Jarvis automatisch mit der Handy-Stimme weiter. Der ElevenLabs-Schlüssel wird nicht in die Sicherungsdatei geschrieben.
+**Handy-Stimme (offline):** Jarvis sucht in dieser Reihenfolge: **Miro** → **Thorsten** (deutsch, männlich) → **Alan** (britisch). Deutsche Stimmen in SherpaTTS herunterladen (z. B. „de_DE miro high“). Engine, Stimme, Tempo, Tonhöhe und Sprechpause in den Einstellungen („Probe hören“). „Sir“ spricht sie englisch aus.
 
-**Handy-Stimme (offline):** Jarvis sucht automatisch in dieser Reihenfolge: **Miro** (deutsch, männlich) → **Thorsten** (deutsch, männlich) → **Alan** (britisch), Tempo 0,95, Tonhöhe 0,9. Deutsche Stimmen dafür in SherpaTTS herunterladen (z. B. „de_DE miro high“). Engine, Stimme, Tempo, Tonhöhe und Sprechpause sind in den Einstellungen wählbar („Probe hören“).
+**Premium (optional):** ElevenLabs-Schlüssel eintragen, Standardstimme „Daniel“ (Multilingual v2). Fällt ElevenLabs aus, spricht Jarvis mit der Handy-Stimme weiter.
+
+## „Jarvis“-Erkennung zum Unterbrechen
+
+Ein Wachwort zum Aktivieren gibt es seit „Immer zuhören“ nicht mehr. Das Offline-Modell für „Jarvis“ bleibt fürs Unterbrechen: Sagt man „Jarvis“, während er spricht, hört er sofort auf. Es läuft auf dem echobereinigten Ton des Dazwischenreden-Mikrofons mit [openWakeWord](https://github.com/dscripka/openWakeWord) (ONNX Runtime) – ohne Konto, ohne Kosten. Empfindlichkeit: Einstellungen → „Empfindlichkeit für „Jarvis““ (Standard 5).
+
+Das Modell ist selbst trainiert (`app/src/main/assets/wakeword/jarvis.onnx`, Messwerte in `training/wakeword/ergebnis/`): zehntausende künstliche Sprecher sagen „Jarvis“ (englisch und deutsch ausgesprochen, mit Hall und Störgeräuschen), dagegen ähnlich klingende Wörter und rund 370 Stunden Alltagsaudio. Neu trainieren: in einem Arbeitszweig `training/wakeword/start.txt` ändern und pushen (oder Actions → **Wachwort „Jarvis“ trainieren**). Nie auf `main` – das Training committet sein Ergebnis in den Zweig.
+
+Modelle: `melspectrogram.onnx` und `embedding_model.onnx` (Apache 2.0), `jarvis.onnx` mit openWakeWord-Daten trainiert (nur nicht-kommerziell). Das frühere `hey_jarvis_v0.1.onnx` (CC BY-NC-SA 4.0) liegt nur zum Vergleich unter `training/wakeword/referenz/`.
 
 ## Projektaufbau
 
 | Datei | Aufgabe |
 |---|---|
-| `JarvisService` | Ablauf: Wachwort, Zuhören, Bildschirmfoto, Anfrage, Vorlesen, Spielmodus |
-| `WakeWordEngine` | Mikrofon für das Wachwort „Jarvis“, Übergabe an die Spracherkennung |
+| `JarvisService` | Ablauf: Zuhören, Bildschirmfoto, Anfrage, Vorlesen, Spielmodus, proaktives Coaching |
+| `MainActivity`, `ReactorView`, `Palette` | Startbildschirm mit Arc-Reaktor-Knopf und Messzeilen |
+| `SettingsActivity`, `Prefs`, `Backup` | Einstellungen, gespeicherte Werte, Sicherungsdatei |
+| `ClaudeClient`, `StreamAccumulator` | Claude-API mit Streaming, Werkzeug-Schleife, Prompt-Caching, Kosten- und Zeitmessung |
+| `SpeechChunker` | Zerlegt die gestreamte Antwort in Sätze – der erste wird gesprochen, während Claude noch schreibt |
+| `Persona`, `Commands`, `Memory`, `Text` | Anweisungen an Claude, Sprachbefehle der App, Gedächtnis, Textbereinigung |
+| `BargeIn`, `SpeechGate`, `TalkAudio`, `WakeModel` | Dazwischenreden: Mikrofon mit Echo-Unterdrückung, Lautstärke-Schranke, Telefonmodus, „Jarvis“-Modell |
 | `wakeword/…/WakeWordDetector` | openWakeWord in reinem Java (eigenes Modul, mit Testaufnahmen geprüft) |
-| `training/wakeword` | Training des Wachworts „Jarvis“ (läuft auf GitHub, siehe oben) |
-| `MainActivity` | Startbildschirm: Status und Reaktor-Knopf |
-| `ReactorView` | Animierter Sprechen-Knopf im Arc-Reaktor-Stil |
-| `SettingsActivity` | Einstellungen in Gruppen |
-| `Subtitles` | Nicht anklickbare Untertitelleiste |
-| `FloatingJ` | Optionales schwebendes J |
-| `Earcon` | Signalton beim Zuhören |
-| `Commands` | Sprachbefehle der App („Spielmodus an/aus“, Dauergespräch, Aufträge an den Agenten) |
-| `ChatLog` | Gesprächsverlauf auf dem Startbildschirm |
+| `GameWatch`, `GameDetector` | Erkennt, ob TFT vorne ist |
+| `ProactiveCoach`, `GameReadout`, `Meta` | Phasen-Wächter und Ansagen, stille Ablese-Zeile, tägliche Meta |
+| `ScreenGrabber`, `CaptureSize` | Bildschirm-Mitschnitt und Bildgrößen |
+| `Voices`, `ElevenTts`, `Earcon` | Sprachausgabe (Handy / Premium), Signalton |
+| `Subtitles`, `FloatingJ`, `ChatLog` | Untertitelleiste, optionales schwebendes J, Gesprächsverlauf |
+| `Costs`, `Timing` | Kosten nach Anthropic-Preisliste, Zeitmessung |
+| `UpdateCheck`, `AppUpdater`, `UpdateReceiver` | Neue Version finden und direkt einspielen |
+| `Wishes`, `WishSender` | Wünsche aus dem Gespräch als GitHub-Issues (doppelte werden erkannt) |
+| `Tools`, `Agenda` | Kalender lesen und Termine eintragen (Websuche läuft bei Anthropic) |
 | `AgentClient`, `AgentReply` | Brücke zum Agenten in Termux (`127.0.0.1`, Token) |
-| `UpdateCheck` | Fragt GitHub nach einer neueren Version |
 | `ListenActivity` | Schnellstart „Jarvis sprechen“ (Seitentaste) |
-| `ClaudeClient`, `GeminiClient` | Anbindung der KI; `ClaudeClient` mit Werkzeug-Schleife (Gemini nur als Notlösung) |
-| `Tools`, `Agenda` | Jarvis' „Hände“: Kalender lesen und Termine eintragen (Websuche läuft direkt bei Anthropic) |
-| `Persona` | Anweisungen: Ton, Kürze, Ehrlichkeit, Spielmodus |
-| `Memory` | Dauerhaftes Gedächtnis („Merk dir“ / „Vergiss“) |
-| `Text` | Textbereinigung, Schlüssel-/Modellprüfung, Fehlermeldungen |
-| `Voices`, `ElevenTts` | Sprachausgabe (Handy / Premium) |
-| `Backup` | Sicherungsdatei für Gedächtnis und Einstellungen |
-| `ScreenGrabber` | Bildschirmaufnahme |
-| `Prefs` | Gespeicherte Einstellungen |
+| `Io` | Gemeinsame Netz-Hilfe |
 
 Layouts liegen in `app/src/main/res/layout`, Farben und Theme in `res/values`.
 
-Automatische Tests liegen in `app/src/test` und `wakeword/src/test` und laufen bei jedem Build. Auf Arbeitszweigen macht zusätzlich ein Emulator Bildschirmfotos (Vorab-Version „vorschau“).
+## Tests und Abläufe auf GitHub
+
+- **Unit-Tests** in `app/src/test` und `wakeword/src/test` laufen bei jedem Build.
+- **Gerätetest** (`.github/scripts/geraetetest.sh`) auf jedem Push: Emulator installiert und bedient die App, stellt echte Fragen an Claude, prüft Streaming und Cache, lässt den Phasen-Wächter Arts echte TFT-Bilder einordnen (`.github/testbilder/waechter`) und lädt die Test-App ohne Anmeldung herunter. Bei Absturz oder Hänger wird keine APK veröffentlicht. Bericht und Bilder: Vorab-Version `vorschau`.
+- **Latenz messen** (`.github/bench`, Actions → „Latenz messen“): misst mit der echten API, wie schnell Claude den ersten Satz liefert.
+- **Aufräumen** (Actions → „Aufräumen“, von Hand): löscht Zweige, die ganz in `main` stecken, Test-Apps gelöschter Zweige und ältere App-Versionen. Mit „nur_anzeigen = ja“ erst schauen.
+- **Wachwort „Jarvis“ trainieren:** siehe oben.
 
 ## Ausbaustufen
 
 - [x] **Stufe 1:** Sprechen, Bildschirm sehen, natürliche Antwort, TFT-Modus, Gedächtnis, Stimmwahl
-- [x] Aktivierungswort „Jarvis“ ohne Antippen, Spielmodus ohne Einblendungen, neues Design
-- [x] Dauergespräch, Termine und Websuche, Agent für lange Aufgaben (im Test)
+- [x] Dauergespräch, Dazwischenreden, Termine und Websuche, Agent für lange Aufgaben (im Test)
+- [x] TFT-Coach: automatische Erkennung, Ansagen von selbst, Spielplan, tägliche Meta
+- [x] „Immer zuhören“ statt Wachwort
 - [ ] **Stufe 2:** Nachrichten vorlesen und beantworten, Erinnerungen, Wecker
 - [ ] **Stufe 3:** Apps per Sprache steuern

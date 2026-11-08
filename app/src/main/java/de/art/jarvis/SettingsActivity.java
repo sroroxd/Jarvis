@@ -115,8 +115,7 @@ public class SettingsActivity extends AppCompatActivity {
                 showResult(b.keyResult, "✗ " + message);
             }
         };
-        if (prefs.isGemini()) new GeminiClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
-        else new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+        new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
     }
 
     // ---------------------------------------------------------------- Sprachsteuerung
@@ -668,7 +667,7 @@ public class SettingsActivity extends AppCompatActivity {
     /** Recherche sofort starten (z. B. nach einem neuen Patch). */
     private void updateMetaNow() {
         saveTextFields();
-        if (prefs.apiKey().isEmpty() || prefs.isGemini()) {
+        if (prefs.apiKey().isEmpty()) {
             b.metaInfo.setText("Die Meta-Recherche braucht einen Claude-Schlüssel (sk-ant-…).");
             return;
         }

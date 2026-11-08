@@ -38,7 +38,7 @@ public class TextTest {
     public void nurEchteModellnamen() {
         assertTrue(Text.isValidModel("claude-haiku-5-5"));
         assertTrue(Text.isValidModel("claude-sonnet-5-5"));
-        assertTrue(Text.isValidModel("gemini-flash-latest"));
+        assertFalse(Text.isValidModel("gemini-flash-latest")); // Gemini ist seit 8. Nov. entfernt – nur Claude
         assertFalse(Text.isValidModel("2"));
         assertFalse(Text.isValidModel("sonnet"));
         assertFalse(Text.isValidModel(""));

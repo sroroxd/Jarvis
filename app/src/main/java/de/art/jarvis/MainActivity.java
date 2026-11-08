@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     private void readDemo(Intent intent) {
-        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean debuggable = BuildConfig.DEBUG;
         String d = intent == null ? null : intent.getStringExtra("demo");
         demo = null;
         if (debuggable && d != null) {
@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
      * proaktiven Coachings mit einem Testbild. In der Handy-Version (Release) wirkungslos.
      */
     private void readTestHooks(Intent intent) {
-        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean debuggable = BuildConfig.DEBUG;
         if (!debuggable || intent == null) return;
         String key = intent.getStringExtra("testkey");
         if (key != null && !key.trim().isEmpty()) {
@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
      * Nummerierung und würden sonst immer einen Hinweis zeigen.
      */
     private void checkForUpdate() {
-        boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean debuggable = BuildConfig.DEBUG;
         if (debuggable || demo != null) return;
         long now = android.os.SystemClock.elapsedRealtime();
         if (lastUpdateCheck != 0 && now - lastUpdateCheck < 30 * 60 * 1000L) return;

@@ -9,7 +9,6 @@ public final class Prefs {
     public static final String DEFAULT_MODEL = "claude-sonnet-5-5";
     public static final String BUDGET_MODEL = "claude-haiku-5-5";
     public static final String TFT_MODEL = "claude-sonnet-5-5";
-    public static final String DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
 
     /**
      * Standard-Stimmen für die Handy-Sprachausgabe, in dieser Reihenfolge gesucht:
@@ -40,11 +39,6 @@ public final class Prefs {
         return Text.keyPreview(apiKey());
     }
 
-    /** Google-Schlüssel beginnen mit „AIza“, Anthropic-Schlüssel mit „sk-ant-“. */
-    public boolean isGemini() {
-        return Text.isGeminiKey(apiKey());
-    }
-
     /** Eingetragenes Modell oder leer. */
     public String rawModel() {
         return sp.getString("model", "").trim();
@@ -58,11 +52,10 @@ public final class Prefs {
         sp.edit().putString("model", value == null ? "" : value.trim()).apply();
     }
 
-    /** Eingetragenes Modell oder der passende Standard für den Anbieter. */
+    /** Eingetragenes Modell oder der Standard. */
     public String model() {
         String m = rawModel();
         if (isValidModel(m)) return m;
-        if (isGemini()) return DEFAULT_GEMINI_MODEL;
         return tftMode() ? TFT_MODEL : DEFAULT_MODEL;
     }
 
@@ -221,21 +214,8 @@ public final class Prefs {
         sp.edit().putBoolean("always_listen", value).apply();
     }
 
-    public static final boolean DEFAULT_WAKE_WORD = false;
     /** 1 = reagiert nur auf sehr deutliches „Jarvis“, 10 = reagiert auf fast alles (gilt fürs Unterbrechen). */
     public static final int DEFAULT_SENSITIVITY = 5;
-
-    /**
-     * Wunsch #47: Das Wachwort „Jarvis“ als Aktivierung ist entfernt – stattdessen {@link #alwaysListen()}.
-     * „Jarvis“ unterbricht weiter, während er spricht (BargeIn). Der gespeicherte Wert bleibt nur für alte Sicherungen.
-     */
-    public boolean wakeWord() {
-        return false;
-    }
-
-    public void setWakeWord(boolean value) {
-        sp.edit().putBoolean("wake_word", value).apply();
-    }
 
     public int sensitivity() {
         return clamp(sp.getInt("wake_sensitivity", DEFAULT_SENSITIVITY), 1, 10);
@@ -413,10 +393,6 @@ public final class Prefs {
 
     public int agentPort() {
         return clamp(sp.getInt("agent_port", DEFAULT_AGENT_PORT), 1024, 65535);
-    }
-
-    public void setAgentPort(int value) {
-        sp.edit().putInt("agent_port", clamp(value, 1024, 65535)).apply();
     }
 
     /** Token des Agenten – steht auf dem Handy in {@code ~/.jarvis-agent/token}. */

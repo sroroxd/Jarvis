@@ -7,7 +7,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -101,6 +100,7 @@ final class ClaudeClient {
     void send(String apiKey, String model, String system, JSONArray messages, String effort,
               ToolRunner tools, TextListener listener, Callback callback) {
         executor.execute(() -> {
+            answering.set(true);
             spentHere.get()[0] = 0;
             Result r = tools == null
                     ? ask(apiKey, model, system, messages, effort, null, listener)
@@ -407,10 +407,6 @@ final class ClaudeClient {
     }
 
     /**
-     * thinking: "adaptive" oder null (Feld weglassen); effort: "low"/"medium"/… oder null.
-     * listener != null: als Strom anfordern und Textstücke sofort weiterreichen.
-     */
-    /**
      * Wo die Wartezeit der letzten Anfrage steckt (Wunsch #43): Senden = Verbindung plus Hochladen der Anfrage
      * (mit Bildschirmfoto mehrere hundert KB), Claude = vom fertigen Hochladen bis zum ersten Textstück.
      * Was danach bis zum ersten gesprochenen Satz fehlt, ist der Rest des Satzes und der Start der Stimme.
@@ -439,9 +435,19 @@ final class ClaudeClient {
         }
     }
 
-    /** Zeitpunkte der letzten Anfrage – für die Zeitmessung auf dem Startbildschirm und den Gerätetest. */
+    /**
+     * Zeitpunkte der letzten Antwort auf eine Frage – für die Zeitmessung auf dem Startbildschirm und den Gerätetest.
+     * Nur Anfragen aus {@link #send} zählen: Vorher überschrieben Phasen-Wächter (alle 6 s) und Meta-Recherche den
+     * Wert, und die Zeile zeigte deren Zeiten statt der von Arts Frage.
+     */
     static volatile Net lastNet;
+    /** Läuft dieser Thread Arts Fragen ({@link #send})? Nur dann wird {@link #lastNet} gesetzt. */
+    private static final ThreadLocal<Boolean> answering = ThreadLocal.withInitial(() -> false);
 
+    /**
+     * thinking: "adaptive" oder null (Feld weglassen); effort: "low"/"medium"/… oder null.
+     * listener != null: als Strom anfordern und Textstücke sofort weiterreichen.
+     */
     private Result request(String apiKey, String model, String system, JSONArray messages,
                            String thinking, String effort, int maxTokens, JSONArray tools, TextListener listener) {
         Result result = new Result();
@@ -451,7 +457,7 @@ final class ClaudeClient {
             if (listener != null) body.put("stream", true);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
             Net net = new Net(Net.now(), payload.length);
-            lastNet = net;
+            if (answering.get()) lastNet = net;
 
             conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
             conn.setRequestMethod("POST");
@@ -478,7 +484,7 @@ final class ClaudeClient {
                 account(model, result.usage);
                 return result;
             }
-            String response = readAll(ok ? conn.getInputStream() : conn.getErrorStream());
+            String response = Io.readAll(ok ? conn.getInputStream() : conn.getErrorStream());
             if (!ok) {
                 result.error = describeError(code, response);
                 try {
@@ -545,14 +551,4 @@ final class ClaudeClient {
         return Text.claudeError(code, type, detail);
     }
 
-    private static String readAll(InputStream in) throws java.io.IOException {
-        if (in == null) return "";
-        try (InputStream is = in) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = is.read(buf)) != -1) out.write(buf, 0, n);
-            return out.toString("UTF-8");
-        }
-    }
 }

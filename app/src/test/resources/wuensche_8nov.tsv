@@ -1,0 +1,35 @@
+# Echte Wünsche aus der App (GitHub-Issues bis 8. Nov. 2026): Nummer, Titel, Beschreibung – chronologisch.
+# Grundlage für WishesTest.echteWuensche: Doppelte sollen erkannt, verschiedene nicht zusammengelegt werden.
+10	Jarvis bricht seine Antwort von selbst ab	Jarvis bricht seine Antworten im Dauergespräch immer wieder von selbst ab, vermutlich weil das Mikrofon die eigene Stimme oder Spielsound als Sprechen erkennt. Bitte Echo- und Störgeräuschunterdrückung verbessern.
+11	Sprachausgabe bricht nach erstem Satz ab	Die Sprachausgabe liest nur den ersten Satz vor und bricht dann ab, vermutlich weil das Mikrofon die eigene Stimme als Sprechen von Art erkennt. Das soll behoben werden, etwa durch Echounterdrückung oder bessere Erkennung der eigenen Ausgabe.
+17	Dazwischenreden zuverlässig machen	Im Dauergespräch soll JARVIS sofort aufhören zu sprechen, sobald Art dazwischenredet. Aktuell passiert das laut Art nicht zuverlässig.
+18	Stimme bricht mitten im Satz ab	JARVIS hört im Dauergespräch mitten im eigenen Satz auf zu sprechen, ohne dass Art dazwischenredet. Ursache prüfen, etwa Eigenecho oder Mikrofon, das die eigene Ausgabe als Sprache erkennt.
+19	Dazwischenreden zuverlässig	Im Dauergespräch soll JARVIS' Stimme zuverlässig sofort abbrechen, sobald Art spricht. Das funktioniert aktuell nicht wie gewünscht.
+20	Eigene Stimme nicht als Unterbrechung werten	Das Mikrofon nimmt vermutlich JARVIS' eigene Sprachausgabe auf und löst dadurch das Abbrechen der Stimme mitten im Satz aus. Die eigene Ausgabe soll beim Erkennen von Dazwischenreden herausgefiltert werden (Echo-Unterdrückung), sodass nur Arts Stimme unterbricht.
+21	Kürzere Antworten	Art wünscht sich generell kürzere Anweisungen und Antworten im TFT-Modus.
+24	Schnelles, effizientes TFT-Coaching	Das gesamte Umfeld des Coachings soll auf Tempo und Effizienz ausgelegt sein: geringe Wartezeit zwischen Frage und Befehl, kurze Antworten, zuverlässige Bilderkennung von Gold, Stufe und Einheiten sowie geprüfte Meta-Daten.
+26	Empfindlichkeit für Jarvis-Abbruch	Beim freihändigen Dauergespräch soll sich die Empfindlichkeit der Erkennung von „Jarvis“ und des Dazwischenredens in den Einstellungen regeln lassen.
+27	TFT-Coaching beschleunigen	Das TFT-Coaching hat Priorität eins: schnellere Antworten, kurze Befehle, zuverlässige Bilderkennung von Gold, Stufe und Einheiten sowie geprüfte Meta-Daten.
+28	Dazwischenreden zuverlässiger unterbrechen	Im Dauergespräch bricht die Stimme nicht immer zuverlässig ab, wenn Art spricht oder „Jarvis“ sagt. Die Unterbrechung soll jedes Mal sofort greifen.
+29	TFT-Coaching als Priorität	Das TFT-Coaching hat höchste Priorität: schnellere Antworten, kurze Befehle, zuverlässige Bilderkennung von Gold, Stufe und Einheiten sowie geprüfte Meta-Daten, alles auf Tempo ausgelegt.
+30	Empfindlichkeit für Jarvis-Abbruch	Für die freihändige Sprachsteuerung soll sich die Empfindlichkeit der Erkennung des Wortes „Jarvis“ einstellen lassen.
+31	Dazwischenreden zuverlässiger	Das Unterbrechen meiner Stimme beim Dazwischenreden funktioniert noch nicht ganz zuverlässig und soll verbessert werden.
+32	Sofort unterbrechen beim Sprechen	Im Dauergespräch soll Jarvis' Stimme abbrechen, sobald Art einfach losredet und Wörter erkannt werden, ohne dass er „Jarvis“ sagen muss.
+33	Dazwischenreden reparieren	Wenn Art spricht oder „Jarvis“ sagt, während Jarvis redet, soll die Sprachausgabe sofort abbrechen. Das funktioniert derzeit nicht zuverlässig.
+35	Automatische Tests über GitHub	Vor jedem Test-Build sollen automatisierte Prüfungen über GitHub laufen, etwa für das Dazwischenreden im Dauergespräch, damit fehlerhafte Versionen Art gar nicht erst erreichen.
+34	Funktionen vor Auslieferung testen	Neue Test-Builds sollen vor der Weitergabe an Art automatisch geprüft werden, insbesondere das Dazwischenreden im Dauergespräch, damit keine nicht funktionierenden Funktionen ausgeliefert werden.
+36	Silero VAD einbinden	Das Open-Source-Projekt Silero VAD von GitHub zur Spracherkennung einbinden, damit Dazwischenreden im Dauergespräch zuverlässig funktioniert.
+37	openWakeWord einbinden	Das Open-Source-Projekt openWakeWord von GitHub für eine robuste, lokale Erkennung des Aktivierungsworts „Jarvis“ prüfen und einbinden.
+38	Aufgabe 37 streichen	openWakeWord nicht einbinden, Art möchte kein Aktivierungswort nutzen.
+39	Ohne Wachwort – Jarvis reagiert, sobald Art losredet (Silero VAD)	Jarvis soll ohne Aktivierungswort reagieren, sobald Art spricht, etwa per Spracherkennung wie Silero VAD. Art möchte kein Aktivierungswort nutzen (#38).
+40	Sofort verstummen beim Dazwischenreden	Spricht Art im Dauergespräch, während Jarvis redet, soll die Sprachausgabe sofort abbrechen und Jarvis zuhören, statt weiterzureden.
+41	Proaktives Coaching – Jarvis analysiert die Partie und meldet sich selbst	Jarvis soll während einer TFT-Partie fortlaufend und selbstständig den Spielverlauf analysieren und von sich aus Hinweise geben, ohne dass Art jedes Mal fragen muss.
+42	Stellplan vor jedem Kampf	Jarvis soll vor jeder Kampfrunde von sich aus ansagen, wie Art seine Einheiten aufstellen soll, ohne dass Art danach fragen muss.
+43	Schnellere Antworten	Jarvis soll spürbar schneller antworten, besonders im Spielmodus während der Partie.
+44	Vollzugriff aufs Handy	Jarvis soll das Handy umfassend bedienen können, einschließlich Dinge wie Dateien, Nachrichten oder Apps auf Zuruf löschen.
+45	Label „Du“ ändern	Im Gesprächsverlauf der App steht vor Arts Eingaben „Du:“. Art wünscht stattdessen die Anrede „Sie“ bzw. eine neutrale Bezeichnung.
+46	Anrede "Sir" englisch aussprechen	Die Sprachausgabe soll das Wort "Sir" englisch (wie "Sör") aussprechen und nicht deutsch wie "Sie".
+47	Wachwort entfernen	Das Wachwort „Jarvis“ als Aktivierung soll aus der App entfernt werden, da Art Jarvis durch einfaches Losreden aktivieren möchte.
+50	Brutalere Stimme	Art wünscht sich eine härtere, dunklere Sprachausgabe für Jarvis, z. B. über Sherpa-ONNX mit einem tiefen oder emotionalen deutschen Modell wie Thorsten-Emotional, Karlsson oder Pavoque.
+51	Stimmenauswahl in der App	Art möchte die Sprachausgabe direkt in den App-Einstellungen umstellen können, inklusive brutalerer, tieferer Stimmen, zum Beispiel deutsche Piper-Modelle.
+52	Stimmauswahl mit harten, menschlichen Stimmen	In der Jarvis-App soll die TTS-Stimme umstellbar sein, inklusive brutalerer, tieferer Stimmen, die menschlich klingen und nicht mechanisch, zum Beispiel deutsche Piper-Stimmen wie Karlsson oder Pavoque.

@@ -117,6 +117,47 @@ public class WishesTest {
         assertNull(Wishes.similar("", "Kürzere Antworten"));
     }
 
+    /**
+     * Alle 33 echten Wünsche bis 8. Nov. (test/resources/wuensche_8nov.tsv) paarweise: Doppelte erkennen, verschiedene
+     * nie zusammenlegen. Gruppen derselben Sache laut den Zusammenfassungen der Issues.
+     */
+    @Test
+    public void echteWuensche() throws Exception {
+        List<String[]> w = new java.util.ArrayList<>();
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
+                getClass().getClassLoader().getResourceAsStream("wuensche_8nov.tsv"), "UTF-8"))) {
+            String line;
+            while ((line = r.readLine()) != null) if (!line.startsWith("#")) w.add(line.split("\t"));
+        }
+        assertEquals(33, w.size());
+        int[][] groups = {{10, 11, 18, 20}, {17, 19, 28, 31, 32, 33, 40}, {24, 27, 29}, {26, 30}, {36, 39}, {39, 47},
+                {50, 51, 52}, {41, 42}, {34, 35}};
+        int found = 0;
+        for (int x = 0; x < w.size(); x++) {
+            for (int y = 0; y < x; y++) {
+                String stored = Wishes.add("", w.get(y)[1], w.get(y)[2]);
+                boolean hit = Wishes.similar(stored, w.get(x)[1], w.get(x)[2]) != null;
+                boolean same = false;
+                int a = Integer.parseInt(w.get(x)[0]), b = Integer.parseInt(w.get(y)[0]);
+                for (int[] g : groups) {
+                    boolean ha = false, hb = false;
+                    for (int n : g) {
+                        ha |= n == a;
+                        hb |= n == b;
+                    }
+                    same |= ha && hb;
+                }
+                assertFalse("falsch zusammengelegt: #" + a + " mit #" + b, hit && !same);
+                if (hit) found++;
+            }
+        }
+        assertTrue("erkannte Doppelte: " + found, found >= 28);   // vorher (nur Titel): 11
+        // Der Anlass: die dreifache Stimm-Wunsch (#50–#52).
+        String s = Wishes.add("", "Brutalere Stimme", w.get(30)[2]);
+        assertNotNull(Wishes.similar(s, w.get(31)[1], w.get(31)[2]));
+        assertNotNull(Wishes.similar(s, w.get(32)[1], w.get(32)[2]));
+    }
+
     /** 8. Nov.: „✓“ hieß „gesendet“, Art las „erledigt“. Jetzt der echte Stand von GitHub. */
     @Test
     public void listeZeigtDenEchtenStand() {

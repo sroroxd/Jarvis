@@ -135,14 +135,6 @@ final class ElevenTts {
         usage = on ? AudioAttributes.USAGE_VOICE_COMMUNICATION : AudioAttributes.USAGE_ASSISTANT;
     }
 
-    boolean isSpeaking() {
-        try {
-            return player != null && player.isPlaying();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     /** Bricht Laden und Wiedergabe ab (z. B. wenn Art aufs J tippt). */
     void stop() {
         generation++;

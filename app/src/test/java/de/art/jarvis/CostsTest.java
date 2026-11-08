@@ -37,8 +37,8 @@ public class CostsTest {
 
     @Test
     public void unbekanntesModellZeigtNichts() {
-        assertFalse(Costs.known("gemini-2.5-flash"));
-        assertEquals(0, Costs.usd("gemini-2.5-flash", 1000, 0, 0, 100, 0), 0);
+        assertFalse(Costs.known("unbekanntes-modell"));
+        assertEquals(0, Costs.usd("unbekanntes-modell", 1000, 0, 0, 100, 0), 0);
         assertTrue(Costs.known("claude-sonnet-5-5"));
         assertTrue(Costs.known("claude-opus-5-5"));
     }

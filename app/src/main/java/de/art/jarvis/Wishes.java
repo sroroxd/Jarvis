@@ -162,8 +162,37 @@ final class Wishes {
      * Priorität“, „TFT-Coaching beschleunigen“) – daraus wurden am 8. Nov. neun Issues für drei Wünsche.
      */
     static Wish similar(String stored, String title) {
+        return similar(stored, title, "");
+    }
+
+    /** Füllwörter, die in Beschreibungen fast jedes Wunsches stehen – für den Vergleich mit Beschreibung. */
+    private static final java.util.Set<String> TEXT_STOPWORDS = new java.util.HashSet<>(java.util.Arrays.asList(
+            "wie", "etwa", "möchte", "wünscht", "beispiel", "inklusive", "können", "kann", "sowie", "damit", "dass",
+            "sobald", "während", "ohne", "über", "aktuell", "derzeit", "jedes", "immer", "ganz", "einbinden", "open",
+            "source", "projekt"));
+
+    private static java.util.Set<String> textKeywords(String text) {
+        java.util.Set<String> out = new java.util.HashSet<>();
+        if (text == null) return out;
+        for (String w : text.toLowerCase(Locale.GERMANY).split("[^\\p{L}\\p{N}]+")) {
+            if (w.length() < 3 || STOPWORDS.contains(w) || TEXT_STOPWORDS.contains(w)) continue;
+            out.add(w.length() > 5 ? w.substring(0, 5) : w);
+        }
+        return out;
+    }
+
+    /**
+     * Wie {@link #similar(String, String)}, zusätzlich mit der Beschreibung: Teilen die Titel mindestens ein Stichwort
+     * und Titel plus Beschreibung mindestens drei, die 30 % des kürzeren Wunsches ausmachen, ist es dasselbe Thema.
+     * Anlass, 8. Nov.: „Brutalere Stimme“, „Stimmenauswahl in der App“ und „Stimmauswahl mit harten, menschlichen
+     * Stimmen“ (#50–#52) teilen im Titel nur „Stimme“, die Beschreibungen sind fast gleich. Gegen alle 33 echten
+     * Wünsche bis 8. Nov. geprüft: 28 statt 11 doppelte Paare erkannt, keines falsch zusammengelegt (WishesTest).
+     */
+    static Wish similar(String stored, String title, String body) {
         String t = clean(title);
         java.util.Set<String> k = keywords(t);
+        java.util.Set<String> kt = textKeywords(t);
+        java.util.Set<String> kAll = textKeywords(t + " " + clean(body));
         for (Wish w : load(stored)) {
             if (w.title.equalsIgnoreCase(t)) return w;
             java.util.Set<String> o = keywords(w.title);
@@ -171,6 +200,15 @@ final class Wishes {
             int common = 0;
             for (String word : k) if (o.contains(word)) common++;
             if (common >= 2 && common * 3 >= Math.min(k.size(), o.size()) * 2) return w;
+            // Mit Beschreibung: gleiches Stichwort im Titel und genug gemeinsamer Inhalt.
+            java.util.Set<String> ot = textKeywords(w.title);
+            boolean titleShared = false;
+            for (String word : kt) if (ot.contains(word)) titleShared = true;
+            if (!titleShared) continue;
+            java.util.Set<String> oAll = textKeywords(w.title + " " + w.body);
+            int shared = 0;
+            for (String word : kAll) if (oAll.contains(word)) shared++;
+            if (shared >= 3 && shared * 10 >= Math.min(kAll.size(), oAll.size()) * 3) return w;
         }
         return null;
     }

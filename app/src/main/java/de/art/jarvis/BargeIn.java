@@ -23,9 +23,9 @@ import de.art.jarvis.wake.WakeWordDetector;
  * Stimme und unterbräche sich ständig selbst. Was an Echo trotzdem durchkommt, fängt
  * {@link SpeechGate} ab.
  *
- * Zusätzlich läuft auf demselben, echobereinigten Ton das Wachwort: „Jarvis“ unterbricht immer,
- * auch wenn Art leiser spricht, als die Lautstärke-Schranke verlangt. Vorher war das Wachwort-Mikrofon
- * während des Sprechens im Dauergespräch ganz aus – obwohl der Startbildschirm „„Jarvis“ unterbricht“ anzeigt.
+ * Zusätzlich läuft auf demselben, echobereinigten Ton die „Jarvis“-Erkennung ({@link WakeModel}): „Jarvis“
+ * unterbricht immer, auch wenn Art leiser spricht, als die Lautstärke-Schranke verlangt. Ein Wachwort zum
+ * Aktivieren gibt es seit „Immer zuhören“ nicht mehr – dies ist die einzige Stelle, die das Modell noch nutzt.
  *
  * Alle öffentlichen Methoden laufen auf dem Haupt-Thread.
  */
@@ -67,6 +67,8 @@ final class BargeIn {
     private WakeWordDetector detector;
     private boolean detectorFailed;
     private boolean releaseRequested;
+    /** start() kam, während der vorige Durchgang noch das Mikrofon freigab – danach gleich neu starten. */
+    private boolean restartAfterStop;
     private ReportListener reportListener;
 
     BargeIn(Listener listener, DetectorLoader loader) {
@@ -79,10 +81,6 @@ final class BargeIn {
     }
 
     /** Ob die Echo-Unterdrückung des Handys zuletzt angelaufen ist (für die Anzeige). */
-    boolean echoCancellerActive() {
-        return echoCanceller;
-    }
-
     /** Neue Antwort beginnt: Die Schranke lernt erst, wenn deren Stimme wirklich zu hören ist. */
     void newUtterance() {
         voiceStarted = false;
@@ -103,13 +101,20 @@ final class BargeIn {
         margin = marginDb;
     }
 
-    /** Wachwort-Schwelle wie beim normalen Wachwort; negativ schaltet es hier aus. */
+    /** Schwelle der „Jarvis“-Erkennung (Regler „Empfindlichkeit für „Jarvis““); negativ schaltet sie aus. */
     void setWakeThreshold(float threshold) {
         wakeThreshold = threshold;
     }
 
     void start() {
-        if (thread != null || releaseRequested) return;
+        if (releaseRequested) return;
+        if (thread != null) {
+            // Der vorige Durchgang hält gerade an (nächster Satz kam schneller als die Freigabe des Mikrofons):
+            // nicht stillschweigend ausfallen lassen, sondern gleich danach neu starten.
+            if (!active) restartAfterStop = true;
+            return;
+        }
+        restartAfterStop = false;
         active = true;
         Thread t = new Thread(this::loop, "jarvis-dazwischenreden");
         thread = t;
@@ -118,6 +123,7 @@ final class BargeIn {
 
     /** Hält an und gibt das Mikrofon frei; {@code then} läuft, sobald es wirklich frei ist. */
     void stop(Runnable then) {
+        restartAfterStop = false;
         if (thread == null) {
             if (then != null) then.run();
             return;
@@ -247,7 +253,12 @@ final class BargeIn {
             closeDetector();
             return;
         }
-        if (speech) listener.onArtSpeaks();
+        if (speech) {
+            restartAfterStop = false;
+            listener.onArtSpeaks();
+        } else if (restartAfterStop) {
+            start();
+        }
     }
 
     private void closeDetector() {

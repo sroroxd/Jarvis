@@ -41,13 +41,9 @@ final class Text {
         return value.replaceAll("[\\s\\u00A0\\u200B-\\u200D\\u2060\\uFEFF]", "");
     }
 
-    /** Nur echte Modellnamen zählen („claude-…“ oder „gemini-…“) – Tippfehler wie „2“ werden ignoriert. */
+    /** Nur echte Modellnamen zählen („claude-…“) – Tippfehler wie „2“ werden ignoriert. */
     static boolean isValidModel(String m) {
-        return m != null && m.matches("(?i)(claude|gemini)-[a-z0-9.\\-]+");
-    }
-
-    static boolean isGeminiKey(String key) {
-        return key != null && key.startsWith("AIza");
+        return m != null && m.matches("(?i)claude-[a-z0-9.\\-]+");
     }
 
     /** Gekürzte Anzeige, z. B. „sk-ant-api…x7Qa (108 Zeichen, Claude)“ – zum Abgleich mit der Konsole. */
@@ -55,7 +51,7 @@ final class Text {
         if (k == null || k.isEmpty()) return "Kein Schlüssel gespeichert.";
         String head = k.substring(0, Math.min(10, k.length()));
         String tail = k.length() > 14 ? k.substring(k.length() - 4) : "";
-        String kind = isGeminiKey(k) ? "Gemini" : k.startsWith("sk-ant-") ? "Claude"
+        String kind = k.startsWith("sk-ant-") ? "Claude"
                 : k.startsWith("github_pat_") || k.startsWith("ghp_") ? "GitHub" : "unbekanntes Format";
         return "Gespeichert: " + head + "…" + tail + " (" + k.length() + " Zeichen, " + kind + ")";
     }

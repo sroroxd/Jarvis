@@ -17,7 +17,8 @@ import java.util.Locale;
 /**
  * Sicherungsdatei für Gedächtnis und Einstellungen. Liegt an einem Ort, den Art selbst wählt
  * (z. B. „Downloads“), und übersteht damit auch eine Deinstallation.
- * API-Schlüssel (Claude/Gemini und ElevenLabs) werden bewusst NICHT gespeichert – die Datei soll gefahrlos herumliegen können.
+ * API-Schlüssel (Claude, ElevenLabs, GitHub, Agent) stehen nur darin, wenn Art „API-Schlüssel mitsichern“ einschaltet
+ * (Prefs.backupKeys) – sonst kann die Datei gefahrlos herumliegen.
  */
 final class Backup {
     /** Die Test-App sichert in eine eigene Datei, damit sie die Sicherung der normalen App nie überschreibt. */
@@ -46,7 +47,6 @@ final class Backup {
         }
         o.put("agent", p.agentEnabled());
         o.put("wishes", p.wishes());
-        o.put("wakeWord", p.wakeWord());
         o.put("alwaysListen", p.alwaysListen());
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
@@ -88,7 +88,6 @@ final class Backup {
         String githubToken = o.optString("githubToken", "");
         if (!githubToken.isEmpty()) p.setGithubToken(githubToken);
         if (o.has("wishes")) p.setWishes(o.optString("wishes", ""));
-        p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
         p.setAlwaysListen(o.optBoolean("alwaysListen", true));
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));
