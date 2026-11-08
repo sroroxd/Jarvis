@@ -138,6 +138,43 @@ final class Wishes {
         return save(list);
     }
 
+    /** Wörter ohne Aussage für den Themenvergleich (alle Wünsche betreffen ohnehin Jarvis). */
+    private static final java.util.Set<String> STOPWORDS = new java.util.HashSet<>(java.util.Arrays.asList(
+            "und", "oder", "als", "für", "fuer", "mit", "von", "vom", "beim", "bei", "zum", "zur", "der", "die", "das",
+            "den", "dem", "des", "ein", "eine", "einen", "einem", "einer", "nicht", "noch", "mehr", "soll", "sollen",
+            "wird", "werden", "bitte", "jarvis", "sir", "art", "wunsch", "auch", "sich"));
+
+    /** Stichwörter eines Titels, auf fünf Buchstaben gekürzt („Priorität“ und „priorisieren“ → „prior“). */
+    static java.util.Set<String> keywords(String title) {
+        java.util.Set<String> out = new java.util.HashSet<>();
+        if (title == null) return out;
+        for (String w : title.toLowerCase(Locale.GERMANY).split("[^\\p{L}\\p{N}]+")) {
+            if (w.length() < 3 || STOPWORDS.contains(w)) continue;
+            out.add(w.length() > 5 ? w.substring(0, 5) : w);
+        }
+        return out;
+    }
+
+    /**
+     * Der schon notierte Wunsch zum selben Thema, sonst null. Gleicher Titel – oder mindestens zwei gemeinsame
+     * Stichwörter, die zwei Drittel des kürzeren Titels ausmachen. Anlass: Art nennt einen Wunsch im Gespräch
+     * mehrmals, Claude formuliert ihn jedes Mal etwas anders („TFT-Coaching priorisieren“, „TFT-Coaching als
+     * Priorität“, „TFT-Coaching beschleunigen“) – daraus wurden am 8. Nov. neun Issues für drei Wünsche.
+     */
+    static Wish similar(String stored, String title) {
+        String t = clean(title);
+        java.util.Set<String> k = keywords(t);
+        for (Wish w : load(stored)) {
+            if (w.title.equalsIgnoreCase(t)) return w;
+            java.util.Set<String> o = keywords(w.title);
+            if (k.isEmpty() || o.isEmpty()) continue;
+            int common = 0;
+            for (String word : k) if (o.contains(word)) common++;
+            if (common >= 2 && common * 3 >= Math.min(k.size(), o.size()) * 2) return w;
+        }
+        return null;
+    }
+
     /** Markiert einen Wunsch als gesendet (Issue-Nummer). */
     static String markSent(String stored, String title, int issue) {
         List<Wish> list = load(stored);

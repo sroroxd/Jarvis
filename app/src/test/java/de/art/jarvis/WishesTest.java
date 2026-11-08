@@ -1,6 +1,7 @@
 package de.art.jarvis;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -87,5 +88,32 @@ public class WishesTest {
         assertEquals("Er soll leiser sprechen", Wishes.titleFrom("er soll leiser sprechen. Und zwar im Spiel."));
         String lang = Wishes.titleFrom("a".repeat(10) + " " + "b".repeat(30) + " " + "c".repeat(40));
         assertTrue(lang.length() <= 72);
+    }
+
+    /** Die echten Titel vom 8. Nov.: neun Issues, drei Themen. */
+    @Test
+    public void gleichesThemaWirdErkannt() {
+        String s = Wishes.add("", "TFT-Coaching priorisieren", "");
+        s = Wishes.markSent(s, "TFT-Coaching priorisieren", 23);
+        assertEquals("#23", Wishes.similar(s, "TFT-Coaching als Priorität").status);
+        assertNotNull(Wishes.similar(s, "TFT-Coaching beschleunigen"));
+        assertNotNull(Wishes.similar(s, "Schnelles, effizientes TFT-Coaching"));
+
+        s = Wishes.add(s, "Dazwischenreden zuverlässig machen", "");
+        assertNotNull(Wishes.similar(s, "Dazwischenreden zuverlässiger unterbrechen"));
+        assertNotNull(Wishes.similar(s, "Dazwischenreden zuverlässiger"));
+
+        s = Wishes.add(s, "Empfindlichkeit für Jarvis-Abbruch", "");
+        assertNotNull(Wishes.similar(s, "Empfindlichkeit für Jarvis-Abbruch")); // gleicher Titel (#26, #30)
+    }
+
+    @Test
+    public void verschiedeneWuenscheBleibenGetrennt() {
+        String s = Wishes.add("", "Dazwischenreden zuverlässig machen", "");
+        s = Wishes.add(s, "Stimme bricht mitten im Satz ab", "");
+        assertNull(Wishes.similar(s, "Eigene Stimme nicht als Unterbrechung werten"));
+        assertNull(Wishes.similar(s, "Kürzere Antworten"));
+        assertNull(Wishes.similar(s, "Tiefere Stimme"));
+        assertNull(Wishes.similar("", "Kürzere Antworten"));
     }
 }

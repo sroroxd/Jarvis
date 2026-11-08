@@ -1240,16 +1240,26 @@ public class JarvisService extends Service {
      * @param confirm selbst bestätigen (beim Sprachbefehl); bei der Steuerzeile bestätigt Claude schon.
      */
     private void noteWish(String title, String body, boolean confirm) {
-        prefs.setWishes(Wishes.add(prefs.wishes(), title, body));
-        Backup.autoSave(this, prefs);
+        // Schon notiert (gleicher Titel oder dasselbe Thema)? Dann kein zweites Issue. Vorher wurde jeder Wunsch
+        // gesendet, auch wenn derselbe Titel schon gespeichert war – am 8. Nov. neun Issues für drei Wünsche.
+        Wishes.Wish known = Wishes.similar(prefs.wishes(), title);
+        if (known == null) {
+            prefs.setWishes(Wishes.add(prefs.wishes(), title, body));
+            Backup.autoSave(this, prefs);
+        }
         String token = prefs.githubToken();
         if (confirm) {
             setState(State.IDLE);
-            speak(token.isEmpty()
-                    ? "Notiert, Sir. Damit es direkt als Aufgabe an die Entwicklung geht, fehlt noch der GitHub-Schlüssel in den Einstellungen."
-                    : "Notiert, Sir. Ich gebe es als Aufgabe an die Entwicklung weiter.");
+            if (known != null) {
+                speak(known.open() ? "Das habe ich schon notiert, Sir."
+                        : "Das liegt schon als Aufgabe " + known.status + " bei der Entwicklung, Sir.");
+            } else {
+                speak(token.isEmpty()
+                        ? "Notiert, Sir. Damit es direkt als Aufgabe an die Entwicklung geht, fehlt noch der GitHub-Schlüssel in den Einstellungen."
+                        : "Notiert, Sir. Ich gebe es als Aufgabe an die Entwicklung weiter.");
+            }
         }
-        if (token.isEmpty()) return;
+        if (token.isEmpty() || known != null) return;
         wishSender.send(token, title, body, today(), (issue, error) -> {
             if (issue > 0) {
                 prefs.setWishes(Wishes.markSent(prefs.wishes(), title, issue));
