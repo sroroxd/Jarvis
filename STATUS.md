@@ -315,6 +315,8 @@ Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
   Handy-Stimme (jeder ausgefallene Satz genau einmal). Einstellungen → Stimme → Schalter „Jarvis spricht mit der
   Offline-Stimme“ (geht erst nach „ausprobieren“; Standard aus; geht vor ElevenLabs). Gerätetest prüft den Ablauf
   im Emulator (Hinweis, kein Abbruch; Tempo dort ~30-fach langsamer).
+- **Gerätetest:** Build 105 fiel durch („App-Prozess läuft nicht mehr“): Der Test hielt zwei Modelle gleichzeitig im
+  kleinen Emulator. Build 106, mit nur einem Modell, bestand – Antwort gesprochen, Ablauf endet sauber.
 - **Noch ungeprüft auf dem Handy:** Wie die Stimme im Spiel neben TFT klingt und ob die CPU-Last (4 Threads) die
   Partie stört; Aussprache englischer Namen („Ornn“); Dazwischenreden mit dieser Stimme.
 - **Was Arts Messung entschieden hat:** Unter 1 s Rechenzeit für „Zu Diensten, Sir.“ (ohne den ersten Satz, der die
