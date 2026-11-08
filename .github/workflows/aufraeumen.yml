@@ -1,11 +1,20 @@
 name: Alte Releases aufräumen
 
 # Einmal von Hand starten: GitHub → Actions → „Alte Releases aufräumen“ → Run workflow.
-# Löscht genau die Liste unten – Release UND Git-Tag (im Browser bleibt der Tag sonst stehen).
-# Stehen bleiben immer: v1.0.43, v1.0.32, v1.0.29 (Rückfall), vorschau (Design-Vorschau schreibt
-# dorthin) und test-sammeltest (aktuelle Test-App). Ein zweiter Lauf schadet nicht: Fehlendes wird übersprungen.
+# WICHTIG: Bei „Use workflow from“ den Zweig ccr-4f440a4a-dx81et wählen – auf main liegt noch die alte Liste.
+#
+# Löscht genau die Listen unten: alte Releases samt Git-Tag und alte Arbeitszweige. Ein Zweig wird nur gelöscht,
+# wenn jeder seiner Commits nachweislich im Zweig „sicher_in“ steckt – sonst bleibt er stehen und der Lauf wird rot.
+# Stehen bleiben immer: main, ccr-4f440a4a-dx81et, v1.0.43 (aktuelle normale App, Ziel des Download-Links),
+# vorschau (Gerätetest schreibt dorthin) und test-ccr-4f440a4a-dx81et (aktuelle Test-App).
+# Ein zweiter Lauf schadet nicht: Fehlendes wird übersprungen.
 on:
   workflow_dispatch:
+    inputs:
+      sicher_in:
+        description: "Zweig, der alle zu löschenden Zweige enthalten muss"
+        default: ccr-4f440a4a-dx81et
+        required: true
 
 permissions:
   contents: write
@@ -16,25 +25,28 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      SICHER_IN: ${{ inputs.sicher_in }}
     steps:
-      - name: Releases und Tags löschen
+      - name: Releases, Tags und Zweige löschen
         run: |
           set -u
-          behalten="v1.0.43 v1.0.32 v1.0.29 vorschau test-sammeltest"
-          weg="test test-wachwort-jarvis test-tft-coach test-jarvis-haende
-               v1.0.1 v1.0.2 v1.0.3 v1.0.4 v1.0.5 v1.0.6 v1.0.7
-               v1.0.10 v1.0.11 v1.0.12 v1.0.13 v1.0.14 v1.0.15 v1.0.16
-               v1.0.22 v1.0.23 v1.0.26"
+          behalten="main ccr-4f440a4a-dx81et v1.0.43 vorschau test-ccr-4f440a4a-dx81et"
+          releases_weg="test-selbst-update test-gespraechstest-ci test-geraetetest-schranke
+                        test-fix-dazwischenreden-abbruch test-feinschliff-cache test-sammeltest
+                        test test-wachwort-jarvis test-tft-coach test-jarvis-haende
+                        v1.0.29 v1.0.32"
+          zweige_weg="agent-ruckgrat feinschliff-cache fix-dazwischenreden-abbruch geraetetest-schranke
+                      gespraech-modus gespraechstest-ci jarvis-haende sammeltest selbst-update
+                      tft-coach wachwort-jarvis"
 
           # Direkt über die API mit Statuscode: GitHub antwortet beim Löschen gelegentlich mit
-          # HTTP 500/502 (beim ersten Lauf am 4. Nov. siebenmal). Das wird jetzt wiederholt –
-          # und was am Ende übrig bleibt, macht den Lauf rot statt „erfolgreich“.
+          # HTTP 500/502 (am 4. Nov. siebenmal). Das wird wiederholt – was übrig bleibt, macht den Lauf rot.
           api() { # Methode Pfad [Ausgabedatei]
             curl -s -o "${3:-/dev/null}" -w '%{http_code}' -X "$1" \
               -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/$GH_REPO/$2"
           }
-          loesche() { # Tag
+          loesche_release() { # Tag
             for versuch in 1 2 3 4 5 6; do
               code=$(api GET "releases/tags/$1" /tmp/release.json)
               if [ "$code" = 200 ]; then
@@ -48,23 +60,50 @@ jobs:
               fi
               code=$(api DELETE "git/refs/tags/$1")
               case "$code" in
-                204|404|422) echo "Erledigt: $1"; return 0 ;;   # 422 = Tag gibt es schon nicht mehr
+                204|404|422) echo "Release weg: $1"; return 0 ;;   # 422 = Tag gibt es schon nicht mehr
                 *) echo "  $1: Tag löschen → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)) ;;
+              esac
+            done
+            return 1
+          }
+          loesche_zweig() { # Zweig
+            for versuch in 1 2 3 4 5 6; do
+              code=$(api GET "branches/$1")
+              if [ "$code" = 404 ]; then echo "Zweig schon weg: $1"; return 0; fi
+              # Sicherung: Steckt jeder Commit des Zweigs in SICHER_IN? (behind_by = Commits, die dort fehlen)
+              code=$(api GET "compare/$1...$SICHER_IN" /tmp/compare.json)
+              if [ "$code" != 200 ]; then
+                echo "  $1: Vergleich → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)); continue
+              fi
+              fehlt=$(jq -r .behind_by /tmp/compare.json)
+              if [ "$fehlt" != 0 ]; then
+                echo "::warning title=Zweig bleibt::$1 hat $fehlt Commit(s), die nicht in $SICHER_IN stecken – nicht gelöscht."
+                return 1
+              fi
+              code=$(api DELETE "git/refs/heads/$1")
+              case "$code" in
+                204|404|422) echo "Zweig weg: $1 (vollständig in $SICHER_IN)"; return 0 ;;
+                *) echo "  $1: Zweig löschen → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)) ;;
               esac
             done
             return 1
           }
 
           fehler=""
-          for t in $weg; do
+          for t in $releases_weg; do
             case " $behalten " in *" $t "*) echo "Geschützt, bleibt: $t"; continue ;; esac
-            loesche "$t" || fehler="$fehler $t"
+            loesche_release "$t" || fehler="$fehler $t"
+          done
+          for z in $zweige_weg; do
+            case " $behalten $SICHER_IN " in *" $z "*) echo "Geschützt, bleibt: $z"; continue ;; esac
+            loesche_zweig "$z" || fehler="$fehler $z"
           done
           echo
           echo "Was jetzt noch da ist:"
           gh release list --limit 50
+          gh api "repos/$GH_REPO/branches" --jq '.[].name'
           if [ -n "$fehler" ]; then
-            echo "::error title=Nicht alles gelöscht::Übrig:$fehler – Workflow einfach noch einmal starten."
+            echo "::error title=Nicht alles gelöscht::Übrig:$fehler – Meldungen oben lesen, dann ggf. noch einmal starten."
             exit 1
           fi
 
@@ -72,7 +111,11 @@ jobs:
         if: always()
         run: |
           {
-            echo "### Releases nach dem Aufräumen"
+            echo "### Nach dem Aufräumen"
             echo
+            echo "**Releases**"
             gh release list --limit 50 | awk -F'\t' '{print "- " $3 " (" $1 ")"}'
+            echo
+            echo "**Zweige**"
+            gh api "repos/$GH_REPO/branches" --jq '.[] | "- " + .name'
           } >> "$GITHUB_STEP_SUMMARY"

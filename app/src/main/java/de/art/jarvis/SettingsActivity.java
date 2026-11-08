@@ -31,6 +31,12 @@ public class SettingsActivity extends AppCompatActivity {
 
     private ActivitySettingsBinding b;
     private Prefs prefs;
+    /**
+     * Gedächtnis, wie es zuletzt im Feld angezeigt wurde. Gespeichert wird das Feld nur, wenn Art es geändert
+     * hat – sonst überschrieb das Verlassen der Einstellungen, was Jarvis sich inzwischen gemerkt hatte
+     * („Jarvis, merk dir …“, während die Einstellungen offen sind).
+     */
+    private String shownMemory = "";
 
     private ElevenTts elevenPreview;
     private TextToSpeech previewTts;
@@ -62,9 +68,11 @@ public class SettingsActivity extends AppCompatActivity {
         setupVoice();
         setupDisplay();
         setupGame();
+        setupWishes();
+        setupAgent();
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
-        hideTicks(b.sliderSensitivity, b.sliderPause, b.sliderRate, b.sliderPitch);
+        hideTicks(b.sliderSensitivity, b.sliderBargeIn, b.sliderPause, b.sliderRate, b.sliderPitch);
     }
 
     /** Ohne die Rasterpunkte wirken die Regler ruhiger. */
@@ -131,6 +139,23 @@ public class SettingsActivity extends AppCompatActivity {
 
         b.switchEarcon.setChecked(prefs.earcon());
         b.switchEarcon.setOnCheckedChangeListener((v, on) -> prefs.setEarcon(on));
+        b.switchBargeIn.setChecked(prefs.bargeIn());
+        b.switchBargeIn.setOnCheckedChangeListener((v, on) -> {
+            prefs.setBargeIn(on);
+            refreshService();
+        });
+        b.switchEchoCall.setChecked(prefs.echoCallMode());
+        b.switchEchoCall.setOnCheckedChangeListener((v, on) -> {
+            prefs.setEchoCallMode(on);
+            refreshService();
+        });
+        setSlider(b.sliderBargeIn, prefs.bargeInSensitivity());
+        b.bargeInValue.setText(String.valueOf(prefs.bargeInSensitivity()));
+        b.sliderBargeIn.setLabelFormatter(v -> String.valueOf(Math.round(v)));
+        b.sliderBargeIn.addOnChangeListener((sl, value, fromUser) -> {
+            b.bargeInValue.setText(String.valueOf(Math.round(value)));
+            if (fromUser) prefs.setBargeInSensitivity(Math.round(value));
+        });
 
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         b.pauseValue.setText(seconds(prefs.pauseMs() / 1000f));
@@ -203,7 +228,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
         b.voiceResult.setVisibility(View.GONE);
         Voices.apply(previewTts, prefs, previewEngine);
-        previewTts.speak(PREVIEW_TEXT, TextToSpeech.QUEUE_FLUSH, null, "preview");
+        previewTts.speak(Text.sirForDeviceVoice(PREVIEW_TEXT), TextToSpeech.QUEUE_FLUSH, null, "preview");
     }
 
     /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */
@@ -289,12 +314,158 @@ public class SettingsActivity extends AppCompatActivity {
             prefs.setTftMode(on);
             refreshService();
         });
+        b.switchProactive.setChecked(prefs.proactiveCoach());
+        b.switchProactive.setOnCheckedChangeListener((v, on) -> {
+            prefs.setProactiveCoach(on);
+            refreshService();
+        });
+        b.switchGameThink.setChecked(prefs.gameThinkDeep());
+        b.switchGameThink.setOnCheckedChangeListener((v, on) -> {
+            prefs.setGameThinkDeep(on);
+            refreshService();
+        });
+        b.switchGameAuto.setChecked(prefs.gameAuto());
+        b.switchGameAuto.setOnCheckedChangeListener((v, on) -> {
+            prefs.setGameAuto(on);
+            if (on && !GameWatch.permitted(this)) openUsageAccess();
+            updateUsageAccess();
+            refreshService();
+        });
+        b.grantUsageAccess.setOnClickListener(v -> openUsageAccess());
+        updateUsageAccess();
+    }
+
+    /** Knopf „Nutzungsdatenzugriff erlauben“ nur, solange die Erkennung an ist und die Freigabe fehlt. */
+    private void updateUsageAccess() {
+        b.grantUsageAccess.setVisibility(prefs.gameAuto() && !GameWatch.permitted(this) ? View.VISIBLE : View.GONE);
+    }
+
+    /** Systemseite „Nutzungsdatenzugriff“ – möglichst direkt bei Jarvis, sonst die Liste aller Apps. */
+    private void openUsageAccess() {
+        try {
+            startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:" + getPackageName())));
+        } catch (Exception direct) {
+            try {
+                startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+            } catch (Exception ignored) {
+                // sehr ungewöhnlich – der Knopf bleibt sichtbar
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- Wünsche an die Entwicklung
+
+    /**
+     * GitHub-Formular für einen fein eingeschränkten Schlüssel, vorausgefüllt per URL (laut GitHub-Doku:
+     * name, description, target_name, expires_in und Berechtigungen). Die Auswahl des Repos lässt
+     * GitHub nicht vorausfüllen – das tippt Art selbst an.
+     */
+    private static final String GITHUB_TOKEN_TEMPLATE = "https://github.com/settings/personal-access-tokens/new"
+            + "?name=Jarvis+W%C3%BCnsche"
+            + "&description=Jarvis+legt+W%C3%BCnsche+als+Aufgaben+in+sroroxd%2FJarvis+an"
+            + "&target_name=sroroxd&expires_in=365&issues=write";
+
+    /** Stand der Issues auf GitHub (null = noch nicht geladen). */
+    private java.util.Map<Integer, String> wishStates;
+    private boolean wishStatesLoading;
+
+    /** Wunschliste anzeigen; den echten Stand auf GitHub einmal pro Öffnen der Einstellungen nachladen. */
+    private void showWishes() {
+        b.wishList.setText(Wishes.display(prefs.wishes(), wishStates));
+        if (wishStates != null || wishStatesLoading) return;
+        wishStatesLoading = true;
+        new WishSender().fetchStates(prefs.githubToken(), states -> {
+            wishStatesLoading = false;
+            if (states == null || isFinishing() || isDestroyed()) return;
+            wishStates = states;
+            b.wishList.setText(Wishes.display(prefs.wishes(), wishStates));
+        });
+    }
+
+    private void setupWishes() {
+        b.githubTokenField.setText(prefs.githubToken());
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
+        showWishes();
+        b.wishSend.setOnClickListener(v -> sendOpenWishes());
+        b.githubTokenCreate.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_TOKEN_TEMPLATE)));
+            } catch (Exception ignored) {
+                showResult(b.wishResult, "✗ Kein Browser gefunden.");
+            }
+        });
+    }
+
+    /** Schickt alle noch offenen Wünsche als Aufgaben an GitHub. */
+    private void sendOpenWishes() {
+        prefs.setGithubToken(text(b.githubTokenField));
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
+        String token = prefs.githubToken();
+        if (token.isEmpty()) {
+            showResult(b.wishResult, "✗ Erst den GitHub-Schlüssel eintragen.");
+            return;
+        }
+        java.util.List<Wishes.Wish> open = new java.util.ArrayList<>();
+        for (Wishes.Wish w : Wishes.load(prefs.wishes())) if (w.open()) open.add(w);
+        if (open.isEmpty()) {
+            showResult(b.wishResult, "Keine offenen Wünsche.");
+            return;
+        }
+        showResult(b.wishResult, "Sende " + open.size() + " …");
+        WishSender sender = new WishSender();
+        int[] left = {open.size()};
+        String[] lastError = {null};
+        for (Wishes.Wish w : open) {
+            sender.send(token, w.title, w.body, JarvisService.today(), (issue, error) -> {
+                if (issue > 0) prefs.setWishes(Wishes.markSent(prefs.wishes(), w.title, issue));
+                else lastError[0] = error;
+                if (--left[0] == 0) {
+                    Backup.autoSave(this, prefs);
+                    wishStates = null; // neue Aufgaben: Stand neu laden
+                    showWishes();
+                    showResult(b.wishResult, lastError[0] == null ? "✓ Alle gesendet." : "✗ " + lastError[0]);
+                }
+            });
+        }
+    }
+
+    // ---------------------------------------------------------------- Agent-Rückgrat
+
+    private void setupAgent() {
+        b.agentTokenField.setText(prefs.agentToken());
+        b.switchAgent.setChecked(prefs.agentEnabled());
+        b.switchAgent.setOnCheckedChangeListener((v, on) -> {
+            prefs.setAgentEnabled(on);
+            updateAgentInfo();
+            refreshService();
+        });
+        b.agentTest.setOnClickListener(v -> testAgent());
+        updateAgentInfo();
+    }
+
+    private void updateAgentInfo() {
+        if (!prefs.agentEnabled()) {
+            b.agentInfo.setText("Aus – Aufträge gehen an die Claude-API wie bisher.");
+        } else if (prefs.agentToken().isEmpty()) {
+            b.agentInfo.setText("An, aber ohne Token. Trag das Token ein, sonst weist der Agent jeden Auftrag ab.");
+        } else {
+            b.agentInfo.setText("An, Port " + prefs.agentPort() + ", Token " + prefs.agentTokenPreview() + ".");
+        }
+    }
+
+    /** Fragt den Agenten, ob er läuft. Antwort steht direkt unter dem Knopf. */
+    private void testAgent() {
+        prefs.setAgentToken(text(b.agentTokenField));
+        updateAgentInfo();
+        showResult(b.agentInfo, "Prüfe …");
+        new AgentClient().pruefen(prefs.agentPort(), prefs.agentToken(),
+                reply -> showResult(b.agentInfo, reply.ok() ? "✓ " + reply.antwort : "✗ " + reply.fehler));
     }
 
     // ---------------------------------------------------------------- Gedächtnis und Sicherung
 
     private void setupBackup() {
-        b.memoryField.setText(prefs.memory());
+        showMemory();
         b.switchBackupKeys.setChecked(prefs.backupKeys());
         b.switchBackupKeys.setOnCheckedChangeListener((v, on) -> {
             prefs.setBackupKeys(on);
@@ -320,9 +491,12 @@ public class SettingsActivity extends AppCompatActivity {
         if (uri == null) return;
         try {
             int count = Backup.apply(prefs, Backup.read(this, uri));
-            useAsBackupTarget(uri); // künftig in dieselbe Datei sichern
+            // Die Test-App liest eine Sicherung nur – sie schreibt nie zurück, damit die Sicherung
+            // der normalen Jarvis-App unverändert bleibt.
+            if (!BuildConfig.TEST_APP) useAsBackupTarget(uri); // künftig in dieselbe Datei sichern
             refreshFromPrefs();
-            b.backupInfo.setText("✓ Wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen.");
+            b.backupInfo.setText("✓ Wiederhergestellt: " + count + " Gedächtniseinträge und deine Einstellungen."
+                    + (BuildConfig.TEST_APP ? " Die Test-App ändert diese Datei nicht." : ""));
             refreshService();
         } catch (Exception e) {
             b.backupInfo.setText("✗ Das ist keine gültige Jarvis-Sicherung.");
@@ -348,13 +522,29 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Zeigt nach einer Wiederherstellung die übernommenen Werte an. */
     private void refreshFromPrefs() {
+        updateAgentInfo();
+        showWishes();
         b.switchBackupKeys.setChecked(prefs.backupKeys());
-        b.memoryField.setText(prefs.memory());
+        showMemory();
+        // Auch die Schlüssel neu anzeigen: Sonst schrieb das Verlassen der Einstellungen (saveTextFields) die
+        // alten, meist leeren Felder zurück – und die eben wiederhergestellten Schlüssel waren wieder weg.
+        b.keyField.setText(prefs.apiKey());
+        b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        b.elevenKeyField.setText(prefs.elevenKey());
+        b.agentTokenField.setText(prefs.agentToken());
+        b.githubTokenField.setText(prefs.githubToken());
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         b.modelField.setText(prefs.rawModel());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());
         b.switchWake.setChecked(prefs.wakeWord());
         setSlider(b.sliderSensitivity, prefs.sensitivity());
         b.switchEarcon.setChecked(prefs.earcon());
+        b.switchBargeIn.setChecked(prefs.bargeIn());
+        setSlider(b.sliderBargeIn, prefs.bargeInSensitivity());
+        b.switchEchoCall.setChecked(prefs.echoCallMode());
+        b.switchGameAuto.setChecked(prefs.gameAuto());
+        b.switchGameThink.setChecked(prefs.gameThinkDeep());
+        b.switchProactive.setChecked(prefs.proactiveCoach());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         setSlider(b.sliderRate, prefs.rate());
         setSlider(b.sliderPitch, prefs.pitch());
@@ -376,8 +566,10 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Jarvis kann sich im Hintergrund Neues gemerkt haben.
-        b.memoryField.setText(prefs.memory());
+        showMemory();
         updateOverlayWarning();
+        updateUsageAccess(); // zurück von der Systemseite: Freigabe erteilt?
+        refreshService();
     }
 
     @Override
@@ -406,10 +598,22 @@ public class SettingsActivity extends AppCompatActivity {
             b.modelLayout.setError(null);
         }
         prefs.setModel(model);
-        prefs.setMemory(text(b.memoryField));
+        String memory = text(b.memoryField);
+        if (!memory.equals(shownMemory)) {
+            prefs.setMemory(memory);
+            shownMemory = prefs.memory();
+        }
+        prefs.setAgentToken(text(b.agentTokenField));
+        prefs.setGithubToken(text(b.githubTokenField));
+        b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
         Backup.autoSave(this, prefs);
+    }
+
+    private void showMemory() {
+        shownMemory = prefs.memory();
+        b.memoryField.setText(shownMemory);
     }
 
     /** Läuft Jarvis, übernimmt er die Änderungen sofort. */
@@ -432,7 +636,7 @@ public class SettingsActivity extends AppCompatActivity {
             b.metaInfo.setText("Noch keine Meta recherchiert.");
             return;
         }
-        String text = prefs.metaText().replaceAll("\\s+", " ").trim();
+        String text = Meta.clean(prefs.metaText()).replaceAll("\\s+", " ").trim();
         if (text.length() > 160) text = text.substring(0, 160) + " …";
         b.metaInfo.setText("Stand " + date + ": " + text);
     }
@@ -451,6 +655,11 @@ public class SettingsActivity extends AppCompatActivity {
                 Meta.MAX_SEARCHES, new ClaudeClient.Callback() {
                     @Override
                     public void onResult(String text) {
+                        if (!Meta.isPlausible(text)) {
+                            b.metaUpdate.setEnabled(true);
+                            b.metaInfo.setText("✗ Recherche unvollständig – kein Set oder Patch erkennbar. Bitte später noch einmal.");
+                            return;
+                        }
                         prefs.setMeta(text, today);
                         b.metaUpdate.setEnabled(true);
                         updateMetaInfo();

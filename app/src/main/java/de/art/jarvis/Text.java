@@ -7,9 +7,27 @@ final class Text {
     private Text() {}
 
     /** Entfernt alles, was beim Vorlesen stört: Markdown, Aufzählungszeichen, Nummerierungen, Emojis. */
+    private static final java.util.regex.Pattern SIR = java.util.regex.Pattern.compile("\\b([Ss])ir\\b");
+
+    /**
+     * Wunsch #46: Die deutsche Handy-Stimme liest „Sir“ deutsch („Sier“). Für sie wird es „Sör“ geschrieben – so
+     * klingt es englisch. Nur für die Sprachausgabe; angezeigt wird weiter „Sir“.
+     */
+    static String sirForDeviceVoice(String s) {
+        if (s == null) return null;
+        java.util.regex.Matcher m = SIR.matcher(s);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) m.appendReplacement(sb, m.group(1).equals("S") ? "Sör" : "sör");
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
     static String cleanForSpeech(String s) {
         if (s == null) return "";
-        String t = s.replaceAll("(?m)^\\s*(?:[-*•–]|\\d+[.)])\\s+", "");
+        String t = s.replaceAll("(?m)^[ \\t]*[-*•–][ \\t]+", "");
+        // Nummerierungen („1. …“) nur in mehrzeiligen Antworten entfernen, und nur mit Text dahinter.
+        // Sonst verschluckte das Vorlesen Zahlen am Satzanfang: „51. Soll ich weiterrechnen?“ wurde zu „Soll ich …“.
+        if (s.indexOf('\n') >= 0) t = t.replaceAll("(?m)^[ \\t]*\\d+[.)][ \\t]+(?=\\S)", "");
         t = t.replaceAll("[*#_`>~|]", "");
         t = t.replaceAll("[\\x{1F000}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{2B00}-\\x{2BFF}\\x{FE0F}\\x{200D}]", "");
         t = t.replaceAll("([^.!?:;,\\s])\\s*\\n+\\s*", "$1. ");
@@ -37,7 +55,8 @@ final class Text {
         if (k == null || k.isEmpty()) return "Kein Schlüssel gespeichert.";
         String head = k.substring(0, Math.min(10, k.length()));
         String tail = k.length() > 14 ? k.substring(k.length() - 4) : "";
-        String kind = isGeminiKey(k) ? "Gemini" : k.startsWith("sk-ant-") ? "Claude" : "unbekanntes Format";
+        String kind = isGeminiKey(k) ? "Gemini" : k.startsWith("sk-ant-") ? "Claude"
+                : k.startsWith("github_pat_") || k.startsWith("ghp_") ? "GitHub" : "unbekanntes Format";
         return "Gespeichert: " + head + "…" + tail + " (" + k.length() + " Zeichen, " + kind + ")";
     }
 
@@ -54,11 +73,11 @@ final class Text {
         if (code == 403 || "permission_error".equals(t)) return "Der Schlüssel hat keine Berechtigung" + suffix;
         if (lower.contains("credit balance")) return "Das API-Guthaben ist aufgebraucht. Bitte in der Anthropic-Konsole aufladen.";
         if (code == 404 || "not_found_error".equals(t)) {
-            return "Das eingestellte Modell ist nicht verfügbar. Lass das Modellfeld in der App leer" + suffix;
+            return "Das eingestellte Modell ist nicht verfügbar. Lassen Sie das Modellfeld in der App leer" + suffix;
         }
-        if (code == 429 || "rate_limit_error".equals(t)) return "Zu viele Anfragen in kurzer Zeit. Versuch es gleich noch einmal.";
+        if (code == 429 || "rate_limit_error".equals(t)) return "Zu viele Anfragen in kurzer Zeit. Versuchen Sie es gleich noch einmal.";
         if (code == 529 || "overloaded_error".equals(t) || code >= 500) {
-            return "Die Claude-Server sind gerade überlastet. Versuch es gleich noch einmal.";
+            return "Die Claude-Server sind gerade überlastet. Versuchen Sie es gleich noch einmal.";
         }
         if (code == 400) return "Die Anfrage wurde abgelehnt (Fehler 400)" + suffix;
         return "Fehler " + code + suffix;
@@ -71,7 +90,7 @@ final class Text {
     static String replyOrFallback(String raw, String cleaned) {
         if (cleaned != null && !cleaned.isEmpty()) return cleaned;
         if (raw != null && raw.toUpperCase(java.util.Locale.ROOT).contains("[MERKEN")) return "Notiert, Sir.";
-        return "Ich habe darauf keine Antwort bekommen. Frag mich bitte noch einmal.";
+        return "Ich habe darauf keine Antwort bekommen. Fragen Sie mich bitte noch einmal.";
     }
 
     /**

@@ -39,6 +39,8 @@ final class ElevenTts {
     private final Context context;
     private final Handler main = new Handler(Looper.getMainLooper());
     private MediaPlayer player;
+    /** Im Telefonmodus (Dauergespräch) als Sprachkommunikation abspielen, damit die Echo-Unterdrückung greift. */
+    private int usage = AudioAttributes.USAGE_ASSISTANT;
     private int generation;
 
     ElevenTts(Context context) {
@@ -106,7 +108,7 @@ final class ElevenTts {
         try {
             MediaPlayer mp = new MediaPlayer();
             mp.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ASSISTANT)
+                    .setUsage(usage)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build());
             mp.setDataSource(file.getAbsolutePath());
@@ -127,6 +129,10 @@ final class ElevenTts {
             release();
             listener.onError("Wiedergabe fehlgeschlagen.");
         }
+    }
+
+    void setVoiceCall(boolean on) {
+        usage = on ? AudioAttributes.USAGE_VOICE_COMMUNICATION : AudioAttributes.USAGE_ASSISTANT;
     }
 
     boolean isSpeaking() {

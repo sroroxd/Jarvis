@@ -3,17 +3,28 @@ plugins {
 }
 
 def runNumber = Integer.parseInt(System.getenv('GITHUB_RUN_NUMBER') ?: '1')
+// Zweig, aus dem gebaut wurde – die Test-App fragt damit auf GitHub nach einer neueren Version.
+def branchName = (System.getenv('GITHUB_REF_NAME') ?: '').replaceAll('[^A-Za-z0-9._/-]', '')
+
+// Arbeitszweige bauen mit „-PtestApp“ eine eigene Test-App („Jarvis Test“). Sie hat eine andere
+// Paket-ID, installiert sich NEBEN die normale Jarvis-App und hat eigene Einstellungen und eigenes
+// Gedächtnis – die normale App wird dabei weder überschrieben noch verändert.
+def testApp = project.hasProperty('testApp')
 
 android {
     namespace 'de.art.jarvis'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'de.art.jarvis'
+        applicationId testApp ? 'de.art.jarvis.test' : 'de.art.jarvis'
         minSdk 30
         targetSdk 35
         versionCode runNumber
-        versionName "1.0.${runNumber}"
+        versionName testApp ? "1.0.${runNumber}-test" : "1.0.${runNumber}"
+        resValue 'string', 'app_name', testApp ? 'Jarvis Test' : 'Jarvis'
+        resValue 'string', 'listen_name', testApp ? 'Jarvis Test sprechen' : 'Jarvis sprechen'
+        buildConfigField 'boolean', 'TEST_APP', testApp ? 'true' : 'false'
+        buildConfigField 'String', 'BRANCH', "\"${branchName}\""
     }
 
     // Fester Schlüssel, damit jede neue APK sich über die alte installieren lässt.
@@ -44,6 +55,7 @@ android {
 
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 
     compileOptions {
@@ -68,4 +80,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.13.0'
     testImplementation 'junit:junit:4.13.2'
+    // Echte JSON-Klassen für die Tests – Android liefert dort sonst nur leere Platzhalter.
+    testImplementation 'org.json:json:20240303'
 }

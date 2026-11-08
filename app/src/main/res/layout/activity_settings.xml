@@ -73,7 +73,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:hint="Modell (leer = automatisch)"
-                        app:helperText="Leer = Claude Sonnet 5.5 (schnell, ohne Nachdenken). Sparen: claude-haiku-5-5">
+                        app:helperText="Leer = Claude Sonnet 5.5 (schnell, denkt nur bei kniffligen Fragen kurz nach). Sparen: claude-haiku-5-5">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/modelField"
@@ -126,13 +126,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Freihändig mit „Hey Jarvis“" />
+                        android:text="Freihändig mit „Jarvis“" />
 
                     <TextView
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Sag „Hey Jarvis“, warte den kurzen Ton ab und sprich los. Die Erkennung läuft offline auf dem Handy und pausiert bei ausgeschaltetem Bildschirm. Das Mikrofon-Symbol oben in der Statusleiste zeigt, dass Jarvis lauscht." />
+                        android:text="Sag „Jarvis“ und sprich los – ohne Antippen. Der kurze Ton zeigt, dass Jarvis zuhört. „Hey Jarvis“ klappt auch. Die Erkennung läuft offline auf dem Handy und pausiert bei ausgeschaltetem Bildschirm. Das Mikrofon-Symbol oben in der Statusleiste zeigt, dass Jarvis lauscht." />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -167,7 +167,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Höher = reagiert leichter, löst aber auch öfter versehentlich aus. Standard: 5." />
+                        android:text="Höher = reagiert leichter, löst aber auch öfter versehentlich aus. Gilt auch, wenn du Jarvis beim Sprechen mit „Jarvis“ unterbrichst. Standard: 5." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchEarcon"
@@ -176,6 +176,69 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="Signalton, wenn Jarvis zuhört" />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchBargeIn"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Dazwischenreden unterbricht Jarvis" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Im Dauergespräch: Sobald du sprichst, hört Jarvis auf zu reden und hört zu. Unterbricht er sich selbst (Lautsprecher sehr laut), hier ausschalten – dann unterbricht nur „Jarvis“." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchEchoCall"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Echo-Filter wie beim Telefonieren" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Im Dauergespräch spricht Jarvis wie bei einem Videoanruf über den Lautsprecher – nur so filtert das Handy seine eigene Stimme heraus und du kannst ihn unterbrechen. Klingt etwas nach Telefon; die Lautstärke stellst du dann mit den Lautstärketasten ein, während er spricht. Mit Kopfhörern nicht nötig." />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/Jarvis.Label"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Empfindlichkeit beim Dazwischenreden" />
+
+                        <TextView
+                            android:id="@+id/bargeInValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorPrimary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderBargeIn"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:stepSize="1"
+                        android:valueFrom="1"
+                        android:valueTo="10" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Höher = deine Stimme unterbricht Jarvis schon, wenn du leiser sprichst. Unterbricht er sich dann selbst, wieder niedriger stellen. Standard: 5." />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -237,7 +300,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Mit ElevenLabs-Schlüssel spricht Jarvis mit der Premium-Stimme „Daniel“. Sonst offline über SherpaTTS: Thorsten → Miro → Alan. Deine eigene Auswahl hat immer Vorrang." />
+                        android:text="Mit ElevenLabs-Schlüssel spricht Jarvis mit der Premium-Stimme „Daniel“. Sonst offline über SherpaTTS: Miro → Thorsten → Alan. Deine eigene Auswahl hat immer Vorrang." />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/engineLayout"
@@ -546,6 +609,57 @@
                         android:layout_height="wrap_content"
                         android:text="Nichts verdeckt das Spielbild, Jarvis antwortet nur per Stimme und denkt als TFT-Coach mit (Claude Sonnet 5.5). Umschalten auch per Sprache: „Spielmodus an“ oder „Spielmodus aus“." />
 
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchProactive"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Von selbst coachen" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Zu Beginn jeder Planungsphase sagt Jarvis ungefragt den wichtigsten Befehl an, wenn nötig mit Aufstellung – sonst schweigt er. Braucht die Bildschirmfreigabe. Kosten (geschätzt): rund 0,8 Cent pro Ansage, etwa 15–20 Cent pro Partie." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchGameThink"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Gründlicher nachdenken" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Aus (Standard) = schnellste Befehle; Jarvis liest Gold, Stufe und Leben aber immer zuerst ab. An = denkt vor fast jeder Antwort nach – manchmal bessere Pläne, dafür spürbar langsamer." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchGameAuto"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="TFT automatisch erkennen" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Läuft TFT im Vordergrund, schaltet Jarvis den Spielmodus selbst ein und hört ohne „Jarvis“ zu. Bist du länger als 20 Sekunden aus dem Spiel, geht beides wieder aus. Braucht einmalig die Freigabe „Nutzungsdatenzugriff“ – damit sieht Jarvis nur, welche App gerade vorne ist." />
+
+                    <Button
+                        android:id="@+id/grantUsageAccess"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Nutzungsdatenzugriff erlauben"
+                        android:visibility="gone" />
+
                     <TextView
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
@@ -575,6 +689,172 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="Hinweis: Live-Tipps während einer Partie verstoßen gegen Riots Regeln – Nutzung auf eigenes Risiko." />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ===================================================== Wünsche an die Entwicklung -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Jarvis.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Jarvis.SectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Wünsche an die Entwicklung" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Sag „Notier für die Entwicklung: …“ – oder sprich einfach über einen Wunsch, Jarvis erkennt ihn. Er landet als Aufgabe im Repo sroroxd/Jarvis, und Claude arbeitet ihn dort ab. Kein Abtippen, kein Wechsel zu Claude." />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/githubTokenLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="GitHub-Schlüssel"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/githubTokenField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Der Knopf öffnet GitHub mit allem vorausgefüllt. Dort nur noch „Only select repositories“ → sroroxd/Jarvis wählen und „Generate token“ tippen, dann den Schlüssel hier einfügen. Ohne Schlüssel werden Wünsche nur hier gesammelt." />
+
+                    <Button
+                        android:id="@+id/githubTokenCreate"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Schlüssel bei GitHub anlegen" />
+
+                    <TextView
+                        android:id="@+id/wishList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textIsSelectable="true" />
+
+                    <Button
+                        android:id="@+id/wishSend"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Offene Wünsche senden" />
+
+                    <TextView
+                        android:id="@+id/wishResult"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ===================================================== Agent-Rückgrat -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Jarvis.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Jarvis.SectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Agent-Rückgrat" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Lange Aufgaben übernimmt ein Agent, der auf diesem Handy in Termux läuft (Claude Code). Dateien, Recherche, Zeitpläne – über dein Abo statt über das API-Guthaben. Sag „Übernimm das: …“, „Auftrag: …“, „Kümmere dich um …“ oder „Erledige …“. Im Spielmodus bleibt alles beim schnellen Weg." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAgent"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Aufträge an den Agenten geben" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Token des Agenten"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/agentTokenField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Steht auf dem Handy in ~/.jarvis-agent/token (zeigt das Einrichtungsskript am Ende an)." />
+
+                    <TextView
+                        android:id="@+id/agentInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary" />
+
+                    <Button
+                        android:id="@+id/agentTest"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Verbindung prüfen" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Einrichtung: Termux öffnen und einmal das Skript aus agent/einrichten.sh im Repo starten. Danach läuft der Agent mit dem Befehl „jarvis-agent“ – solange er nicht läuft, meldet Jarvis den Auftrag als nicht zustellbar." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -690,7 +970,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:text="Wiederherstellen" />
+                            android:maxLines="1"
+                            android:text="Zurückholen" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -718,7 +999,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="• „Hey Jarvis“ sagen – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: „Hey Jarvis“ oder Antippen unterbricht.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
+                        android:text="• TFT: Bildschirm freigeben und spielen. Jarvis erkennt das Spiel, hört ohne „Jarvis“ zu und sagt in jeder Planungsphase von selbst den wichtigsten Befehl.\n• Sonst: „Jarvis“ sagen (wenn „Freihändig“ an ist) – oder auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: Antippen unterbricht immer; im Dauergespräch auch „Jarvis“ oder einfach losreden.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

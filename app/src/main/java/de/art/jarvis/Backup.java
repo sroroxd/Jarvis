@@ -20,7 +20,8 @@ import java.util.Locale;
  * API-Schlüssel (Claude/Gemini und ElevenLabs) werden bewusst NICHT gespeichert – die Datei soll gefahrlos herumliegen können.
  */
 final class Backup {
-    static final String FILE_NAME = "jarvis-sicherung.json";
+    /** Die Test-App sichert in eine eigene Datei, damit sie die Sicherung der normalen App nie überschreibt. */
+    static final String FILE_NAME = BuildConfig.TEST_APP ? "jarvis-test-sicherung.json" : "jarvis-sicherung.json";
 
     private Backup() {}
 
@@ -40,10 +41,20 @@ final class Backup {
         if (p.backupKeys()) { // nur auf ausdrücklichen Wunsch
             o.put("apiKey", p.apiKey());
             o.put("elevenKey", p.elevenKey());
+            o.put("agentToken", p.agentToken());
+            o.put("githubToken", p.githubToken());
         }
+        o.put("agent", p.agentEnabled());
+        o.put("wishes", p.wishes());
         o.put("wakeWord", p.wakeWord());
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
+        o.put("bargeIn", p.bargeIn());
+        o.put("bargeInSensitivity", p.bargeInSensitivity());
+        o.put("gameAuto", p.gameAuto());
+        o.put("echoCallMode", p.echoCallMode());
+        o.put("gameThinkDeep", p.gameThinkDeep());
+        o.put("proactiveCoach", p.proactiveCoach());
         o.put("floatingJ", p.floatingJ());
         o.put("subtitles", p.subtitles());
         o.put("subtitlesGame", p.subtitlesInGame());
@@ -70,9 +81,21 @@ final class Backup {
         }
         String elevenKey = o.optString("elevenKey", "");
         if (!elevenKey.isEmpty()) p.setElevenKey(elevenKey);
+        String agentToken = o.optString("agentToken", "");
+        if (!agentToken.isEmpty()) p.setAgentToken(agentToken);
+        p.setAgentEnabled(o.optBoolean("agent", false));
+        String githubToken = o.optString("githubToken", "");
+        if (!githubToken.isEmpty()) p.setGithubToken(githubToken);
+        if (o.has("wishes")) p.setWishes(o.optString("wishes", ""));
         p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));
+        p.setBargeIn(o.optBoolean("bargeIn", true));
+        p.setBargeInSensitivity(o.optInt("bargeInSensitivity", SpeechGate.DEFAULT_LEVEL));
+        p.setGameAuto(o.optBoolean("gameAuto", false));
+        p.setEchoCallMode(o.optBoolean("echoCallMode", true));
+        p.setGameThinkDeep(o.optBoolean("gameThinkDeep", false));
+        p.setProactiveCoach(o.optBoolean("proactiveCoach", true));
         p.setFloatingJ(o.optBoolean("floatingJ", false));
         p.setSubtitles(o.optBoolean("subtitles", true));
         p.setSubtitlesInGame(o.optBoolean("subtitlesGame", false));

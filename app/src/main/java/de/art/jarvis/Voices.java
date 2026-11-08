@@ -107,7 +107,7 @@ final class Voices {
     }
 
     /**
-     * Die zu nutzende Stimme: gespeicherte Wahl → Thorsten → Miro → Alan (Namenssuche)
+     * Die zu nutzende Stimme: gespeicherte Wahl → Miro → Thorsten → Alan (Namenssuche)
      * → bei SherpaTTS: deutsche, dann britische Stimme → beste deutsche Stimme.
      */
     static Voice choose(TextToSpeech tts, Prefs prefs, String enginePkg) {

@@ -34,4 +34,16 @@ public class TimingTest {
         assertTrue(t.voiceStarted(1700));
         assertEquals("Zuhören 0,0 s · KI 1,0 s · Stimme 0,2 s · gesamt 1,2 s", t.summary());
     }
+
+    /** Streaming: Die KI-Zeit endet mit dem ersten Satz, nicht mit dem Ende der Antwort. */
+    @Test
+    public void ersterSatzZaehltBeimStreaming() {
+        Timing t = new Timing();
+        t.speechEnded(1000);
+        t.sent(1200);
+        t.firstAnswer(2000); // erster Satz da
+        assertTrue(t.voiceStarted(2300));
+        t.firstAnswer(4000); // Antwort komplett – ändert die Messung nicht mehr
+        assertEquals("Zuhören 0,2 s · KI 0,8 s · Stimme 0,3 s · gesamt 1,3 s", t.summary());
+    }
 }
