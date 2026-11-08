@@ -199,7 +199,8 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
     Bildschirmfreigabe. Schalter „Von selbst coachen“ (Einstellungen → Spielmodus, Standard an).
     Kosten (geschätzt, nicht gemessen): Wächter rund 4 Cent pro Partie, Ansagen rund 0,8 Cent pro Stück, zusammen etwa
     15–20 Cent pro Partie.
-    Logik in `ProactiveCoach` (8 Unit-Tests). **Ungeprüft:** ob Haiku die Phasen auf echten TFT-Bildern
+    Logik in `ProactiveCoach` (8 Unit-Tests). Der CI-Gerätetest schickt dem Wächter einen gemalten
+    Einstellungs-Bildschirm an die echte API und erwartet „ANDERES“ (prüft Modellname und Format). **Ungeprüft:** ob Haiku die Phasen auf echten TFT-Bildern
     sicher erkennt – dafür braucht es ein paar echte Bildschirmfotos von Art (Planung, Kampf, Karussell).
 
 **Geprüft:** Build (Release und Debug), alle 165 Unit-Tests inklusive Wachwort mit echten Aufnahmen.

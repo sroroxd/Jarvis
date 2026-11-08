@@ -23,6 +23,8 @@ public class ProactiveCoachTest {
         assertEquals(ProactiveCoach.Kind.OTHER, p("ANDERES").kind);
         assertEquals(ProactiveCoach.Kind.OTHER, p("Ich bin mir nicht sicher.").kind);
         assertEquals(ProactiveCoach.Kind.OTHER, p(null).kind);
+        assertEquals("2-1", p("**PLANUNG 2-1**").stage);             // Formatierung des Modells
+        assertEquals(ProactiveCoach.Kind.COMBAT, p("- KAMPF").kind);
     }
 
     @Test

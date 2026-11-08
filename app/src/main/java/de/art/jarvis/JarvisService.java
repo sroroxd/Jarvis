@@ -55,6 +55,8 @@ public class JarvisService extends Service {
     public static final String ACTION_STOP = "de.art.jarvis.STOP";
     /** Nur Debug-Builds: eine Frage so behandeln, als hätte Art sie gesprochen (Gesprächstest in der CI). */
     public static final String ACTION_TEST_ASK = "de.art.jarvis.TEST_ASK";
+    /** Nur Debug-Builds: den Phasen-Wächter einmal mit einem Testbild fragen (CI prüft Modell und Anfrageformat). */
+    public static final String ACTION_TEST_WATCH = "de.art.jarvis.TEST_WATCH";
     public static final String EXTRA_TEXT = "text";
     /** Log-Kennung für den Gesprächstest in der CI – nur Debug-Builds schreiben hier etwas hinein. */
     static final String TEST_TAG = "JarvisTest";
@@ -345,6 +347,7 @@ public class JarvisService extends Service {
                 handleUtterance(text.trim());
             }
         }
+        else if (ACTION_TEST_WATCH.equals(action) && debuggable()) testWatch();
         return START_NOT_STICKY;
     }
 
@@ -536,24 +539,47 @@ public class JarvisService extends Service {
         // dem Haupt-Thread, sonst stocken Spracherkennung und Sprachausgabe.
         watchExecutor.execute(() -> {
             String image = g.captureJpegBase64(false); // Alltagsgröße reicht, um die Phase zu erkennen
-            if (image == null) {
-                main.post(() -> proactiveBusy = false);
-                return;
-            }
-            JSONArray messages = new JSONArray();
-            try {
-                JSONArray content = new JSONArray()
-                        .put(new JSONObject().put("type", "image").put("source", new JSONObject()
-                                .put("type", "base64").put("media_type", "image/jpeg").put("data", image)))
-                        .put(new JSONObject().put("type", "text").put("text", ProactiveCoach.WATCH_PROMPT));
-                messages.put(new JSONObject().put("role", "user").put("content", content));
-            } catch (JSONException e) {
-                main.post(() -> proactiveBusy = false);
-                return;
-            }
-            // Günstiges Modell: Der Wächter sagt nur „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.
-            claude.sendQuick(key, Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, watchCallback);
+            if (image == null || !sendWatch(key, image)) main.post(() -> proactiveBusy = false);
         });
+    }
+
+    /** Fragt den Phasen-Wächter; die Antwort kommt über {@link #watchCallback}. Läuft auf jedem Thread. */
+    private boolean sendWatch(String key, String image) {
+        JSONArray messages = new JSONArray();
+        try {
+            JSONArray content = new JSONArray()
+                    .put(new JSONObject().put("type", "image").put("source", new JSONObject()
+                            .put("type", "base64").put("media_type", "image/jpeg").put("data", image)))
+                    .put(new JSONObject().put("type", "text").put("text", ProactiveCoach.WATCH_PROMPT));
+            messages.put(new JSONObject().put("role", "user").put("content", content));
+        } catch (JSONException e) {
+            return false;
+        }
+        // Günstiges Modell: Der Wächter sagt nur „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.
+        claude.sendQuick(key, Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, watchCallback);
+        return true;
+    }
+
+    /**
+     * CI-Gerätetest: Der Emulator hat keine Bildschirmfreigabe. Ein gemalter Einstellungs-Bildschirm (kein TFT)
+     * geht an den Wächter – richtig ist „ANDERES“. Prüft Modellname, Bildformat und Antwortformat gegen die echte API.
+     */
+    private void testWatch() {
+        android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(1280, 590, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas c = new android.graphics.Canvas(bmp);
+        c.drawColor(0xFFF2F2F2);
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        p.setColor(0xFF202020);
+        p.setTextSize(56);
+        c.drawText("Einstellungen", 60, 110, p);
+        p.setTextSize(40);
+        String[] rows = {"WLAN", "Bluetooth", "Akku", "Anzeige", "Töne und Vibration"};
+        for (int i = 0; i < rows.length; i++) c.drawText(rows[i], 60, 200 + i * 80, p);
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out);
+        bmp.recycle();
+        testLog("waechter-test gesendet");
+        sendWatch(prefs.apiKey(), android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
     }
 
     private final ClaudeClient.Callback watchCallback = new ClaudeClient.Callback() {
@@ -561,7 +587,7 @@ public class JarvisService extends Service {
         public void onResult(String text) {
             proactiveBusy = false;
             ProactiveCoach.Phase phase = ProactiveCoach.parse(text);
-            testLog("phase: " + text.trim());
+            testLog("phase: " + text.trim().replace('\n', ' '));
             long now = SystemClock.elapsedRealtime();
             if (coachPolicy.due(phase, now) && coachNow(phase)) coachPolicy.coached(phase, now);
         }
@@ -569,6 +595,7 @@ public class JarvisService extends Service {
         @Override
         public void onError(String message) {
             proactiveBusy = false; // nächster Blick in ein paar Sekunden
+            testLog("phase fehler: " + message);
         }
     };
 

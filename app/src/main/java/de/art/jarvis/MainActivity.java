@@ -130,7 +130,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     /**
      * Nur Debug-Builds, für den Gesprächstest in der CI (siehe .github/scripts/geraetetest.sh):
      * „testkey“ trägt den API-Schlüssel ein, „teststart“ startet Jarvis ohne Bildschirmfreigabe,
-     * „testfrage“ stellt eine Frage, als wäre sie gesprochen. In der Handy-Version (Release) wirkungslos.
+     * „testfrage“ stellt eine Frage, als wäre sie gesprochen, „testwaechter“ fragt einmal den Phasen-Wächter des
+     * proaktiven Coachings mit einem Testbild. In der Handy-Version (Release) wirkungslos.
      */
     private void readTestHooks(Intent intent) {
         boolean debuggable = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
@@ -143,6 +144,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             startService(new Intent(this, JarvisService.class)
                     .setAction(JarvisService.ACTION_TEST_ASK)
                     .putExtra(JarvisService.EXTRA_TEXT, frage.trim()));
+        }
+        if (intent.getBooleanExtra("testwaechter", false)) {
+            startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_WATCH));
         }
     }
 

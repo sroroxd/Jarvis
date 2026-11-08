@@ -57,7 +57,8 @@ final class ProactiveCoach {
     private long lastSeenAt = Long.MIN_VALUE / 2;
 
     static Phase parse(String reply) {
-        String t = reply == null ? "" : reply.trim().toUpperCase(Locale.GERMANY);
+        // Vorangestellte Zeichen wie „**“ oder „- “ überspringen – Modelle formatieren gern.
+        String t = reply == null ? "" : reply.trim().toUpperCase(Locale.GERMANY).replaceFirst("^[^A-ZÄÖÜ]+", "");
         if (t.startsWith("PLANUNG")) {
             Matcher m = STAGE.matcher(t);
             return new Phase(Kind.PLANNING, m.find() ? m.group(1) + "-" + m.group(2) : null);

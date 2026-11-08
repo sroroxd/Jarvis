@@ -107,6 +107,23 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
     say "  Hinweis: Cache griff bei der zweiten Frage nicht"
   fi
   adb exec-out screencap -p > shots/05_gespraech.png
+  # Proaktives Coaching: Der Phasen-Wächter (Haiku) bekommt einen gemalten Einstellungs-Bildschirm – richtig ist
+  # „ANDERES“. Prüft Modellname und Anfrageformat; ob er echte TFT-Bilder richtig einordnet, zeigt nur das Handy.
+  phases() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "phase( fehler)?:" || true; }
+  pvor=$(phases | wc -l)
+  adb shell "am start -n $ACT --ez testwaechter true" > /dev/null 2>&1
+  for _ in $(seq 1 30); do
+    sleep 2
+    [ "$(phases | wc -l)" -gt "$pvor" ] && break
+  done
+  pline=$(phases | tail -1)
+  if [ "$(phases | wc -l)" -le "$pvor" ]; then
+    say "  FEHLER Phasen-Wächter: keine Antwort nach 60 s"; gfail=1
+  elif echo "$pline" | grep -q "phase: ANDERES"; then
+    say "  Phasen-Wächter: ${pline#*JarvisTest: }"
+  else
+    say "  FEHLER Phasen-Wächter (erwartet ANDERES): ${pline#*JarvisTest: }"; gfail=1
+  fi
 else
   say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
 fi
