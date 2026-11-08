@@ -292,6 +292,15 @@ public final class Prefs {
     // ---------------------------------------------------------------- Dazwischenreden
 
     /** Im Dauergespräch unterbricht Arts Stimme Jarvis sofort (Standard an). */
+    /** Jarvis spricht mit der Offline-Stimme (Pocket TTS) statt mit ElevenLabs oder der Handy-Stimme. */
+    public boolean pocketVoice() {
+        return sp.getBoolean("pocket_voice", false);
+    }
+
+    public void setPocketVoice(boolean value) {
+        sp.edit().putBoolean("pocket_voice", value).apply();
+    }
+
     public boolean bargeIn() {
         return sp.getBoolean("barge_in", true);
     }

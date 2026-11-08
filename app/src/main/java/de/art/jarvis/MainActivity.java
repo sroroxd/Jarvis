@@ -144,6 +144,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             // zwischen die Testfragen streuen. Die Fragen kommen über „testfrage“.
             prefs.setAlwaysListen(false);
         }
+        // „testpocketstimme“: Jarvis spricht mit der Offline-Stimme (Modell muss schon im App-Ordner liegen).
+        if (intent.getBooleanExtra("testpocketstimme", false)) prefs.setPocketVoice(true);
         if (intent.getBooleanExtra("teststart", false)) startJarvis(RESULT_CANCELED, null);
         String frage = intent.getStringExtra("testfrage");
         if (frage != null && !frage.trim().isEmpty()) {

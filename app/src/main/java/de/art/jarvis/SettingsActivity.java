@@ -209,6 +209,11 @@ public class SettingsActivity extends AppCompatActivity {
         b.previewVoice.setOnClickListener(v -> preview());
         b.pocketTry.setOnClickListener(v -> tryPocket());
         if (PocketTrial.downloaded(this)) b.pocketTry.setText("Offline-Stimme anhören (schon geladen)");
+        updatePocketSwitch();
+        b.switchPocket.setOnCheckedChangeListener((v, on) -> {
+            prefs.setPocketVoice(on);
+            refreshService();
+        });
         loadPreviewEngine(active);
     }
 
@@ -260,8 +265,16 @@ public class SettingsActivity extends AppCompatActivity {
             if (done) {
                 b.pocketTry.setEnabled(true);
                 if (PocketTrial.downloaded(this)) b.pocketTry.setText("Offline-Stimme anhören (schon geladen)");
+                updatePocketSwitch();
             }
         });
+    }
+
+    /** Der Schalter geht erst, wenn das Modell auf dem Handy liegt. */
+    private void updatePocketSwitch() {
+        boolean ready = PocketTrial.downloaded(this);
+        b.switchPocket.setEnabled(ready);
+        b.switchPocket.setChecked(ready && prefs.pocketVoice());
     }
 
     /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */

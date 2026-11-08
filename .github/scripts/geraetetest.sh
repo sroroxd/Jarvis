@@ -258,6 +258,20 @@ if [ "$pok" = 1 ]; then
     pocket | grep -E "geladen|satz 1" | sed 's/.*JarvisTest: /  /' | while read -r l; do say "$l"; done
     say "  Offline-Stimme läuft auf Android (Tempo im Emulator ohne Aussagekraft)"
     adb exec-out run-as "$PKG" cat files/pocket/probe.wav > shots/pocket_probe.wav 2>/dev/null || true
+    # Ablauf als Jarvis' Stimme: Antwort → Satz erzeugen → abspielen → zurück in den Ruhezustand („sprache fertig“).
+    # Im Emulator dauert das ~1 Minute je Satz; hier zählt nur, dass es nicht hängt (Hinweis, kein Abbruch).
+    fertig_vorher=$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "sprache fertig" || true)
+    adb shell "am start -n $ACT --ez testpocketstimme true --es testfrage 'Sag nur: Hallo.'" > /dev/null 2>&1
+    for _ in $(seq 1 60); do
+      sleep 5
+      [ "$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c 'sprache fertig' || true)" -gt "$fertig_vorher" ] && break
+    done
+    if [ "$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c 'sprache fertig' || true)" -gt "$fertig_vorher" ]; then
+      say "  Offline-Stimme als Jarvis' Stimme: Antwort gesprochen, Ablauf endet sauber"
+    else
+      say "  WARNUNG Offline-Stimme als Jarvis' Stimme: nach 5 Minuten kein „Sprache fertig“ (hängt oder im Emulator zu langsam)"
+      adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "pocket|satz:|sprechen:" | tail -5 | sed 's/.*JarvisTest: /    /' | while read -r l; do say "$l"; done
+    fi
   elif pocket | grep -q "pocket fehler"; then
     say "  Hinweis Offline-Stimme: $(pocket | grep 'pocket fehler' | tail -1 | sed 's/.*JarvisTest: //')"
   else

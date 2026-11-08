@@ -491,6 +491,21 @@
                         android:textColor="?attr/colorPrimary"
                         android:textIsSelectable="true"
                         android:visibility="gone" />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchPocket"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Jarvis spricht mit der Offline-Stimme" />
+
+                    <TextView
+                        android:id="@+id/pocketSwitchHint"
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Erst nach „Offline-Stimme ausprobieren“ möglich (das lädt das Modell). Gilt vor ElevenLabs und der Handy-Stimme; geht etwas schief, spricht Jarvis mit der Handy-Stimme weiter. Der Satz beginnt etwa eine Sekunde später als mit der Handy-Stimme." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

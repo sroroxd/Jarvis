@@ -306,7 +306,18 @@ Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
   (`PocketTrial`): lädt erst auf Antippen rund 147 MB (jede Datei mit fester Prüfsumme, feste Fassung des
   Modell-Repos; im Mobilfunk erst nach zweitem Tippen), spricht drei Sätze und zeigt die Zeiten. Noch **nicht**
   als Jarvis' Stimme eingebaut.
-- **Was Arts Messung entscheidet:** Unter 1 s Rechenzeit für „Zu Diensten, Sir.“ (ohne den ersten Satz, der die
+- **Arts Messung (S24 Ultra, Build 103, 4 Threads):** Laden 0,6 s; Satz 1 (kurz, mit Einlesen der Stimme) 1,59 s für
+  1,3 s Sprache; Satz 2 1,22 s für 4,0 s; Satz 3 1,00 s für 3,0 s – **gut dreimal schneller als Echtzeit**. Der
+  nächste Satz ist fertig, bevor der vorige ausgesprochen ist; nur der allererste Satz einer Antwort beginnt rund
+  eine Sekunde später als mit der Handy-Stimme.
+- **Eingebaut (8. Nov. spät):** `PocketSpeaker` – zwei Threads in einer Reihe (erzeugen / abspielen), Satz für
+  Satz über StreamSpeech, Abbrechen beim Dazwischenreden, Telefonmodus-Ton (`TalkAudio.speech`), Rückfall auf die
+  Handy-Stimme (jeder ausgefallene Satz genau einmal). Einstellungen → Stimme → Schalter „Jarvis spricht mit der
+  Offline-Stimme“ (geht erst nach „ausprobieren“; Standard aus; geht vor ElevenLabs). Gerätetest prüft den Ablauf
+  im Emulator (Hinweis, kein Abbruch; Tempo dort ~30-fach langsamer).
+- **Noch ungeprüft auf dem Handy:** Wie die Stimme im Spiel neben TFT klingt und ob die CPU-Last (4 Threads) die
+  Partie stört; Aussprache englischer Namen („Ornn“); Dazwischenreden mit dieser Stimme.
+- **Was Arts Messung entschieden hat:** Unter 1 s Rechenzeit für „Zu Diensten, Sir.“ (ohne den ersten Satz, der die
   Stimme einliest) → Pocket als Jarvis' Stimme einbauen (Satz für Satz über StreamSpeech, Sprachprobe wählbar,
   ElevenLabs bleibt als Wahl). Deutlich darüber → whisper.cpp/Agent zuerst, Pocket später mit kleinerem Modell.
 

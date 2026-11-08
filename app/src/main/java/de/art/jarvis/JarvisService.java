@@ -185,6 +185,8 @@ public class JarvisService extends Service {
     /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
     private int agentJobId;
     private ElevenTts eleven;
+    /** Offline-Stimme (Pocket TTS), siehe {@link PocketSpeaker}; wird erst bei Bedarf erzeugt. */
+    private PocketSpeaker pocket;
     private boolean elevenWarned;
     private WindowManager wm;
     private MediaProjection projection;
@@ -349,6 +351,7 @@ public class JarvisService extends Service {
         bargeIn.release();
         destroyRecognizer();
         eleven.stop();
+        if (pocket != null) pocket.release();
         earcon.release();
         if (tts != null) {
             tts.stop();
@@ -1468,7 +1471,7 @@ public class JarvisService extends Service {
                 withTools, prefs.agentReady());
         // Satzweise sprechen, während Claude noch schreibt (Handy-Stimme). ElevenLabs bekommt die Antwort weiter am
         // Stück – dort wäre jeder Satz eine eigene Anfrage.
-        final StreamSpeech stream = !prefs.elevenKey().isEmpty() ? null : new StreamSpeech(id);
+        final StreamSpeech stream = !prefs.elevenKey().isEmpty() && !pocketWanted() ? null : new StreamSpeech(id);
         ClaudeClient.Callback callback = new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
@@ -1859,7 +1862,12 @@ public class JarvisService extends Service {
         }
         caption(clean);
         publishExchange(null, clean);
-        // Premium-Stimme (ElevenLabs), wenn eingerichtet – sonst die Stimme des Handys.
+        // Offline-Stimme, wenn Art sie gewählt hat – sonst Premium-Stimme (ElevenLabs), wenn eingerichtet,
+        // sonst die Stimme des Handys.
+        if (pocketWanted()) {
+            speakPocket(clean, gen, true);
+            return;
+        }
         if (!prefs.elevenKey().isEmpty()) {
             speakPremium(clean, gen);
             return;
@@ -1922,11 +1930,16 @@ public class JarvisService extends Service {
         pendingSpeech = null;
         if (tts != null) tts.stop();
         eleven.stop();
+        if (pocket != null) pocket.stop();
     }
 
     /** flush: erster Satz eines Vorgangs (verdrängt Älteres); sonst hinten anstellen. */
     private void speakDevice(String clean, int gen, boolean flush) {
         if (gen != speechGen) return;
+        if (pocketWanted()) {
+            speakPocket(clean, gen, flush);
+            return;
+        }
         // Wurde in den Einstellungen eine andere Engine gewählt? Dann neu starten und danach sprechen.
         String engineNow = Voices.resolveEngine(this, prefs);
         boolean engineChanged = engineNow == null ? ttsEngine != null : !engineNow.equals(ttsEngine);
@@ -1969,7 +1982,62 @@ public class JarvisService extends Service {
         }
     }
 
+    // ---------------------------------------------------------------- Offline-Stimme (Pocket TTS)
+
+    /** Hat Art die Offline-Stimme gewählt, liegt das Modell da, und hat sie bisher nicht versagt? */
+    private boolean pocketWanted() {
+        if (pocketFailed || !prefs.pocketVoice() || !PocketTrial.downloaded(this)) return false;
+        return pocketSpeaker().usable();
+    }
+
+    private PocketSpeaker pocketSpeaker() {
+        if (pocket == null) {
+            pocket = new PocketSpeaker(this, new PocketSpeaker.Listener() {
+                @Override
+                public void onStart(int gen) {
+                    if (gen == speechGen) onVoiceStarted();
+                }
+
+                @Override
+                public void onDone(int gen) {
+                    if (gen != speechGen) return;
+                    if (queuedUtterances > 0) queuedUtterances--;
+                    speechDone(gen);
+                }
+
+                @Override
+                public void onError(int gen, String text, String message) {
+                    if (gen != speechGen) return;
+                    // Nicht stumm bleiben: mit der Handy-Stimme weiter, einmal pro Sitzung Bescheid geben.
+                    testLog("pocket fehler: " + message);
+                    pocketFailed = true;
+                    if (queuedUtterances > 0) queuedUtterances--;
+                    if (!pocketWarned) {
+                        pocketWarned = true;
+                        statusBriefly(message + " Ich spreche mit der Handy-Stimme weiter.");
+                    }
+                    speakDevice(text, gen, false); // hinten anstellen: Jeder ausgefallene Satz kommt genau einmal
+                }
+            });
+            pocket.setVoiceCall(speechAsCall);
+            pocket.prepare();
+        }
+        return pocket;
+    }
+
+    private boolean pocketWarned;
+    /** Offline-Stimme hat in dieser Sitzung versagt – bis zum Neustart nicht mehr versuchen. */
+    private boolean pocketFailed;
+    private void speakPocket(String clean, int gen, boolean flush) {
+        if (gen != speechGen) return;
+        setState(State.SPEAKING);
+        pocket.setVoiceCall(speechAsCall);
+        queuedUtterances++;
+        pocket.speak(clean, gen, flush);
+    }
+
     private void onSpeechFinished() {
+        testLog("sprache fertig");
         lastExchangeAt = SystemClock.elapsedRealtime();
         if (state == State.SPEAKING) setState(State.IDLE);
         subtitles.hideAfter(CAPTION_LINGER_MS);
