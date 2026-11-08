@@ -266,6 +266,47 @@ Deshalb zuerst **ein Tag Machbarkeit**: NDK einrichten, PocketTTS für `arm64-v8
 Probeausgabe auf dem Gerät hören. Erst danach die restlichen Tage. Scheitert der Tag an Punkt 3 oder 4, ist das
 Ergebnis trotzdem etwas wert – die Werkzeugkette braucht whisper.cpp genauso.
 
+### Vertiefung (zweiter Durchgang)
+
+**Die Premium-Stimme schaltet das satzweise Sprechen ganz ab.** In `ask()` steht
+`stream = !prefs.elevenKey().isEmpty() ? null : new StreamSpeech(id)`. Sobald ein ElevenLabs-Schlüssel
+eingetragen ist, gibt es kein `StreamSpeech` – Jarvis wartet auf die **komplette** Antwort, lädt dann die
+**komplette** MP3 (`ElevenTts` lädt ganz herunter und spielt sie über `MediaPlayer`, kein Streaming) und
+fängt erst danach an zu reden. Zum Gewinn von 0,6–1,1 s durch das satzweise Sprechen kämen also noch einmal
+Antwortende plus Download dazu. Art hat derzeit keinen ElevenLabs-Schlüssel eingetragen, der Nachteil ist also
+latent – aber er schlägt genau in dem Moment zu, in dem Art die Stimme verbessern will. **Das ist das stärkste
+Argument für PocketTTS:** eine lokale Stimme, die streamt, bringt die bessere Stimme *und* behält das satzweise
+Sprechen, statt zwischen beidem zu wählen.
+
+**Nichts wirft das Zuhören wieder an.** `updateAlwaysListen()` wird genau zweimal gerufen: aus `applySettings()`
+und aus dem Bildschirm-Empfänger. Es gibt keinen regelmäßigen Wächter. Das ist die Ursache dafür, dass Schwachstelle 1
+dauerhaft wirkt statt sich von selbst zu erholen.
+
+**Kalender: gründlich geprüft, in Ordnung.** `Agenda` rechnet ganztägige Termine in UTC (so speichert Android sie)
+und normale in Ortszeit, fängt „Ende vor Beginn“ ab, schneidet Zeitzonen-Zusätze bewusst weg und gibt bei
+unlesbaren Angaben verständliche Meldungen zurück statt zu raten. `Tools` prüft jede Berechtigung einzeln und
+fängt `SecurityException` getrennt ab. Hier ist nichts zu tun.
+
+**Verlauf und Anzeige: kein Leck.** `ChatLog` ist bei 80 Einträgen gedeckelt und synchronisiert, `history` wird
+nur vom Haupt-Thread angefasst und paarweise gekürzt, der statische `UiListener` wird in `onStop` gelöst.
+
+**Agent-Rückgrat: tragfähige Basis, eine echte Lücke.** `AgentClient` läuft auf eigenem Thread, nur auf
+127.0.0.1, mit Token, 10 Minuten Zeitlimit. Was fehlt: **Während eines langen Auftrags hört Art nichts.** Jarvis
+sagt einmal „Ich kümmere mich darum, Sir“ und schweigt dann bis zu zehn Minuten. Zwischenstände
+(`--output-format stream-json`) sind deshalb nicht Kür, sondern der eigentliche Punkt von Baustein 2.
+
+**whisper.cpp nachgeprüft statt geschätzt.** Android ist offiziell unterstützt (`examples/whisper.android`),
+MIT, Quantisierung und VAD vorhanden – das senkt das Risiko gegenüber PocketTTS deutlich. Aber der
+Speicherbedarf ist der Haken: tiny rund 273 MB, base rund 388 MB Arbeitsspeicher. Neben einer laufenden
+TFT-Partie ist das viel; realistisch ist tiny oder base quantisiert, und die Erkennungsgüte auf Deutsch muss
+gegen Googles Erkennung gemessen werden, bevor umgestellt wird. Für Android nennt das Projekt keine
+Geschwindigkeitswerte – also messen.
+
+**Proaktives Coaching, nachgerechnet.** Wächter rund 0,012 ct je Blick, bei 10 Blicken pro Minute und 35 Minuten
+rund 4 ct. Ansagen mit Sonnet und scharfem Bild rund 0,7 ct, bei etwa 20 Ansagen rund 14 ct. Zusammen also die
+15–20 ct, die in den Einstellungen stehen – die Angabe stimmt. Stellschraube: Die Ansagen denken mit „medium“
+vor, das kostet Ausgabe-Tokens und Zeit.
+
 ### Was zuerst – drei Punkte
 
 1. **Dauerzuhören absichern und eine Kostenbremse einziehen** (½–1 Tag). Behebt den Fehler, nach dem Jarvis
