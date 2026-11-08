@@ -15,6 +15,15 @@ public class TextTest {
                 Text.cleanForSpeech("**Gute Idee!** 😀\n- Erstens kaufen\n- Zweitens leveln\n1. Dann rollen"));
     }
 
+    /** Jarvis schreibt Zahlen als Ziffern – eine Zahl am Satzanfang ist keine Nummerierung. */
+    @Test
+    public void zahlAmSatzanfangBleibtStehen() {
+        assertEquals("51. Soll ich weiterrechnen?", Text.cleanForSpeech("51. Soll ich weiterrechnen?"));
+        assertEquals("102.", Text.cleanForSpeech("102."));
+        assertEquals("102. Das ist das Doppelte.", Text.cleanForSpeech("102.\nDas ist das Doppelte."));
+        assertEquals("Erstens kaufen. Dann rollen", Text.cleanForSpeech("1. Erstens kaufen\n2. Dann rollen"));
+    }
+
     @Test
     public void normalerSatzBleibtUnveraendert() {
         assertEquals("Kauf den Kämpfer und level auf acht.", Text.cleanForSpeech("Kauf den Kämpfer und level auf acht."));

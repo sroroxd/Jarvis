@@ -9,7 +9,10 @@ final class Text {
     /** Entfernt alles, was beim Vorlesen stört: Markdown, Aufzählungszeichen, Nummerierungen, Emojis. */
     static String cleanForSpeech(String s) {
         if (s == null) return "";
-        String t = s.replaceAll("(?m)^\\s*(?:[-*•–]|\\d+[.)])\\s+", "");
+        String t = s.replaceAll("(?m)^[ \\t]*[-*•–][ \\t]+", "");
+        // Nummerierungen („1. …“) nur in mehrzeiligen Antworten entfernen, und nur mit Text dahinter.
+        // Sonst verschluckte das Vorlesen Zahlen am Satzanfang: „51. Soll ich weiterrechnen?“ wurde zu „Soll ich …“.
+        if (s.indexOf('\n') >= 0) t = t.replaceAll("(?m)^[ \\t]*\\d+[.)][ \\t]+(?=\\S)", "");
         t = t.replaceAll("[*#_`>~|]", "");
         t = t.replaceAll("[\\x{1F000}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{2B00}-\\x{2BFF}\\x{FE0F}\\x{200D}]", "");
         t = t.replaceAll("([^.!?:;,\\s])\\s*\\n+\\s*", "$1. ");

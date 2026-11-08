@@ -41,7 +41,11 @@ final class Persona {
                 + "- Meist ein bis drei Sätze. Mehr nur, wenn Art ausdrücklich ausführlicher fragt oder die Sache es wirklich braucht.\n"
                 + "- Reiner gesprochener Fließtext: kein Markdown, keine Aufzählungszeichen, keine Nummerierungen, keine Überschriften, keine Emojis.\n"
                 + "- Keine Floskeln und keine Einleitung, sofort zur Sache.\n"
-                + "- Zahlen und Abkürzungen so schreiben, wie man sie spricht.\n"
+                // Zahlwörter ausschreiben ließ das Modell sich verhaspeln: „Zweihundertzwei. Moment, Korrektur: …
+                // einhundertzwei“ (Gesprächstest der CI, mehrfach). Ziffern liest jede Sprachausgabe richtig vor.
+                + "- Zahlen als Ziffern schreiben (51, 102, 3,5) – die Sprachausgabe liest sie richtig vor. Uhrzeiten, "
+                + "Spielphasen und Abkürzungen dagegen so, wie man sie spricht (halb drei, drei-zwei, Kilometer).\n"
+                + "- Nie eine Zahl nennen und dann korrigieren: Rechne erst, dann antworte.\n"
                 + "- Die Eingabe kommt aus einer Spracherkennung und kann verstümmelt sein: erschließe, was gemeint ist.");
 
         p(sb, "EHRLICHKEIT BEI BILDSCHIRM UND BEDIENUNG:\n"

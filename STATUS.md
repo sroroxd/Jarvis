@@ -145,10 +145,15 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
    Sprechen. Jetzt nur, wenn sich das Gedächtnis ändert.
 6. **„du“ und „Sie“ gemischt:** Jarvis siezt laut Grundanweisung, die festen Ansagen der App duzten.
    Alle gesprochenen Meldungen jetzt per „Sie“.
-7. Kleinkram: Cache-Anzeige wurde von der Meta-Recherche überschrieben; Kalender-Werkzeug verwies
+7. **Falsche Zahl, dann Selbstkorrektur** („Zweihundertzwei. Moment, Korrektur: … einhundertzwei“).
+   Der Gesprächstest der CI scheiterte daran zweimal in Folge, und das Beispiel stand schon vorher im
+   Testskript. Die Grundanweisung verlangte ausgeschriebene Zahlwörter, dabei verhaspelt sich das Modell.
+   Jetzt Ziffern (jede Sprachausgabe liest sie vor); das Vorlesen verschluckt keine Zahl am Satzanfang
+   mehr („51. …“ galt als Nummerierung).
+8. Kleinkram: Cache-Anzeige wurde von der Meta-Recherche überschrieben; Kalender-Werkzeug verwies
    auf die Uhrzeit „in der Systemanweisung“ (steht seit #13 in der `[KONTEXT]`-Zeile).
 
-**Geprüft:** Build (Release und Debug), alle 129 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+**Geprüft:** Build (Release und Debug), alle 130 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben
