@@ -18,11 +18,9 @@ Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `f
 
 - **Test-App:** github.com/sroroxd/Jarvis/releases/download/test-ccr-4f440a4a-dx81et/JarvisTest.apk –
   ab Build 63 aktualisiert sie sich selbst (Knopf „Installieren“ auf dem Startbildschirm).
-- **Zusammenführen** nach Arts Test: #22 mit **Merge-Commit, nicht Squash**. Dann enthält `main` die
-  Original-Commits, und GitHub schließt #1–#7 und #12–#16 von selbst als zusammengeführt.
-- **Danach kann weg** (Art im Browser): die Zweige `jarvis-haende`, `wachwort-jarvis`, `tft-coach`,
-  `gespraech-modus`, `agent-ruckgrat`, `sammeltest`, `fix-dazwischenreden-abbruch`, `feinschliff-cache`,
-  `geraetetest-schranke`, `gespraechstest-ci`, `selbst-update` und deren Test-Releases `test-…`.
+- **Zusammenführen** nach Arts Test: #22 mit **Merge-Commit, nicht Squash** – dann landen die
+  Original-Commits in `main`. Die alten PRs #1–#7 und #12–#16 sind seit dem 8. Nov. geschlossen
+  („in #22 aufgegangen“), ihre Commits stecken vollständig in #22.
 - Neue Arbeit kommt auf diesen Zweig, solange #22 offen ist – keine neue Kette.
 
 **`main`** ist noch die ältere Version (Wachwort „Hey Jarvis“, Spielmodus, Tages-Meta, Gedächtnis).
@@ -36,18 +34,26 @@ Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `f
 3. **Selbst-Update:** Läuft das nächste Update über den Knopf „Installieren“ durch?
 4. **Spielmodus:** Sind die Antworten jetzt kurz genug (#21)?
 
-## Aufräumen (geprüft am 4. November)
+## Aufräumen (8. November)
 
-Repo geprüft: keine fremden Pushes, keine echten Schlüssel im Code, keine
-fehlgeschlagenen Builds (nur zwei absichtlich abgebrochene Trainingsläufe).
-Erledigt von Art: Zweig `claude-md-doku-regeln` gelöscht, „Automatically delete
-head branches“ eingeschaltet (zusammengeführte Zweige verschwinden jetzt von selbst).
+**Erledigt (Claude):** Die elf überholten PRs geschlossen. Die Wunsch-Issues zusammengefasst –
+16 offene Wünsche waren 5 Themen: #10 (Selbstabbruch beim Sprechen), #17 (Dazwischenreden
+zuverlässig), #21 (kürzere Antworten), #23 (TFT-Coaching hat Vorrang), #25 (Empfindlichkeit für
+„Jarvis“ und Dazwischenreden einstellbar); die übrigen sind als Duplikat darauf verwiesen. Ursache der
+Doppelten in der App behoben: Sie schickte jeden Wunsch, auch wenn derselbe Titel schon notiert war, und
+erkannte Umformulierungen desselben Themas nicht (`Wishes.similar`).
 
-Alte Releases: **GitHub → Actions → „Alte Releases aufräumen“ → Run workflow**
-(PR #8, auf `main`). Löscht `test`, `test-wachwort-jarvis`, `test-tft-coach`,
-`test-jarvis-haende` und `v1.0.1` bis `v1.0.26` samt Git-Tags. Geschützt:
-`v1.0.43`, `v1.0.32`, `v1.0.29`, `vorschau`, `test-sammeltest`. Starten muss Art
-selbst – Löschen ist aus der Entwicklungsumgebung gesperrt.
+**Für Art, ein Klick** (Löschen ist aus der Entwicklungsumgebung gesperrt): GitHub → Actions →
+„Alte Releases aufräumen“ → Run workflow → bei **„Use workflow from“ den Zweig
+`ccr-4f440a4a-dx81et` wählen** → Run workflow. Löscht die elf alten Zweige (nur wenn jeder Commit in
+`ccr-4f440a4a-dx81et` steckt – vorab geprüft: bei allen elf der Fall) und die Releases `test-selbst-update`,
+`test-gespraechstest-ci`, `test-geraetetest-schranke`, `test-fix-dazwischenreden-abbruch`,
+`test-feinschliff-cache`, `test-sammeltest`, `v1.0.29`, `v1.0.32` samt Tags. Danach stehen nur noch:
+Zweige `main` und `ccr-4f440a4a-dx81et`, Releases `v1.0.43` (normale App), `test-ccr-4f440a4a-dx81et`
+(Test-App) und `vorschau` (Gerätetest).
+
+Früher erledigt (4. Nov.): Repo geprüft – keine fremden Pushes, keine echten Schlüssel im Code;
+„Automatically delete head branches“ ist eingeschaltet.
 
 ## Was als Nächstes kommt
 
