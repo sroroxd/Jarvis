@@ -153,6 +153,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                     // „testoffen“: wie bei offenem Mikrofon nach einer Gesprächspause – der Filter vor Claude fragt mit.
                     .putExtra("offen", intent.getBooleanExtra("testoffen", false)));
         }
+        if (intent.getBooleanExtra("testpocket", false)) { // Offline-Stimme, siehe JarvisService.testPocket
+            startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_POCKET));
+        }
         if (intent.getBooleanExtra("testwaechter", false)) {
             startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_WATCH));
         }

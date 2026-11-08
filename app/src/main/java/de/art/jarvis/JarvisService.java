@@ -57,6 +57,8 @@ public class JarvisService extends Service {
     public static final String ACTION_TEST_ASK = "de.art.jarvis.TEST_ASK";
     /** Nur Debug-Builds: den Phasen-Wächter einmal mit einem Testbild fragen (CI prüft Modell und Anfrageformat). */
     public static final String ACTION_TEST_WATCH = "de.art.jarvis.TEST_WATCH";
+    /** Nur Debug-Builds: Offline-Stimme (Pocket TTS) laden und drei Sätze sprechen – Machbarkeit, siehe testPocket(). */
+    public static final String ACTION_TEST_POCKET = "de.art.jarvis.TEST_POCKET";
     public static final String EXTRA_TEXT = "text";
     /** Log-Kennung für den Gesprächstest in der CI – nur Debug-Builds schreiben hier etwas hinein. */
     static final String TEST_TAG = "JarvisTest";
@@ -321,6 +323,7 @@ public class JarvisService extends Service {
                 handleUtterance(text.trim());
             }
         }
+        else if (ACTION_TEST_POCKET.equals(action) && debuggable()) testPocket();
         else if (ACTION_TEST_WATCH.equals(action) && debuggable()) {
             if (intent.getBooleanExtra("bilder", false)) testWatchFiles();
             else testWatch();
@@ -592,6 +595,72 @@ public class JarvisService extends Service {
      * haben schon die Größe, die die App schickt (lange Kante 1280, JPEG 75). Protokoll je Bild
      * „waechter-bild <Datei>: <Antwort>“, zum Schluss „waechter-bilder fertig“.
      */
+    /**
+     * Machbarkeit der Offline-Stimme (Pocket TTS über sherpa-onnx): Das CI-Skript legt Modell und Sprachprobe in den
+     * App-Ordner „pocket“; hier wird geladen, drei Sätze erzeugt und gespielt, Zeiten protokolliert
+     * („pocket: …“) und der erste Satz als „pocket/probe.wav“ gespeichert, damit Art ihn anhören kann.
+     */
+    private void testPocket() {
+        final java.io.File dir = new java.io.File(getFilesDir(), "pocket");
+        new Thread(() -> {
+            if (!PocketVoice.present(dir)) {
+                testLog("pocket fehler: Modell fehlt in " + dir);
+                return;
+            }
+            PocketVoice voice = null;
+            try {
+                long t0 = SystemClock.elapsedRealtime();
+                voice = new PocketVoice(dir, new java.io.File(dir, "stimme.wav"), 2);
+                testLog("pocket: geladen in " + (SystemClock.elapsedRealtime() - t0) + " ms, "
+                        + voice.sampleRate() + " Hz, " + Runtime.getRuntime().availableProcessors() + " Kerne");
+                String[] saetze = {"Zu Diensten, Sir.",
+                        "Kaufen Sie jetzt den zweiten Ornn und stellen Sie Ihren Carry hinten in die Ecke.",
+                        "Morgen um neun Uhr haben Sie einen Termin beim Zahnarzt."};
+                for (int i = 0; i < saetze.length; i++) {
+                    long t = SystemClock.elapsedRealtime();
+                    com.k2fsa.sherpa.onnx.GeneratedAudio audio = voice.generate(saetze[i]);
+                    long ms = SystemClock.elapsedRealtime() - t;
+                    float sec = audio.getSamples().length / (float) audio.getSampleRate();
+                    testLog(String.format(java.util.Locale.GERMANY, "pocket satz %d: %d ms für %.2f s Audio (RTF %.2f)",
+                            i + 1, ms, sec, sec > 0 ? ms / 1000f / sec : 0));
+                    if (i == 0) audio.save(new java.io.File(dir, "probe.wav").getAbsolutePath());
+                    try {
+                        playPcm(audio.getSamples(), audio.getSampleRate());
+                    } catch (RuntimeException e) { // Emulator ohne Ton: Abspielen ist hier Beiwerk
+                        testLog("pocket abspielen: " + e.getMessage());
+                    }
+                }
+                testLog("pocket fertig");
+            } catch (Throwable e) { // auch UnsatisfiedLinkError – genau das soll die Machbarkeit zeigen
+                testLog("pocket fehler: " + e);
+            } finally {
+                if (voice != null) voice.release();
+            }
+        }, "pocket-test").start();
+    }
+
+    /** Spielt Gleitkomma-Samples einmal ab und wartet, bis sie durch sind (nur für den Pocket-Test). */
+    private static void playPcm(float[] samples, int rate) {
+        if (samples.length == 0) return;
+        android.media.AudioTrack track = new android.media.AudioTrack.Builder()
+                .setAudioAttributes(new android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_ASSISTANT)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                .setAudioFormat(new android.media.AudioFormat.Builder()
+                        .setEncoding(android.media.AudioFormat.ENCODING_PCM_FLOAT)
+                        .setSampleRate(rate).setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO).build())
+                .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+                .setBufferSizeInBytes(samples.length * 4)
+                .build();
+        try {
+            track.write(samples, 0, samples.length, android.media.AudioTrack.WRITE_BLOCKING);
+            track.play();
+            SystemClock.sleep(samples.length * 1000L / rate + 100);
+        } finally {
+            track.release();
+        }
+    }
+
     private void testWatchFiles() {
         java.io.File[] files = new java.io.File(getFilesDir(), "waechter").listFiles((d, n) -> n.endsWith(".jpg"));
         if (files == null || files.length == 0) {
@@ -1345,8 +1414,7 @@ public class JarvisService extends Service {
             @Override
             public void onResult(String reply) {
                 boolean addressed = ListenRules.addressed(reply);
-                testLog("filter: " + (addressed ? "JA" : "NEIN") + " (" + (SystemClock.elapsedRealtime() - t0)
-                        + " ms" + costSuffix() + ")");
+                testLog("filter: " + (addressed ? "JA" : "NEIN") + " (" + (SystemClock.elapsedRealtime() - t0) + " ms)");
                 pending.gateReady(addressed);
             }
 

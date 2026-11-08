@@ -355,6 +355,12 @@ Art hat am Abend des 8. Nov. grünes Licht für alle drei gegeben.
   mit `[STAND: …]` als erster Zeile (heute), einmal als letzter. Verglichen werden Zeit bis zum ersten
   gesprochenen Satz **und** die Antworten selbst – die Zeile vorn kann die Befehle besser machen (Claude liest
   erst ab, dann rät er). Umgebaut wird nur, wenn hinten deutlich schneller ist und die Befehle gleich gut bleiben.
+  **Ergebnis (CI, 3 Läufe je Frage):** erster Satz im Spiel 1,12 s (vorn) gegen 1,01 s (hinten) – nur 0,1 s.
+  Hinten wurden die Antworten schlechter: Claude las den Stand laut vor („Phase eins-drei, Gold 2, Stufe 2 …“),
+  riet zwischen den Läufen widersprüchlich (Akali, Xayah, „kaufen Sie nichts“) und hatte Ausreißer bis 4 s mit
+  über 600 Ausgabe-Tokens. Vorn blieben die Befehle stimmig. **Entscheidung: Die Zeile bleibt vorn.**
+- **Gerätetest bestätigt den Vorlauf:** Die erste Frage zeigte „Senden 1,0 s (7 KB)“ – bei 7 KB ist das fast nur
+  der Verbindungsaufbau; die Folgefragen 0,0–0,1 s. Genau diesen Posten nimmt der Vorlauf jetzt vorweg.
 - Offen: Arts nächste Partie mit der Aufschlüsselung „Senden (KB) · Claude“ auf dem Startbildschirm. Zeigt sie,
   dass das Hochladen des Bildes der große Posten ist, ist der nächste Hebel, das Bild schon während Arts Frage
   hochzuladen (die Anfrage beginnt, sobald er zu sprechen anfängt; die Frage selbst kommt als Letztes dazu).

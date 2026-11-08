@@ -223,6 +223,47 @@ else
   say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
 fi
 
+# ---------------------------------------------------------------- Offline-Stimme (Pocket TTS, Machbarkeit)
+# Lädt Kyutais deutsches Pocket-TTS-Modell (sherpa-onnx-Paket, CC BY 4.0, rund 140 MB) und eine Sprachprobe
+# (VCTK p226, CC BY 4.0), legt beides in den App-Ordner „pocket“ und lässt drei Sätze sprechen. Zeigt, ob die
+# Bibliothek auf Android lädt und wie schnell sie im Emulator ist (x86, kein S24 Ultra). Nur Hinweis, kein
+# Abbruch – ein Absturz fiele trotzdem unten in der Auswertung auf. Der erste Satz kommt als pocket_probe.wav
+# in die Vorab-Version, zum Anhören.
+say "Offline-Stimme (Pocket TTS):"
+HF=https://huggingface.co/haex-space/pocket-tts-sherpa-onnx/resolve/d8f5915ed8bd94e1aa3dbd5a219360b3bb966190/de
+mkdir -p /tmp/pocket
+pok=1
+for f in lm_flow.int8.onnx lm_main.int8.onnx encoder.onnx decoder.int8.onnx text_conditioner.onnx vocab.json token_scores.json; do
+  curl -sSfL --retry 3 --max-time 300 -o "/tmp/pocket/$f" "$HF/$f" || pok=0
+done
+curl -sSfL --retry 3 --max-time 60 -o /tmp/pocket/stimme.wav \
+  https://huggingface.co/kyutai/tts-voices/resolve/main/vctk/p226_023_enhanced.wav || pok=0
+if [ "$pok" = 1 ]; then
+  for f in /tmp/pocket/*; do
+    name=$(basename "$f")
+    adb push "$f" "/data/local/tmp/pk_$name" > /dev/null 2>&1
+    adb shell "run-as $PKG sh -c 'mkdir -p files/pocket && cp /data/local/tmp/pk_$name files/pocket/$name'" > /dev/null 2>&1
+    adb shell rm -f "/data/local/tmp/pk_$name"
+  done
+  pocket() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "pocket" || true; }
+  adb shell "am start -n $ACT --ez testpocket true" > /dev/null 2>&1
+  for _ in $(seq 1 60); do
+    sleep 3
+    pocket | grep -qE "pocket (fertig|fehler)" && break
+  done
+  if pocket | grep -q "pocket fertig"; then
+    pocket | sed 's/.*JarvisTest: /  /' | while read -r l; do say "$l"; done
+    adb exec-out run-as "$PKG" cat files/pocket/probe.wav > shots/pocket_probe.wav 2>/dev/null || true
+  elif pocket | grep -q "pocket fehler"; then
+    say "  Hinweis Offline-Stimme: $(pocket | grep 'pocket fehler' | tail -1 | sed 's/.*JarvisTest: //')"
+  else
+    say "  Hinweis Offline-Stimme: keine Rückmeldung nach 3 Minuten"
+    pocket | sed 's/.*JarvisTest: /    /' | while read -r l; do say "$l"; done
+  fi
+else
+  say "  Hinweis Offline-Stimme: Modell ließ sich nicht herunterladen"
+fi
+
 # ---------------------------------------------------------------- Selbst-Update: Download-Weg
 # Die App lädt neue Builds zuerst über die GitHub-API (der normale Link antwortete am 8. Nov. meist mit 504).
 # Hier ohne Anmeldung geprüft, wie auf dem Handy – mit der APK, die gerade als Test-App veröffentlicht ist.

@@ -68,6 +68,13 @@ android {
         noCompress 'onnx'
     }
 
+    packaging {
+        jniLibs {
+            // sherpa-onnx und onnxruntime-android bringen beide libonnxruntime.so mit (beide 1.28) – eine reicht.
+            pickFirsts += ['**/libonnxruntime.so']
+        }
+    }
+
     lint {
         abortOnError false
         checkReleaseBuilds false
@@ -76,7 +83,10 @@ android {
 
 dependencies {
     implementation project(':wakeword')
-    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.23.2'
+    // 1.28 – dieselbe Reihe wie die ONNX Runtime in sherpa-onnx 2.0.1, damit beide dieselbe libonnxruntime.so teilen.
+    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.28.0'
+    // Offline-Stimme: Kyutai Pocket TTS über sherpa-onnx (Apache 2.0), siehe PocketVoice.
+    implementation 'com.github.k2-fsa.sherpa-onnx:sherpa-onnx:v2.0.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.13.0'
     testImplementation 'junit:junit:4.13.2'
