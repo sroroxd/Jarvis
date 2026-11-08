@@ -13,6 +13,26 @@ report=shots/geraetetest.txt
 : > "$report"
 say() { echo "$*" | tee -a "$report"; }
 
+# Der langsame CI-Emulator zeigt manchmal „Pixel Launcher isn't responding“ – ein Dialog einer FREMDEN App, der
+# dann alle Fingertipps abfängt (so am 8. Nov. in Build 74: Die Bilder „Einstellungen“ zeigten nur den Dialog).
+# Auf „Warten“ tippen. Hängt Jarvis selbst, fällt das weiter unten über „ANR in <Paket>“ auf.
+dialoge_weg() {
+  local xml b x1 y1 x2 y2
+  for _ in 1 2 3; do
+    adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1 || return 0
+    xml=$(adb shell cat /sdcard/ui.xml 2>/dev/null)
+    echo "$xml" | grep -qE "isn[^ ]{1,6}t responding|reagiert nicht" || return 0
+    b=$(echo "$xml" | grep -oE 'text="(Wait|Warten)"[^>]*bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' \
+          | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1)
+    [ -z "$b" ] && return 0
+    read -r x1 y1 x2 y2 <<< "$(echo "$b" | tr -c '0-9' ' ')"
+    adb shell input tap $(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 ))
+    say "Hinweis: Systemdialog „App reagiert nicht“ einer fremden App weggetippt"
+    sleep 2
+  done
+}
+vorne() { adb shell dumpsys activity activities 2>/dev/null | grep -E "topResumedActivity|mResumedActivity" | head -1; }
+
 adb wait-for-device
 adb shell settings put global window_animation_scale 0
 adb shell settings put global transition_animation_scale 0
@@ -28,6 +48,7 @@ adb logcat -b crash -c || true
 
 adb shell am start -W -n "$ACT" >> "$report" 2>&1
 sleep 6
+dialoge_weg
 adb exec-out screencap -p > shots/01_start.png
 
 # „Starten“ in der Mitte des Reaktors (Pixel-6-Profil, 1080 × 2400). Ohne API-Schlüssel meldet die App
@@ -36,17 +57,30 @@ adb shell input tap 540 1140
 sleep 8
 adb exec-out screencap -p > shots/01b_nach_starten.png
 
-# Zahnrad oben rechts → Einstellungen, einmal ganz durchscrollen
+# Zahnrad oben rechts → Einstellungen, einmal ganz durchscrollen. Nachsehen, ob sie wirklich vorne sind.
+dialoge_weg
 adb shell input tap 989 228
 sleep 4
-adb exec-out screencap -p > shots/02_einstellungen_1.png
-for i in 2 3 4 5 6 7; do
-  adb shell input swipe 540 1900 540 750 600
+if ! vorne | grep -q SettingsActivity; then
+  dialoge_weg
+  adb shell input tap 989 228
+  sleep 4
+fi
+if vorne | grep -q SettingsActivity; then
+  einstellungen="Einstellungen geöffnet"
+  adb exec-out screencap -p > shots/02_einstellungen_1.png
+  for i in 2 3 4 5 6 7 8; do
+    adb shell input swipe 540 1900 540 750 600
+    sleep 2
+    adb exec-out screencap -p > shots/02_einstellungen_$i.png
+  done
+  adb shell input keyevent KEYCODE_BACK
   sleep 2
-  adb exec-out screencap -p > shots/02_einstellungen_$i.png
-done
-adb shell input keyevent KEYCODE_BACK
-sleep 2
+else
+  einstellungen="Einstellungen NICHT geprüft"
+  say "WARNUNG: Einstellungen ließen sich nicht öffnen – vorne: $(vorne | tr -s ' ')"
+  adb exec-out screencap -p > shots/02_einstellungen_fehlt.png
+fi
 
 # Zustände des Startbildschirms (nur die Debug-Variante kennt das Extra „demo“)
 for st in IDLE LISTENING THINKING SPEAKING; do
@@ -58,6 +92,7 @@ done
 # Noch eine halbe Minute laufen lassen: Dienst, Wachwort-Engine (ONNX) und Zeitgeber arbeiten weiter.
 adb shell am start -n "$ACT" > /dev/null 2>&1
 sleep 30
+dialoge_weg
 adb exec-out screencap -p > shots/04_nach_30s.png
 
 # ---------------------------------------------------------------- Gesprächstest mit Claude
@@ -155,7 +190,7 @@ fi
 { echo "Fehlerprotokoll (AndroidRuntime:E, leer = keine Fehler):"; adb logcat -d -s AndroidRuntime:E 2>/dev/null; } > shots/logcat_fehler.txt || true
 
 if [ "$fail" -eq 0 ]; then
-  say "BESTANDEN: installiert, gestartet, Einstellungen geöffnet, 30 s gelaufen – kein Absturz, kein Hänger."
+  say "BESTANDEN: installiert, gestartet, $einstellungen, 30 s gelaufen – kein Absturz, kein Hänger."
   [ -n "${JARVIS_TESTKEY:-}" ] && say "BESTANDEN: Gespräch mit Claude (Rechnen, Verlauf, Streaming)."
 fi
 exit "$fail"
