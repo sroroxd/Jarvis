@@ -117,4 +117,14 @@ public class ClaudeClientTest {
         assertEquals("ohne Cache", ohne.summary());
         assertEquals(null, ClaudeClient.Usage.from(null));
     }
+
+    @Test
+    public void netzZeitenWerdenZerlegt() {
+        ClaudeClient.Net net = new ClaudeClient.Net(1_000, 389_120);
+        assertEquals(null, net.summary()); // noch nichts hochgeladen
+        net.uploaded = 1_400;
+        assertEquals(null, net.summary()); // noch kein Text
+        net.firstText = 2_300;
+        assertEquals("Senden 0,4 s (380 KB) · Claude 0,9 s", net.summary());
+    }
 }

@@ -7,16 +7,44 @@ wird der zu lang, fängt er einen neuen an. Claude liest zu Beginn jeder Sitzung
 aktuellen Stand – egal, in welchem Fenster.
 
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
-8. November 2026 (12 Uhr).
+8. November 2026 (14 Uhr).
 
 ## Wo der aktuelle Stand liegt
 
-**`main` ist seit dem 8. Nov., 11:08 UTC, auf dem Stand von Build 82**: Art hat PR #22 mit Merge-Commit
-übernommen (alle früheren Zweige, Gesamtprüfung, Streaming, proaktives Coaching, Selbst-Update über die API).
+**`main` ist auf dem Stand von Build 87** (8. Nov.):
+- 11:08 UTC hat Art PR #22 übernommen (alle früheren Zweige, Gesamtprüfung, Streaming, proaktives Coaching,
+  Selbst-Update über die API).
+- Am Nachmittag folgte PR #48 (Immer zuhören statt Wachwort, Spielplan, Kosten in Cent, Akku-Knopf,
+  Startrunden-Regel). Art hatte ihn ausdrücklich freigegeben („überprüfe und führe ggf. zusammen“), Claude hat
+  ihn nach bestandenem Gerätetest und mit Build 86 auf Arts Handy zusammengeführt.
 
-Weiter geht es auf demselben Arbeitszweig `ccr-4f440a4a-dx81et`, neu aufgesetzt auf `main`, mit einem
-**neuen PR** nach `main` (der gemergte #22 wird nicht wiederverwendet). Inhalt: Punkt 21 (Spielplan, Kosten,
-Akku) und die Startrunden-Regel des Wächters (Punkt 22).
+Weiter geht es auf demselben Arbeitszweig `ccr-4f440a4a-dx81et`, jeweils neu aufgesetzt auf `main`, mit einem
+neuen PR pro Runde. Gemergte PRs werden nicht wiederverwendet.
+
+### Messwerte von Arts Handy, 8. Nov. (Build 82 um 12:37, Build 86 um 13:36)
+
+| | Build 82 | Build 86 |
+|---|---|---|
+| Bildschirmfoto mitgeschickt | nein | ja (Spielmodus, Freigabe an) |
+| Zuhören / KI / Stimme / gesamt | 0,1 / 3,1 / 0,0 / 3,2 s | 0,1 / 5,2 / 0,0 / 5,3 s |
+| Kosten der Antwort | – | 1,3 ct (Cache 5,5 Tsd. gelesen) |
+| Echo / Schwelle / lautester Moment | −90 / −40 / −10 dB | −73 / −40 / −31 dB |
+| unterbrochen | durch Stimme | nein |
+
+- **Dazwischenreden funktioniert grundsätzlich:** Der Telefonmodus filtert Jarvis' Stimme fast ganz heraus
+  (Echo −73 bis −90 dB), die Schwelle liegt damit am Boden von −40 dB. In Build 82 hat Art ihn per Stimme
+  unterbrochen.
+- In Build 86 lag der lauteste Moment zwar über der Schwelle, aber die Schranke verlangt rund 0,26 s
+  durchgehende Sprache (13 von 15 Blöcken à 20 ms). Ein kurzes Geräusch zählt nicht. Ob Art es da überhaupt
+  versucht hat, ist offen – deshalb keine Änderung an den Schwellen.
+- **Zeit:** Die App selbst braucht 0,1 s; die Wartezeit ist fast ganz „KI“. Mit Bildschirmfoto 5,2 s statt
+  3,1 s – zwei Einzelmessungen mit verschiedenen Fragen, also nur ein Hinweis. Größte Hebel für #43: Bildgröße
+  und die Ablese-Zeile vor dem ersten gesprochenen Satz.
+- **Kosten:** 46 Cent bis 13:36. Eine Antwort mit Bild kostet 1,3 ct; nachgerechnet ist das stimmig (Bild rund
+  2.200 Tokens ≈ 0,44 ct, Cache 0,06 ct, übrige Eingabe, Nachdenken und Antwort). Aufschlüsseln nach Fragen,
+  Ansagen und Wächter kann die App noch nicht.
+- **Arts Anweisung an Jarvis** („… die Logik hinter deinem TFT-Coaching aktualisieren … wie ein Bot für mich …“)
+  ist auf dem Bild abgeschnitten und wurde nicht als Wunsch angelegt. Den vollen Satz hat Claude bei Art erfragt.
 
 - **Test-App:** github.com/sroroxd/Jarvis/releases/download/test-ccr-4f440a4a-dx81et/JarvisTest.apk –
   aktualisiert sich selbst (Knopf „Installieren“), ab Build 77 über die GitHub-API.

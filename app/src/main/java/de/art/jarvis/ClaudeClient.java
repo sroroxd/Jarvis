@@ -410,6 +410,38 @@ final class ClaudeClient {
      * thinking: "adaptive" oder null (Feld weglassen); effort: "low"/"medium"/… oder null.
      * listener != null: als Strom anfordern und Textstücke sofort weiterreichen.
      */
+    /**
+     * Wo die Wartezeit der letzten Anfrage steckt (Wunsch #43): Senden = Verbindung plus Hochladen der Anfrage
+     * (mit Bildschirmfoto mehrere hundert KB), Claude = vom fertigen Hochladen bis zum ersten Textstück.
+     * Was danach bis zum ersten gesprochenen Satz fehlt, ist der Rest des Satzes und der Start der Stimme.
+     */
+    static final class Net {
+        final long start;
+        final int bytes;
+        volatile long uploaded;
+        volatile long firstText;
+
+        Net(long start, int bytes) {
+            this.start = start;
+            this.bytes = bytes;
+        }
+
+        /** z. B. „Senden 0,4 s (380 KB) · Claude 0,9 s“; null, solange noch kein Text kam. */
+        String summary() {
+            if (uploaded == 0 || firstText == 0) return null;
+            return String.format(java.util.Locale.GERMANY, "Senden %.1f s (%d KB) · Claude %.1f s",
+                    Math.max(0, uploaded - start) / 1000.0, Math.round(bytes / 1024.0),
+                    Math.max(0, firstText - uploaded) / 1000.0);
+        }
+
+        static long now() {
+            return System.nanoTime() / 1_000_000L;
+        }
+    }
+
+    /** Zeitpunkte der letzten Anfrage – für die Zeitmessung auf dem Startbildschirm und den Gerätetest. */
+    static volatile Net lastNet;
+
     private Result request(String apiKey, String model, String system, JSONArray messages,
                            String thinking, String effort, int maxTokens, JSONArray tools, TextListener listener) {
         Result result = new Result();
@@ -418,6 +450,8 @@ final class ClaudeClient {
             JSONObject body = body(model, maxTokens, thinking, effort, system, messages, tools);
             if (listener != null) body.put("stream", true);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
+            Net net = new Net(Net.now(), payload.length);
+            lastNet = net;
 
             conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
             conn.setRequestMethod("POST");
@@ -431,12 +465,16 @@ final class ClaudeClient {
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(payload);
             }
+            net.uploaded = Net.now();
 
             int code = conn.getResponseCode();
             result.code = code;
             boolean ok = code >= 200 && code < 300;
             if (ok && listener != null) {
-                readStream(conn.getInputStream(), listener, result);
+                readStream(conn.getInputStream(), delta -> {
+                    if (net.firstText == 0) net.firstText = Net.now();
+                    listener.onText(delta);
+                }, result);
                 account(model, result.usage);
                 return result;
             }
@@ -452,6 +490,7 @@ final class ClaudeClient {
                 return result;
             }
 
+            if (net.firstText == 0) net.firstText = Net.now(); // ohne Strom: ganze Antwort auf einmal
             JSONObject json = new JSONObject(response);
             result.usage = Usage.from(json.optJSONObject("usage"));
             account(model, result.usage);
