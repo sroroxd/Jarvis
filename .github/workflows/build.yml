@@ -5,6 +5,10 @@ name: Jarvis APK bauen
 on:
   push:
     branches: [ '**' ]
+    # Reine Messungen ändern die App nicht – dafür keinen App-Build und keine neue Test-App.
+    paths-ignore:
+      - '.github/bench/**'
+      - '.github/workflows/latenz.yml'
   workflow_dispatch:
 
 permissions:
