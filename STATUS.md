@@ -27,7 +27,9 @@ Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `f
 
 ### Gerätetest 8. Nov. mit Build 69 (Art)
 
-- **Selbst-Update über „Installieren“: klappt.**
+- **Selbst-Update über „Installieren“: klappt.** Build 75 kam wegen der 504-Störung bei GitHub nicht durch
+  (Punkt 17); Build 77 hat Art per Direktlink auf den Dateispeicher installiert – erfolgreich. Ab 77 lädt die App
+  über die GitHub-API.
 - **Dazwischenreden: klappt noch nicht.** Vermutete Ursache: Ohne Telefonmodus filtert das Handy Jarvis' Stimme
   nicht heraus, sie kommt am Mikrofon lauter an als Art. Ab Build 70: Telefonmodus im Dauergespräch (Punkt 15)
   und eine Messzeile auf dem Startbildschirm nach jeder Antwort: „Dazwischenreden: Echo … · Schwelle … ·
