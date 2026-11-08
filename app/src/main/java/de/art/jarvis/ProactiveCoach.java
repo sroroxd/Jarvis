@@ -51,7 +51,8 @@ final class ProactiveCoach {
             + "Übersicht „Verursachter Schaden“\n"
             + "ANDERES – Karussell oder Startinsel mit mehreren Spielern, Ladebildschirm, Menü, Lobby, Ergebnis oder gar "
             + "nicht TFT\n"
-            + "Im Zweifel zwischen PLANUNG und KAMPF: KAMPF.";
+            + "Im Zweifel zwischen PLANUNG und KAMPF: KAMPF.\n"
+            + "Schreib NUR das Ergebnis, ohne Erklärung – also zum Beispiel „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.";
     /** Was die App Claude statt einer Frage schickt, wenn eine neue Planungsphase beginnt. */
     static final String AUTO_PREFIX = "[AUTO]";
 
