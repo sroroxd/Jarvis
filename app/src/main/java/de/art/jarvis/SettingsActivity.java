@@ -239,7 +239,13 @@ public class SettingsActivity extends AppCompatActivity {
     private void tryPocket() {
         if (!PocketTrial.downloaded(this) && !pocketMeteredConfirmed) {
             android.net.ConnectivityManager cm = getSystemService(android.net.ConnectivityManager.class);
-            if (cm != null && cm.isActiveNetworkMetered()) {
+            boolean metered;
+            try {
+                metered = cm != null && cm.isActiveNetworkMetered();
+            } catch (RuntimeException e) {
+                metered = false; // Auskunft nicht möglich – dann nicht blockieren
+            }
+            if (metered) {
                 pocketMeteredConfirmed = true;
                 showResult(b.pocketResult, "Du bist im Mobilfunk. Noch einmal tippen, um die " + (PocketTrial.totalBytes() >> 20)
                         + " MB trotzdem zu laden – oder später im WLAN.");
