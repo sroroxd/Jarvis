@@ -37,11 +37,21 @@ final class ProactiveCoach {
     /** Grundanweisung des Phasen-Wächters (kurz, damit er schnell und günstig ist). */
     static final String WATCH_SYSTEM = "Du erkennst Spielphasen in Teamfight Tactics auf einem Handy-Bildschirmfoto. "
             + "Antworte mit genau einer Zeile und nichts sonst.";
+    /**
+     * Die Merkmale stammen aus Arts echten Bildschirmfotos vom 8. Nov. (.github/testbilder/waechter): Im Kampf stehen
+     * Gegner mit ROTEN Lebensbalken auf dem Brett, es fliegen Schadenszahlen, rechts steht oft „Verursachter Schaden“.
+     * In der Planung sieht das Brett fast gleich aus – aber nur eigene Einheiten mit GRÜNEN Balken, oft ist der Laden
+     * mit fünf Champion-Karten offen. Im Zweifel KAMPF: Eine verpasste Ansage ist harmloser als Reden mitten im Kampf.
+     */
     static final String WATCH_PROMPT = "Was zeigt dieses Bildschirmfoto? Antworte genau so:\n"
-            + "PLANUNG <Phase> – Teamfight Tactics in der Planungsphase (Einheiten kaufen und aufstellen, der Kampf hat noch "
-            + "nicht begonnen); <Phase> wie oben in der Mitte angezeigt, zum Beispiel 3-2, sonst ?\n"
-            + "KAMPF – die Einheiten kämpfen gerade\n"
-            + "ANDERES – Karussell, Ladebildschirm, Menü, Lobby oder gar nicht TFT";
+            + "PLANUNG <Phase> – Teamfight Tactics in der Planungsphase: Auf dem Brett und der Bank stehen nur EIGENE "
+            + "Einheiten (grüne Lebensbalken), keine Gegner, keine Schadenszahlen; oft ist der Laden mit fünf "
+            + "Champion-Karten offen. <Phase> ist die Rundenanzeige oben in der Mitte, zum Beispiel 3-2, sonst ?\n"
+            + "KAMPF – Gegner oder Monster mit ROTEN Lebensbalken sind auf dem Brett, Schadenszahlen, oder rechts die "
+            + "Übersicht „Verursachter Schaden“\n"
+            + "ANDERES – Karussell oder Startinsel mit mehreren Spielern, Ladebildschirm, Menü, Lobby, Ergebnis oder gar "
+            + "nicht TFT\n"
+            + "Im Zweifel zwischen PLANUNG und KAMPF: KAMPF.";
     /** Was die App Claude statt einer Frage schickt, wenn eine neue Planungsphase beginnt. */
     static final String AUTO_PREFIX = "[AUTO]";
 
@@ -68,9 +78,10 @@ final class ProactiveCoach {
     }
 
     /**
-     * Ist jetzt eine Ansage fällig? Ja, wenn Planung läuft, der Abstand reicht und es eine NEUE Planungsphase ist:
-     * dazwischen lag ein Kampf (oder Karussell) – oder die gelesene Phase hat sich geändert, falls der Wächter den
-     * Kampf verpasst hat.
+     * Ist jetzt eine Ansage fällig? Ja, wenn Planung läuft, der Abstand reicht und es eine NEUE Planungsphase ist.
+     * Ist die Rundenanzeige lesbar, entscheidet sie allein: eine Ansage pro Runde (3-1, 3-2, …). So redet Jarvis
+     * nicht mitten im Kampf, wenn der Wächter ein Kampfbild einmal für Planung hält – Planung und Kampf einer Runde
+     * tragen dieselbe Nummer. Nur wenn sie unlesbar ist, zählt, ob dazwischen ein Kampf (oder Karussell) lag.
      */
     boolean due(Phase p, long now) {
         lastSeen = p;
@@ -80,8 +91,8 @@ final class ProactiveCoach {
             return false;
         }
         if (now - lastCoach < MIN_GAP_MS) return false;
-        boolean newStage = p.stage != null && lastStage != null && !p.stage.equals(lastStage);
-        return sawOther || newStage;
+        if (p.stage != null && lastStage != null) return !p.stage.equals(lastStage);
+        return sawOther;
     }
 
     /** Ansage ist raus. */

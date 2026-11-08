@@ -243,7 +243,19 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
       Leerlauf außerhalb des Dauergesprächs da, nach dem Beenden war die Zeile ganz weg. Jetzt immer, sobald es
       Werte gibt – auch nach dem Beenden.
 
-**Geprüft:** Build (Release und Debug), alle 172 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+20. **Arts echte TFT-Bilder als Testbilder (8. Nov.):** Sechs Bildschirmfotos (Planung 1-3 mit offenem Laden,
+    vier Kämpfe in 1-2, 1-3 und 2-1, Start 1-1) liegen verpixelt und auf App-Größe gebracht in
+    `.github/testbilder/waechter`. Der Gerätetest schickt sie über die App an den Wächter und berichtet, wie viele
+    er richtig einordnet (nur Bericht, kein Abbruch).
+    - *Erkenntnis aus den Bildern:* Kampf und Planung sehen fast gleich aus. Der Unterschied: Im Kampf stehen
+      Gegner mit ROTEN Lebensbalken auf dem Brett, es gibt Schadenszahlen und rechts „Verursachter Schaden“; in der
+      Planung nur eigene Einheiten mit grünen Balken, oft mit offenem Laden. Diese Merkmale stehen jetzt in der
+      Frage an den Wächter, dazu „im Zweifel KAMPF“.
+    - *Eine Ansage pro Runde:* Ist die Rundenanzeige lesbar, entscheidet sie allein. Hält der Wächter ein Kampfbild
+      einmal für Planung, schweigt Jarvis – Planung und Kampf einer Runde tragen dieselbe Nummer (Test ergänzt).
+    - Noch offen: ein zweites Planungsbild, möglichst ohne offenen Laden und aus Stufe 3 oder 4.
+
+**Geprüft:** Build (Release und Debug), alle 173 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

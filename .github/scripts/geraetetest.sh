@@ -159,6 +159,46 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
   else
     say "  FEHLER Phasen-Wächter (erwartet ANDERES): ${pline#*JarvisTest: }"; gfail=1
   fi
+  # Arts echte TFT-Bilder (.github/testbilder/waechter, Spielernamen unkenntlich). Der Dateiname sagt, was richtig ist:
+  # „kampf__…“ → KAMPF, „anderes__…“ → ANDERES, „planung_1-3__…“ → PLANUNG 1-3. Nur Bericht, kein Abbruch: Ein
+  # Sprachmodell kann einzelne Bilder anders sehen, und die APK soll daran nicht hängen. Kopiert per run-as in den
+  # privaten Ordner der App (geht nur bei Debug-Builds).
+  bilder=0
+  for f in .github/testbilder/waechter/*.jpg; do
+    [ -f "$f" ] || continue
+    name=$(basename "$f")
+    adb push "$f" "/data/local/tmp/wb_$name" > /dev/null 2>&1
+    adb shell "run-as $PKG sh -c 'mkdir -p files/waechter && cp /data/local/tmp/wb_$name files/waechter/$name'" \
+      > /dev/null 2>&1 && bilder=$((bilder + 1))
+  done
+  if [ "$bilder" -gt 0 ]; then
+    fertig() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "waechter-bilder fertig" || true; }
+    bvor=$(fertig)
+    adb shell "am start -n $ACT --ez testwaechterbilder true" > /dev/null 2>&1
+    for _ in $(seq 1 60); do
+      sleep 2
+      [ "$(fertig)" -gt "$bvor" ] && break
+    done
+    richtig=0
+    gesehen=0
+    while IFS= read -r zeile; do
+      name=$(echo "$zeile" | sed -E 's/.*waechter-bild ([^:]+): .*/\1/')
+      antwort=$(echo "$zeile" | sed -E 's/.*waechter-bild [^:]+: //')
+      soll=$(echo "${name%%__*}" | tr '[:lower:]' '[:upper:]' | tr '_' ' ')
+      gesehen=$((gesehen + 1))
+      # Antwort vereinheitlichen: Großbuchstaben, Gedankenstriche als Bindestrich, Zeichen davor („**“) weg.
+      ist=$(echo "$antwort" | tr '[:lower:]' '[:upper:]' | sed -E 's/–/-/g; s/‑/-/g; s/^[^A-Z]+//; s/ *- */-/g')
+      if [ "${ist#"$soll"}" != "$ist" ]; then
+        richtig=$((richtig + 1))
+        say "  Wächter, echtes Bild $name: $antwort"
+      else
+        say "  Hinweis Wächter, echtes Bild $name: erwartet $soll, Antwort: $antwort"
+      fi
+    done < <(adb logcat -d -s JarvisTest:I 2>/dev/null | grep "waechter-bild " | tail -n "$bilder")
+    say "  Phasen-Wächter auf Arts echten TFT-Bildern: $richtig von $bilder richtig ($gesehen beantwortet)"
+  else
+    say "  Hinweis: Arts TFT-Testbilder ließen sich nicht in die App kopieren"
+  fi
 else
   say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
 fi

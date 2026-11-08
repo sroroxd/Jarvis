@@ -148,6 +148,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (intent.getBooleanExtra("testwaechter", false)) {
             startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_WATCH));
         }
+        if (intent.getBooleanExtra("testwaechterbilder", false)) { // Arts echte TFT-Bilder, siehe geraetetest.sh
+            startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_WATCH)
+                    .putExtra("bilder", true));
+        }
     }
 
     @Override

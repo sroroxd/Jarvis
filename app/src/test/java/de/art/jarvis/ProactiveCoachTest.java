@@ -39,6 +39,18 @@ public class ProactiveCoachTest {
         assertTrue(c.due(p("PLANUNG 3-2"), t + 70_000));        // nächste Runde
     }
 
+    /** Hält der Wächter ein Kampfbild einmal für Planung, darf Jarvis nicht mitten im Kampf reden. */
+    @Test
+    public void fehlgriffImKampfBleibtStill() {
+        ProactiveCoach c = new ProactiveCoach();
+        long t = 1_000_000;
+        c.coached(p("PLANUNG 1-3"), t);
+        assertFalse(c.due(p("KAMPF"), t + 30_000));
+        assertFalse(c.due(p("PLANUNG 1-3"), t + 36_000));       // Fehlgriff: dieselbe Runde, also Kampf – schweigen
+        assertFalse(c.due(p("KAMPF"), t + 42_000));
+        assertTrue(c.due(p("PLANUNG 1-4"), t + 60_000));        // die nächste Runde schon
+    }
+
     @Test
     public void nichtZuSchnellHintereinander() {
         ProactiveCoach c = new ProactiveCoach();

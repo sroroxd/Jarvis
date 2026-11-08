@@ -347,7 +347,10 @@ public class JarvisService extends Service {
                 handleUtterance(text.trim());
             }
         }
-        else if (ACTION_TEST_WATCH.equals(action) && debuggable()) testWatch();
+        else if (ACTION_TEST_WATCH.equals(action) && debuggable()) {
+            if (intent.getBooleanExtra("bilder", false)) testWatchFiles();
+            else testWatch();
+        }
         return START_NOT_STICKY;
     }
 
@@ -545,6 +548,10 @@ public class JarvisService extends Service {
 
     /** Fragt den Phasen-Wächter; die Antwort kommt über {@link #watchCallback}. Läuft auf jedem Thread. */
     private boolean sendWatch(String key, String image) {
+        return sendWatch(key, image, watchCallback);
+    }
+
+    private boolean sendWatch(String key, String image, ClaudeClient.Callback callback) {
         JSONArray messages = new JSONArray();
         try {
             JSONArray content = new JSONArray()
@@ -556,8 +563,54 @@ public class JarvisService extends Service {
             return false;
         }
         // Günstiges Modell: Der Wächter sagt nur „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.
-        claude.sendQuick(key, Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, watchCallback);
+        claude.sendQuick(key, Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, callback);
         return true;
+    }
+
+    /**
+     * CI-Gerätetest mit Arts echten TFT-Bildern (.github/testbilder/waechter, Spielernamen unkenntlich). Das Skript
+     * kopiert sie in den App-Ordner „waechter“; jedes geht nacheinander an den Wächter, genau wie im Spiel. Die Bilder
+     * haben schon die Größe, die die App schickt (lange Kante 1280, JPEG 75). Protokoll je Bild
+     * „waechter-bild <Datei>: <Antwort>“, zum Schluss „waechter-bilder fertig“.
+     */
+    private void testWatchFiles() {
+        java.io.File[] files = new java.io.File(getFilesDir(), "waechter").listFiles((d, n) -> n.endsWith(".jpg"));
+        if (files == null || files.length == 0) {
+            testLog("waechter-bilder fertig (keine Bilder gefunden)");
+            return;
+        }
+        java.util.Arrays.sort(files);
+        testWatchFile(files, 0);
+    }
+
+    private void testWatchFile(java.io.File[] files, int i) {
+        if (i >= files.length) {
+            testLog("waechter-bilder fertig");
+            return;
+        }
+        final java.io.File f = files[i];
+        String image;
+        try {
+            image = android.util.Base64.encodeToString(java.nio.file.Files.readAllBytes(f.toPath()),
+                    android.util.Base64.NO_WRAP);
+        } catch (java.io.IOException e) {
+            testLog("waechter-bild " + f.getName() + ": fehler " + e.getMessage());
+            testWatchFile(files, i + 1);
+            return;
+        }
+        sendWatch(prefs.apiKey(), image, new ClaudeClient.Callback() {
+            @Override
+            public void onResult(String text) {
+                testLog("waechter-bild " + f.getName() + ": " + text.trim().replace('\n', ' '));
+                testWatchFile(files, i + 1);
+            }
+
+            @Override
+            public void onError(String message) {
+                testLog("waechter-bild " + f.getName() + ": fehler " + message);
+                testWatchFile(files, i + 1);
+            }
+        });
     }
 
     /**
