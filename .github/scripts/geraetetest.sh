@@ -103,7 +103,7 @@ answers() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "antwort \[|fehl
 ask() {  # ask <Name> <Frage> <Muster für die richtige Antwort> [Muster, das nicht vorkommen darf]
   local before line
   before=$(answers | wc -l)
-  adb shell "am start -n $ACT --es testfrage '$2'" > /dev/null 2>&1
+  adb shell "am start -n $ACT --es testfrage '$2' ${ASK_EXTRA:-}" > /dev/null 2>&1
   for _ in $(seq 1 45); do
     sleep 2
     [ "$(answers | wc -l)" -gt "$before" ] && break
@@ -140,6 +140,22 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
     say "  Cache: greift"
   else
     say "  Hinweis: Cache griff bei der zweiten Frage nicht"
+  fi
+  # Kostenbremse bei offenem Mikrofon: Nach einer Gesprächspause fragt erst Haiku, ob der Satz Jarvis galt.
+  # Eine echte Frage muss durchkommen (sonst bliebe Jarvis stumm) – das ist hart. Dass Fernseh-Gerede
+  # herausgefiltert wird, ist nur ein Hinweis: Durchgelassen kostet es Geld, schadet aber nicht.
+  filter_vorher=$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "filter: " || true)
+  ASK_EXTRA="--ez testoffen true" ask "Filter-ja" "Was ist die Hauptstadt von Frankreich?" "paris" "gefiltert"
+  if [ "$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "filter: " || true)" -le "$filter_vorher" ]; then
+    say "  FEHLER Filter: bei offenem Mikrofon nicht gefragt"; gfail=1
+  else
+    say "  Filter: $(adb logcat -d -s JarvisTest:I 2>/dev/null | grep "filter: " | tail -1 | sed 's/.*JarvisTest: //')"
+  fi
+  gfail_vorher=$gfail
+  ASK_EXTRA="--ez testoffen true" ask "Filter-nein" "und morgen wird es im Norden regnerisch bei zwoelf Grad, mehr dazu gleich nach der Werbung" "gefiltert"
+  if [ "$gfail" != "$gfail_vorher" ]; then
+    say "  Hinweis Filter: Fernseh-Satz wurde nicht herausgefiltert (kostet Geld, kein Absturz)"
+    gfail=$gfail_vorher
   fi
   adb exec-out screencap -p > shots/05_gespraech.png
   # Proaktives Coaching: Der Phasen-Wächter (Haiku) bekommt einen gemalten Einstellungs-Bildschirm – richtig ist

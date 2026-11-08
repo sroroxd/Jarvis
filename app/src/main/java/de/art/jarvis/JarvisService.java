@@ -158,6 +158,15 @@ public class JarvisService extends Service {
     /** Aufeinanderfolgende Erkennungsfehler im Dauergespräch – für das Zurückweichen. */
     private int continuousErrors;
     private final Runnable relisten = this::relistenIfContinuous;
+    /** Prüft regelmäßig, ob Jarvis zuhören sollte, es aber nicht tut (siehe {@link ListenRules}). */
+    private final Runnable listenWatchdog = this::listenWatchdog;
+    /** Wann Jarvis zuletzt fertig gesprochen hat (elapsedRealtime) – danach gilt das Gespräch eine Weile als „warm“. */
+    private long lastExchangeAt;
+    /** Nur CI-Gerätetest: die nächste Testfrage läuft wie bei offenem Mikrofon nach einer Gesprächspause. */
+    private boolean testOpenMic;
+    /** Bildschirmfotos für Fragen und Ansagen – nicht auf dem Haupt-Thread, sonst stocken Erkennung und Stimme. */
+    private final java.util.concurrent.ExecutorService captureExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
     /** Dazwischenreden: lauscht, während Jarvis im Dauergespräch spricht. */
     private BargeIn bargeIn;
     /** Automatische Spielerkennung: TFT vorne → Spielmodus und Dauergespräch (Einstellung „TFT automatisch erkennen“). */
@@ -282,6 +291,10 @@ public class JarvisService extends Service {
             boolean wasRunning = running;
             startForeground(NOTIFICATION_ID, buildNotification(), types);
             running = true;
+            if (!wasRunning) {
+                main.removeCallbacks(listenWatchdog);
+                main.postDelayed(listenWatchdog, ListenRules.WATCHDOG_MS);
+            }
             if (projection == null && data != null) startProjection(code, data);
             applySettings();
             if (!wasRunning) main.postDelayed(() -> say("Zu Diensten, Sir."), 500);
@@ -300,6 +313,10 @@ public class JarvisService extends Service {
             if (text != null && !text.trim().isEmpty()) {
                 // Genau der Weg, den eine erkannte Spracheingabe nimmt – nur ohne Mikrofon.
                 testLog("frage: " + text.trim());
+                if (intent.getBooleanExtra("offen", false)) {
+                    testOpenMic = true;
+                    lastExchangeAt = 0;
+                }
                 publishExchange(text.trim(), "");
                 handleUtterance(text.trim());
             }
@@ -324,6 +341,7 @@ public class JarvisService extends Service {
         }
         gameWatch.stop();
         watchExecutor.shutdown();
+        captureExecutor.shutdown();
         talkAudio.exit();
         bargeIn.release();
         destroyRecognizer();
@@ -412,6 +430,23 @@ public class JarvisService extends Service {
         } else if (continuous && prefs.alwaysListen() && !screenAwake && !gameWatch.inGame()) {
             stopContinuous(false);
         }
+    }
+
+    /**
+     * Wächter: Soll Jarvis zuhören, steht aber still da (kein Zuhören, Denken, Sprechen und kein Neustart geplant),
+     * wird das Zuhören neu angeworfen. Vorher konnte „Immer zuhören“ nach Fehlern der Spracherkennung dauerhaft
+     * taub bleiben, bis Art den Bildschirm aus- und wieder einschaltete.
+     */
+    private void listenWatchdog() {
+        if (!running) return;
+        main.postDelayed(listenWatchdog, ListenRules.WATCHDOG_MS);
+        boolean wanted = listenWanted();
+        if (!ListenRules.kickNeeded(wanted || continuous, continuous, state == State.IDLE, main.hasCallbacks(relisten))) {
+            return;
+        }
+        testLog("waechter: zuhoeren neu angeworfen");
+        if (wanted) updateAlwaysListen();
+        else scheduleRelisten(RELISTEN_DELAY_MS);
     }
 
     // ---------------------------------------------------------------- Telefonmodus (Echo-Unterdrückung)
@@ -657,23 +692,15 @@ public class JarvisService extends Service {
         timing.speechEndedIfUnknown(SystemClock.elapsedRealtime());
         setState(State.THINKING);
         String text = ProactiveCoach.autoMessage(phase);
-        if (floatingJ == null && !subtitles.isShowing()) {
-            ask(id, key, text, grabber.captureJpegBase64(true));
-            return true;
-        }
-        // Wie bei einer Frage: Eingeblendetes kurz verstecken, damit das Brett frei auf dem Bild ist.
-        setCaptureHidden(true);
-        main.postDelayed(() -> {
-            String image = grabber == null ? null : grabber.captureJpegBase64(true);
-            setCaptureHidden(false);
-            if (id != requestId) return;
+        // Wie bei einer Frage: im Hintergrund fotografieren, Eingeblendetes kurz verstecken.
+        captureThen(id, true, image -> {
             if (image != null) {
                 ask(id, key, text, image);
                 return;
             }
             setState(State.IDLE);
             scheduleRelisten(RELISTEN_DELAY_MS);
-        }, 120);
+        });
         return true;
     }
 
@@ -1020,17 +1047,15 @@ public class JarvisService extends Service {
                 setState(State.IDLE);
                 if (continuous) {
                     // Dauergespräch: Stille ist normal – einfach weiter zuhören. Echte Fehler (Erkenner
-                    // belegt, Netz weg) mit wachsender Pause wiederholen, nach fünf in Folge aufgeben.
+                    // belegt, Netz weg) mit wachsender Pause wiederholen; mit „Immer zuhören“ danach alle 30 s
+                    // weiter versuchen statt aufzugeben (ListenRules).
                     boolean silence = error == SpeechRecognizer.ERROR_NO_MATCH
                             || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT;
                     if (silence) {
                         continuousErrors = 0;
                         scheduleRelisten(150);
-                    } else if (++continuousErrors > 5) {
-                        stopContinuous(false);
-                        say("Die Spracherkennung meldet immer wieder Fehler " + error + ". Ich beende das Dauergespräch.");
                     } else {
-                        scheduleRelisten(Math.min(8000, 500L << continuousErrors));
+                        retryListening("Die Spracherkennung meldet immer wieder Fehler " + error + ".");
                     }
                     return;
                 }
@@ -1062,15 +1087,30 @@ public class JarvisService extends Service {
                 finishListening();
             } else {
                 setState(State.IDLE);
-                if (continuous && ++continuousErrors <= 5) {
-                    // Im Dauergespräch nicht jedes Mal ansagen – sonst Endlosschleife aus Ansage und Neustart.
-                    scheduleRelisten(Math.min(8000, 500L << continuousErrors));
-                    return;
-                }
-                if (continuous) stopContinuous(false);
-                say("Die Spracherkennung konnte nicht starten.");
+                // Im Dauergespräch nicht jedes Mal ansagen – sonst Endlosschleife aus Ansage und Neustart.
+                if (continuous) retryListening("Die Spracherkennung konnte nicht starten.");
+                else say("Die Spracherkennung konnte nicht starten.");
             }
         }
+    }
+
+    /**
+     * Echter Fehler im Dauergespräch: mit wachsender Pause neu versuchen. Mit „Immer zuhören“ nie aufgeben, sondern
+     * nach fünf Fehlern alle 30 s weiter – einmal still als Hinweis eingeblendet. Ohne „Immer zuhören“ wie bisher:
+     * nach fünf Fehlern Dauergespräch beenden und es sagen.
+     */
+    private void retryListening(String problem) {
+        long delay = ListenRules.retryDelay(++continuousErrors, prefs.alwaysListen());
+        if (delay < 0) {
+            stopContinuous(false);
+            say(problem + " Ich beende das Dauergespräch.");
+            return;
+        }
+        testLog("erkenner fehler " + continuousErrors + ", neuer versuch in " + delay + " ms");
+        if (continuousErrors == ListenRules.QUICK_RETRIES + 1) {
+            statusBriefly(problem + " Ich versuche es alle 30 Sekunden weiter.");
+        }
+        scheduleRelisten(delay);
     }
 
     private String joined(String partial) {
@@ -1146,6 +1186,8 @@ public class JarvisService extends Service {
     }
 
     private void handleUtterance(String text) {
+        final boolean testOpen = testOpenMic;
+        testOpenMic = false;
         maybeUpdateMeta();
         // „Spielmodus an/aus“ erledigt die App selbst.
         Boolean game = Commands.gameMode(text);
@@ -1226,30 +1268,124 @@ public class JarvisService extends Service {
             say("Mir fehlt noch der API-Schlüssel. Bitte tragen Sie ihn in den Jarvis-Einstellungen ein.");
             return;
         }
-        long now = System.currentTimeMillis();
-        if (now - lastInteraction > CONVERSATION_TIMEOUT_MS) history.clear();
-        lastInteraction = now;
-
         final int id = ++requestId;
         setState(State.THINKING);
         status("„" + text + "“");
-        if (grabber == null) {
-            ask(id, key, text, null);
+        // Kostenbremse bei offenem Mikrofon: Nach einer Gesprächspause fragt erst der günstige Filter (Haiku, nur
+        // Text), ob der Satz Jarvis galt. Bildschirmfoto und Filter laufen gleichzeitig – die Frage wartet nur auf
+        // den langsameren der beiden.
+        long nowRt = SystemClock.elapsedRealtime();
+        boolean openMic = continuous || testOpen;
+        final PendingAsk pending = new PendingAsk(id, key, text);
+        if (ListenRules.needsGate(openMic, nowRt, lastExchangeAt, text)) {
+            askGate(key, text, nowRt, pending);
+        } else {
+            pending.gateDone = true;
+        }
+        captureThen(id, prefs.tftMode(), pending::imageReady);
+    }
+
+    /** Wartet auf Bildschirmfoto und (falls nötig) Filter; dann geht die Frage an Claude – oder Jarvis schweigt. */
+    private final class PendingAsk {
+        final int id;
+        final String key;
+        final String text;
+        final long started = SystemClock.elapsedRealtime();
+        boolean imageDone;
+        boolean gateDone;
+        boolean blocked;
+        String image;
+
+        PendingAsk(int id, String key, String text) {
+            this.id = id;
+            this.key = key;
+            this.text = text;
+        }
+
+        void imageReady(String img) {
+            image = img;
+            imageDone = true;
+            go();
+        }
+
+        void gateReady(boolean addressed) {
+            blocked = !addressed;
+            gateDone = true;
+            go();
+        }
+
+        private void go() {
+            if (!imageDone || !gateDone || id != requestId || !running) return;
+            if (blocked) {
+                // Galt nicht Jarvis (Fernseher, Gespräch mit anderen): schweigen und weiter zuhören, ohne Sonnet.
+                testLog("antwort [gefiltert]: –");
+                setState(State.IDLE);
+                scheduleRelisten(RELISTEN_DELAY_MS);
+                return;
+            }
+            askClaude(id, key, text, image);
+        }
+    }
+
+    /** Fragt den Filter (Haiku): Galt der Satz Jarvis? Fehler oder unklare Antwort → ja, Jarvis antwortet. */
+    private void askGate(String key, String text, long nowRt, PendingAsk pending) {
+        long since = lastExchangeAt == 0 ? -1 : (nowRt - lastExchangeAt) / 1000;
+        String prompt = ListenRules.gatePrompt(text, since < 0 ? null : lastJarvis, Math.max(0, since), prefs.tftMode());
+        JSONArray messages = new JSONArray();
+        try {
+            messages.put(new JSONObject().put("role", "user").put("content", prompt));
+        } catch (JSONException e) {
+            pending.gateDone = true;
+            return;
+        }
+        final long t0 = SystemClock.elapsedRealtime();
+        claude.sendGate(key, Prefs.BUDGET_MODEL, ListenRules.GATE_SYSTEM, messages, new ClaudeClient.Callback() {
+            @Override
+            public void onResult(String reply) {
+                boolean addressed = ListenRules.addressed(reply);
+                testLog("filter: " + (addressed ? "JA" : "NEIN") + " (" + (SystemClock.elapsedRealtime() - t0)
+                        + " ms" + costSuffix() + ")");
+                pending.gateReady(addressed);
+            }
+
+            @Override
+            public void onError(String message) {
+                testLog("filter fehler: " + message);
+                pending.gateReady(true);
+            }
+        });
+    }
+
+    /**
+     * Bildschirmfoto im Hintergrund, Ergebnis auf dem Haupt-Thread (null ohne Bildschirmfreigabe). Ist etwas
+     * eingeblendet, wird es kurz versteckt, damit es nicht auf dem Foto landet.
+     */
+    private void captureThen(int id, boolean game, java.util.function.Consumer<String> done) {
+        final ScreenGrabber g = grabber;
+        if (g == null) {
+            done.accept(null);
             return;
         }
         boolean overlayVisible = floatingJ != null || subtitles.isShowing();
-        if (!overlayVisible) {
-            // Nichts eingeblendet (z. B. Spielmodus) → sofort fotografieren, keine Wartezeit.
-            ask(id, key, text, grabber.captureJpegBase64(prefs.tftMode()));
-            return;
-        }
-        // Eingeblendetes kurz verstecken, damit es nicht auf dem Bildschirmfoto landet.
-        setCaptureHidden(true);
-        main.postDelayed(() -> {
-            String image = grabber == null ? null : grabber.captureJpegBase64(prefs.tftMode());
-            setCaptureHidden(false);
-            if (id == requestId) ask(id, key, text, image);
-        }, 120); // 120 ms reichen, damit das Bild ohne Einblendung neu gezeichnet ist (vorher 300 ms)
+        if (overlayVisible) setCaptureHidden(true);
+        Runnable shoot = () -> captureExecutor.execute(() -> {
+            String image = g.captureJpegBase64(game);
+            main.post(() -> {
+                if (overlayVisible) setCaptureHidden(false);
+                if (id == requestId && running) done.accept(image);
+            });
+        });
+        // 120 ms reichen, damit das Bild ohne Einblendung neu gezeichnet ist; sonst sofort.
+        if (overlayVisible) main.postDelayed(shoot, 120);
+        else shoot.run();
+    }
+
+    /** Frage an Claude; ein Gespräch, das eine Viertelstunde ruhte, beginnt frisch. */
+    private void askClaude(int id, String key, String text, String image) {
+        long now = System.currentTimeMillis();
+        if (now - lastInteraction > CONVERSATION_TIMEOUT_MS) history.clear();
+        lastInteraction = now;
+        ask(id, key, text, image);
     }
 
     private void ask(int id, String key, String text, String image) {
@@ -1466,6 +1602,7 @@ public class JarvisService extends Service {
         continuous = true;
         listenPaused = false;
         continuousLastSpeech = SystemClock.elapsedRealtime();
+        lastExchangeAt = continuousLastSpeech; // Art hat gerade angetippt – seine Frage gilt Jarvis
         continuousErrors = 0;
         notifyUi();
         startListening();
@@ -1785,6 +1922,7 @@ public class JarvisService extends Service {
     }
 
     private void onSpeechFinished() {
+        lastExchangeAt = SystemClock.elapsedRealtime();
         if (state == State.SPEAKING) setState(State.IDLE);
         subtitles.hideAfter(CAPTION_LINGER_MS);
         scheduleRelisten(RELISTEN_DELAY_MS);

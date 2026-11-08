@@ -217,10 +217,11 @@ Die Lücke liegt also **nicht am Modell**. Seit PR #53 zerlegt die App die Warte
    `listenPaused` – und `updateAlwaysListen()` läuft nur beim Ein- und Ausschalten des Bildschirms oder beim
    Ändern einer Einstellung. Jarvis hört danach nicht mehr zu, obwohl „Immer zuhören“ an ist, bis Art den
    Bildschirm aus- und wieder einschaltet. Die Ansage („Ich beende das Dauergespräch“) passt seit heute auch
-   nicht mehr. *Noch nicht behoben – siehe „Was zuerst“.*
+   nicht mehr. *Behoben am 8. Nov. abends – siehe „Punkt 1 umgesetzt“.*
 2. **Bildschirmfoto blockiert den Haupt-Thread (mittel).** Der Phasen-Wächter wurde heute auf einen eigenen
    Thread verlegt, **Arts eigene Fragen nicht** (`JarvisService` Zeilen 661, 667, 1243, 1249). Pro Frage
-   laufen Bitmap-Kopie, Verkleinern und JPEG auf dem Haupt-Thread.
+   laufen Bitmap-Kopie, Verkleinern und JPEG auf dem Haupt-Thread. *Behoben am 8. Nov. abends (eigener Thread,
+   auch für die ungefragten Ansagen).*
 3. **Zwei Vollbilder je Aufnahme (mittel).** `ScreenGrabber.toBitmap` legt erst ein gepolstertes, dann ein
    zugeschnittenes Bitmap an – bei 1920 × 886 je rund 6,8 MB, dazu die verkleinerte Fassung. Alle 6 Sekunden
    während einer Partie. Dazu hält die Methode dabei `lock`, sodass der Mitschnitt-Thread solange wartet.
@@ -320,6 +321,28 @@ vor, das kostet Ausgabe-Tokens und Zeit.
 
 Danach in dieser Reihenfolge: Rest von PocketTTS, Agent-Rückgrat, whisper.cpp, App-Steuerung (nach dem
 Schlüsseltausch).
+
+Art hat am Abend des 8. Nov. grünes Licht für alle drei gegeben.
+
+### Punkt 1 umgesetzt (8. Nov. abends, PR #56)
+
+- **Kein Verstummen mehr.** Neue Klasse `ListenRules` (reines Java, 5 Tests). Nach fünf schnellen Versuchen
+  (0,5–8 s) gibt Jarvis mit „Immer zuhören“ nicht mehr auf, sondern versucht es alle 30 s weiter und blendet
+  das einmal still ein, statt es anzusagen. Ohne „Immer zuhören“ (Dauergespräch von Hand) bleibt es wie bisher.
+  Dazu ein **Wächter**: alle 20 s prüft er, ob Jarvis zuhören sollte, aber still dasteht (kein Zuhören, Denken,
+  Sprechen, kein Neustart geplant), und wirft das Zuhören neu an. Im Protokoll: `waechter: zuhoeren neu angeworfen`.
+- **Kostenbremse.** Bei offenem Mikrofon fragt nach einer Gesprächspause (über 60 s seit Jarvis zuletzt sprach)
+  erst Haiku (nur Text, rund 0,0015 ct): Galt der Satz Jarvis? Nur ein klares NEIN hält zurück – Fehler, Netz weg
+  oder unklare Antwort heißen „antworten“. Folgefragen innerhalb einer Minute und alles mit „Jarvis“ im Satz
+  gehen ohne Filter direkt an Sonnet. Filter und Bildschirmfoto laufen gleichzeitig; die Frage wartet nur auf
+  den langsameren der beiden. Die [STILL]-Regel in Sonnets Anweisung bleibt als zweite Sicherung.
+  Im Protokoll: `filter: JA (… ms …)` bzw. `antwort [gefiltert]: –`.
+- **Bildschirmfoto im Hintergrund** für Arts Fragen und die ungefragten Ansagen (eigener Thread
+  `captureExecutor`); der Haupt-Thread wartet nicht mehr auf Bitmap, Verkleinern und JPEG.
+- **Gerätetest:** neu „Filter-ja“ (echte Frage bei offenem Mikrofon muss durchkommen – harter Fehler, sonst
+  bliebe Jarvis stumm) und „Filter-nein“ (Fernseh-Satz; wird er durchgelassen, nur ein Hinweis).
+- Grenze: Der Emulator hat kein Mikrofon. Ob der Wächter auf dem S24 Ultra je eingreifen muss und wie oft der
+  Filter echte Fernseh-Sätze abfängt, zeigt erst Arts Handy (Protokollzeilen oben).
 
 ## Verfeinerung – Recherche vom 7. November
 

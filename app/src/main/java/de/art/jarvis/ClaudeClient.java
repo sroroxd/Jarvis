@@ -65,6 +65,8 @@ final class ClaudeClient {
     private static final ExecutorService background = Executors.newSingleThreadExecutor();
     /** Kurze Nebenanfragen (Phasen-Wächter des proaktiven Coachings) – eigener Thread, hält weder Fragen noch Meta auf. */
     private static final ExecutorService quick = Executors.newSingleThreadExecutor();
+    /** Filter vor Claude bei offenem Mikrofon – eigener Thread, damit er nie hinter einem Wächter-Bild wartet. */
+    private static final ExecutorService gate = Executors.newSingleThreadExecutor();
     /** Lehnt das Konto die Websuche ab (in der Claude Console nicht freigeschaltet), lassen wir sie danach weg. */
     private static volatile boolean webSearchUnavailable;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -145,11 +147,18 @@ final class ClaudeClient {
      * Adaptiv mit „low“ – bei so einfachen Fragen denkt das Modell laut Doku meist gar nicht nach.
      */
     void sendQuick(String apiKey, String model, String system, JSONArray messages, Callback callback) {
-        quick.execute(() -> {
-            Result r = request(apiKey, model, system, messages, "adaptive", "low", 1024, null, null);
-            if (r.code == 400 && mentionsThinking(r.detail)) r = request(apiKey, model, system, messages, null, null, 256, null, null);
-            deliver(r, "Keine Antwort.", callback);
-        });
+        quick.execute(() -> quickRequest(apiKey, model, system, messages, callback));
+    }
+
+    /** Wie {@link #sendQuick}, aber für den Filter vor Claude (siehe {@link ListenRules}) auf eigenem Thread. */
+    void sendGate(String apiKey, String model, String system, JSONArray messages, Callback callback) {
+        gate.execute(() -> quickRequest(apiKey, model, system, messages, callback));
+    }
+
+    private void quickRequest(String apiKey, String model, String system, JSONArray messages, Callback callback) {
+        Result r = request(apiKey, model, system, messages, "adaptive", "low", 1024, null, null);
+        if (r.code == 400 && mentionsThinking(r.detail)) r = request(apiKey, model, system, messages, null, null, 256, null, null);
+        deliver(r, "Keine Antwort.", callback);
     }
 
     private void deliver(Result result, String emptyMessage, Callback callback) {

@@ -130,7 +130,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     /**
      * Nur Debug-Builds, für den Gesprächstest in der CI (siehe .github/scripts/geraetetest.sh):
      * „testkey“ trägt den API-Schlüssel ein, „teststart“ startet Jarvis ohne Bildschirmfreigabe,
-     * „testfrage“ stellt eine Frage, als wäre sie gesprochen, „testwaechter“ fragt einmal den Phasen-Wächter des
+     * „testfrage“ stellt eine Frage, als wäre sie gesprochen (mit „testoffen“ wie bei offenem Mikrofon nach einer
+     * Gesprächspause), „testwaechter“ fragt einmal den Phasen-Wächter des
      * proaktiven Coachings mit einem Testbild. In der Handy-Version (Release) wirkungslos.
      */
     private void readTestHooks(Intent intent) {
@@ -148,7 +149,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (frage != null && !frage.trim().isEmpty()) {
             startService(new Intent(this, JarvisService.class)
                     .setAction(JarvisService.ACTION_TEST_ASK)
-                    .putExtra(JarvisService.EXTRA_TEXT, frage.trim()));
+                    .putExtra(JarvisService.EXTRA_TEXT, frage.trim())
+                    // „testoffen“: wie bei offenem Mikrofon nach einer Gesprächspause – der Filter vor Claude fragt mit.
+                    .putExtra("offen", intent.getBooleanExtra("testoffen", false)));
         }
         if (intent.getBooleanExtra("testwaechter", false)) {
             startService(new Intent(this, JarvisService.class).setAction(JarvisService.ACTION_TEST_WATCH));
