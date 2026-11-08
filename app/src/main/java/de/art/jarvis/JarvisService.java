@@ -1301,9 +1301,14 @@ public class JarvisService extends Service {
         speechDone(speechGen);
     }
 
-    /** Fertig gesprochen erst, wenn nichts mehr in der Warteschlange ist und die Antwort nicht mehr streamt. */
+    /**
+     * Fertig gesprochen erst, wenn nichts mehr in der Warteschlange ist, die Antwort nicht mehr streamt und kein
+     * Text mehr darauf wartet, dass die Sprachausgabe startklar wird (sonst hörte das Dauergespräch schon wieder zu,
+     * während Jarvis gleich darauf spricht).
+     */
     private void speechDone(int gen) {
         if (gen != speechGen || queuedUtterances > 0 || moreComing) return;
+        if (pendingSpeech != null && pendingGen == gen) return; // kommt mit initTts oder spätestens mit dem 6-s-Notausgang
         onSpeechFinished();
     }
 
