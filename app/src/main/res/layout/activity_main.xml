@@ -109,11 +109,11 @@
                 app:chipSpacingHorizontal="8dp">
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chipWake"
+                    android:id="@+id/chipListen"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Wachwort" />
+                    android:text="Zuhören" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipGame"

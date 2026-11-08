@@ -47,6 +47,7 @@ final class Backup {
         o.put("agent", p.agentEnabled());
         o.put("wishes", p.wishes());
         o.put("wakeWord", p.wakeWord());
+        o.put("alwaysListen", p.alwaysListen());
         o.put("sensitivity", p.sensitivity());
         o.put("earcon", p.earcon());
         o.put("bargeIn", p.bargeIn());
@@ -88,6 +89,7 @@ final class Backup {
         if (!githubToken.isEmpty()) p.setGithubToken(githubToken);
         if (o.has("wishes")) p.setWishes(o.optString("wishes", ""));
         p.setWakeWord(o.optBoolean("wakeWord", Prefs.DEFAULT_WAKE_WORD));
+        p.setAlwaysListen(o.optBoolean("alwaysListen", true));
         p.setSensitivity(o.optInt("sensitivity", Prefs.DEFAULT_SENSITIVITY));
         p.setEarcon(o.optBoolean("earcon", true));
         p.setBargeIn(o.optBoolean("bargeIn", true));

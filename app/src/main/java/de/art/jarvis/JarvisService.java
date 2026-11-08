@@ -250,6 +250,7 @@ public class JarvisService extends Service {
             updateWake();
             updateGameWatch();
             updateProactive();
+            updateAlwaysListen();
             notifyUi();
         }
     };
@@ -262,6 +263,8 @@ public class JarvisService extends Service {
         prefs = new Prefs(this);
         appliedGameMode = prefs.tftMode();
         claude = new ClaudeClient();
+        // Tagessumme der Kosten: jede Anfrage zählt, auch Phasen-Wächter und Meta-Recherche (Arts Plan vom 30. Okt.).
+        ClaudeClient.costListener = usd -> prefs.addCost(today(), usd);
         gemini = new GeminiClient();
         tools = new Tools(this);
         agent = new AgentClient();
@@ -357,6 +360,7 @@ public class JarvisService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        ClaudeClient.costListener = null;
         continuous = false;
         screenShared = false;
         main.removeCallbacksAndMessages(null);
@@ -426,9 +430,40 @@ public class JarvisService extends Service {
         updateGameWatch();
         updateTalkAudio();
         updateProactive();
+        updateAlwaysListen();
         updateNotification();
         maybeUpdateMeta();
         notifyUi();
+    }
+
+    // ---------------------------------------------------------------- Immer zuhören (Wunsch #39/#47)
+
+    /** Art hat das Zuhören per Antippen oder „Gespräch beenden“ pausiert – bis er wieder antippt. */
+    private boolean listenPaused;
+
+    /** Soll Jarvis gerade von selbst durchgehend zuhören? Nur bei eingeschaltetem Bildschirm (Akku). */
+    private boolean listenWanted() {
+        return running && prefs.alwaysListen() && micGranted() && screenAwake && !listenPaused;
+    }
+
+    /**
+     * „Immer zuhören“: Statt auf ein Wachwort zu warten, läuft das Dauergespräch, solange Jarvis läuft und der
+     * Bildschirm an ist. Bildschirm aus: Zuhören endet still, beim Einschalten geht es von selbst weiter.
+     */
+    private void updateAlwaysListen() {
+        if (listenWanted()) {
+            if (!continuous) {
+                continuous = true;
+                continuousLastSpeech = SystemClock.elapsedRealtime();
+                continuousErrors = 0;
+                notifyUi();
+            }
+            // Nicht sofort: Beim Start sagt Jarvis erst „Zu Diensten“; spricht er dann, ist das hier wirkungslos und
+            // das Ende seiner Ansage startet das Zuhören (onSpeechFinished).
+            if (state == State.IDLE) scheduleRelisten(1200);
+        } else if (continuous && prefs.alwaysListen() && !screenAwake && !gameWatch.inGame()) {
+            stopContinuous(false);
+        }
     }
 
     // ---------------------------------------------------------------- Telefonmodus (Echo-Unterdrückung)
@@ -482,7 +517,8 @@ public class JarvisService extends Service {
                 if (state == State.IDLE) speak("TFT erkannt. Ich höre zu, Sir.");
             }
         } else {
-            if (autoConversation && continuous) stopContinuous(false);
+            // Mit „Immer zuhören“ bleibt das Zuhören nach dem Spiel an.
+            if (autoConversation && continuous && !listenWanted()) stopContinuous(false);
             autoConversation = false;
             if (autoGameMode && prefs.tftMode()) {
                 prefs.setTftMode(false);
@@ -601,7 +637,9 @@ public class JarvisService extends Service {
         sendWatch(prefs.apiKey(), image, new ClaudeClient.Callback() {
             @Override
             public void onResult(String text) {
-                testLog("waechter-bild " + f.getName() + ": " + text.trim().replace('\n', ' '));
+                // Rohantwort und was Jarvis daraus macht – der Gerätetest prüft die Entscheidung („=> …“).
+                testLog("waechter-bild " + f.getName() + ": " + text.trim().replace('\n', ' ')
+                        + " => " + ProactiveCoach.label(ProactiveCoach.parse(text)));
                 testWatchFile(files, i + 1);
             }
 
@@ -1244,6 +1282,7 @@ public class JarvisService extends Service {
                     speak("Ich höre schon durchgehend zu, Sir.");
                 } else {
                     continuous = true;
+                    listenPaused = false;
                     continuousLastSpeech = SystemClock.elapsedRealtime();
                     continuousErrors = 0;
                     notifyUi();
@@ -1330,7 +1369,8 @@ public class JarvisService extends Service {
             // Uhrzeit und Bildschirm-Hinweis stehen vor der Frage statt in der Grundanweisung – so bleibt
             // die Grundanweisung gleich und kommt aus dem Zwischenspeicher (siehe ClaudeClient.body).
             content.put(new JSONObject().put("type", "text")
-                    .put("text", Persona.turnContext(prefs.tftMode(), image != null, new java.util.Date())));
+                    .put("text", Persona.turnContext(prefs.tftMode(), image != null,
+                            continuous && !text.startsWith(ProactiveCoach.AUTO_PREFIX), new java.util.Date())));
             content.put(new JSONObject().put("type", "text").put("text", text));
             messages.put(new JSONObject().put("role", "user").put("content", content));
         } catch (JSONException e) {
@@ -1358,7 +1398,8 @@ public class JarvisService extends Service {
                 String stand = GameReadout.find(answer);
                 answer = GameReadout.strip(answer);
                 if (stand != null) testLog("stand: " + stand);
-                // Proaktive Ansage, aber nichts Wichtiges zu tun: schweigen und weiter zuhören.
+                // [STILL]: ungefragte Ansage ohne Wichtiges – oder beim Dauerzuhören Gerede, das nicht Jarvis galt
+                // (Fernseher, Gespräch mit anderen). Schweigen und weiter zuhören.
                 if (ProactiveCoach.isStill(answer)) {
                     testLog("still");
                     setState(State.IDLE);
@@ -1383,7 +1424,7 @@ public class JarvisService extends Service {
                 }
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
                 ClaudeClient.Usage used = prefs.isGemini() ? null : ClaudeClient.lastUsage;
-                testLog("antwort [" + (used == null ? "?" : used.summary()) + "]: " + answer);
+                testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", GameReadout.forHistory(stand, answer));
                 finishStream(stream, answer);
@@ -1525,6 +1566,7 @@ public class JarvisService extends Service {
      */
     private void startContinuous() {
         continuous = true;
+        listenPaused = false;
         continuousLastSpeech = SystemClock.elapsedRealtime();
         continuousErrors = 0;
         notifyUi();
@@ -1545,7 +1587,14 @@ public class JarvisService extends Service {
         }
         setState(State.IDLE);
         notifyUi();
-        if (announce) speak("Dauergespräch beendet.");
+        if (!announce) return;
+        // Von Art beendet (Antippen, „Gespräch beenden“): Mit „Immer zuhören“ pausiert, bis er wieder antippt.
+        if (prefs.alwaysListen()) {
+            listenPaused = true;
+            speak("Ich höre nicht mehr zu. Tippen Sie, wenn Sie mich brauchen.");
+        } else {
+            speak("Dauergespräch beendet.");
+        }
     }
 
     /** Nach einer Antwort (oder nach Stille) wieder zuhören, solange das Dauergespräch läuft. */
@@ -1566,8 +1615,10 @@ public class JarvisService extends Service {
 
     private void relistenIfContinuous() {
         if (!continuous || !running || state != State.IDLE) return;
-        // Während TFT vorne ist, keine Viertelstunden-Grenze – eine Partie hat lange stille Phasen.
-        if (!gameWatch.inGame() && SystemClock.elapsedRealtime() - continuousLastSpeech > CONTINUOUS_IDLE_MS) {
+        // Während TFT vorne ist, keine Viertelstunden-Grenze – eine Partie hat lange stille Phasen. Mit „Immer zuhören“
+        // auch nicht: Dann endet das Zuhören mit dem Bildschirm, nicht nach einer Viertelstunde.
+        if (!gameWatch.inGame() && !prefs.alwaysListen()
+                && SystemClock.elapsedRealtime() - continuousLastSpeech > CONTINUOUS_IDLE_MS) {
             stopContinuous(false);
             speak("Ich habe eine Viertelstunde nichts gehört und höre nicht mehr durchgehend zu. Tippen Sie, wenn Sie mich brauchen.");
             return;
@@ -1761,9 +1812,16 @@ public class JarvisService extends Service {
         bargeIn.voiceStarted(); // ab jetzt lernt die Echo-Schranke Jarvis' eigene Stimme
         if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
             ClaudeClient.Usage usage = prefs.isGemini() ? null : ClaudeClient.lastUsage;
-            lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary()) + ")";
+            lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary())
+                    + costSuffix() + ")";
             notifyUi();
         }
+    }
+
+    /** „ · 0,6 ct“ – Kosten der letzten Antwort in US-Cent; leer bei Gemini oder unbekanntem Modell. */
+    private String costSuffix() {
+        double usd = prefs.isGemini() ? -1 : ClaudeClient.lastCostUsd;
+        return usd < 0 ? "" : " · " + Costs.cents(usd);
     }
 
     /** Bricht ab, was gerade gesprochen wird – auch den Rest einer noch streamenden Antwort. */
@@ -1843,8 +1901,8 @@ public class JarvisService extends Service {
                 new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
         String name = BuildConfig.TEST_APP ? "Jarvis Test" : "Jarvis";
         String title = prefs.tftMode() ? name + " ist aktiv · Spielmodus" : name + " ist aktiv";
-        String text = prefs.wakeWord()
-                ? "Sag „Jarvis“ – oder tippe auf „Sprechen“."
+        String text = prefs.alwaysListen() && !listenPaused
+                ? "Ich höre zu – einfach losreden."
                 : "Tippe auf „Sprechen“, um mit Jarvis zu reden.";
         Icon icon = Icon.createWithResource(this, R.drawable.ic_jarvis);
         return new Notification.Builder(this, CHANNEL)

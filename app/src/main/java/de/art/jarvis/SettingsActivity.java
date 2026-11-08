@@ -122,9 +122,9 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Sprachsteuerung
 
     private void setupVoiceControl() {
-        b.switchWake.setChecked(prefs.wakeWord());
-        b.switchWake.setOnCheckedChangeListener((v, on) -> {
-            prefs.setWakeWord(on);
+        b.switchListen.setChecked(prefs.alwaysListen());
+        b.switchListen.setOnCheckedChangeListener((v, on) -> {
+            prefs.setAlwaysListen(on);
             refreshService();
         });
 
@@ -333,6 +333,29 @@ public class SettingsActivity extends AppCompatActivity {
         });
         b.grantUsageAccess.setOnClickListener(v -> openUsageAccess());
         updateUsageAccess();
+        b.batteryExempt.setOnClickListener(v -> requestBatteryExemption());
+        updateBattery();
+    }
+
+    /** Hinweis „Im Hintergrund weiterlaufen lassen“ nur, solange Jarvis der Akku-Optimierung unterliegt. */
+    private void updateBattery() {
+        android.os.PowerManager pm = getSystemService(android.os.PowerManager.class);
+        boolean exempt = pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+        b.batteryBox.setVisibility(exempt ? View.GONE : View.VISIBLE);
+    }
+
+    /** Systemdialog „Akku-Optimierung ignorieren?“ direkt für Jarvis – sonst die Liste aller Apps. */
+    private void requestBatteryExemption() {
+        try {
+            startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:" + getPackageName())));
+        } catch (Exception direct) {
+            try {
+                startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+            } catch (Exception ignored) {
+                // sehr ungewöhnlich – der Hinweis bleibt sichtbar
+            }
+        }
     }
 
     /** Knopf „Nutzungsdatenzugriff erlauben“ nur, solange die Erkennung an ist und die Freigabe fehlt. */
@@ -536,7 +559,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         b.modelField.setText(prefs.rawModel());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());
-        b.switchWake.setChecked(prefs.wakeWord());
+        b.switchListen.setChecked(prefs.alwaysListen());
         setSlider(b.sliderSensitivity, prefs.sensitivity());
         b.switchEarcon.setChecked(prefs.earcon());
         b.switchBargeIn.setChecked(prefs.bargeIn());
@@ -569,6 +592,7 @@ public class SettingsActivity extends AppCompatActivity {
         showMemory();
         updateOverlayWarning();
         updateUsageAccess(); // zurück von der Systemseite: Freigabe erteilt?
+        updateBattery();
         refreshService();
     }
 

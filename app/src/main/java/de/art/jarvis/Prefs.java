@@ -167,6 +167,23 @@ public final class Prefs {
         sp.edit().putBoolean("backup_keys", value).apply();
     }
 
+    // ------------------------------------------------------------ Kosten (Tagessumme aller Claude-Anfragen)
+
+    private static final Object COST_LOCK = new Object();
+
+    /** Zählt eine Anfrage zur Tagessumme; ein neuer Tag beginnt bei null. Aus jedem Thread aufrufbar. */
+    public void addCost(String day, double usd) {
+        synchronized (COST_LOCK) {
+            double sum = costToday(day) + usd;
+            sp.edit().putString("cost_day", day).putFloat("cost_usd", (float) sum).apply();
+        }
+    }
+
+    /** Ausgaben heute in US-Dollar (Fragen, ungefragte Ansagen, Phasen-Wächter, Meta-Recherche). */
+    public double costToday(String day) {
+        return day.equals(sp.getString("cost_day", "")) ? sp.getFloat("cost_usd", 0f) : 0;
+    }
+
     // ------------------------------------------------------------ TFT-Meta aus dem Internet (täglich)
 
     public String metaText() {
@@ -190,14 +207,30 @@ public final class Prefs {
         sp.edit().putBoolean("tft_mode", value).apply();
     }
 
-    // ------------------------------------------------------------ Freihändig (Wachwort „Jarvis“)
+    // ------------------------------------------------------------ Zuhören (Wunsch #39/#47: einfach losreden)
 
-    public static final boolean DEFAULT_WAKE_WORD = true;
-    /** 1 = reagiert nur auf sehr deutliches „Jarvis“, 10 = reagiert auf fast alles. */
+    /**
+     * Immer zuhören: Solange Jarvis läuft und der Bildschirm an ist, hört er durchgehend zu – ohne Wachwort und ohne
+     * Antippen. Standard an (Arts Wunsch #47, „Wachwort entfernen“).
+     */
+    public boolean alwaysListen() {
+        return sp.getBoolean("always_listen", true);
+    }
+
+    public void setAlwaysListen(boolean value) {
+        sp.edit().putBoolean("always_listen", value).apply();
+    }
+
+    public static final boolean DEFAULT_WAKE_WORD = false;
+    /** 1 = reagiert nur auf sehr deutliches „Jarvis“, 10 = reagiert auf fast alles (gilt fürs Unterbrechen). */
     public static final int DEFAULT_SENSITIVITY = 5;
 
+    /**
+     * Wunsch #47: Das Wachwort „Jarvis“ als Aktivierung ist entfernt – stattdessen {@link #alwaysListen()}.
+     * „Jarvis“ unterbricht weiter, während er spricht (BargeIn). Der gespeicherte Wert bleibt nur für alte Sicherungen.
+     */
     public boolean wakeWord() {
-        return sp.getBoolean("wake_word", DEFAULT_WAKE_WORD);
+        return false;
     }
 
     public void setWakeWord(boolean value) {

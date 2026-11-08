@@ -99,6 +99,19 @@ public class ProactiveCoachTest {
         assertTrue(c.due(p("PLANUNG 2-5"), t + 20_000));        // die Planungsphase danach bekommt ihre Ansage
     }
 
+    /** Gerätetest Build 84: Der Wächter hielt Arts Startbild einmal für „PLANUNG 1-1“. Runde 1-1 ist nie Planung. */
+    @Test
+    public void startrundeIstNiePlanung() {
+        assertEquals(ProactiveCoach.Kind.OTHER, p("PLANUNG 1-1").kind);
+        assertEquals("ANDERES", ProactiveCoach.label(p("PLANUNG 1-1")));
+        assertEquals("PLANUNG 1-2", ProactiveCoach.label(p("PLANUNG 1-2")));
+        assertEquals("PLANUNG ?", ProactiveCoach.label(p("PLANUNG ?")));
+        assertEquals("KAMPF", ProactiveCoach.label(p("KAMPF")));
+        ProactiveCoach c = new ProactiveCoach();
+        assertFalse(c.due(p("PLANUNG 1-1"), 1_000_000));          // keine Ansage zum Start
+        assertTrue(c.due(p("PLANUNG 1-2"), 1_030_000));           // die erste echte Planungsphase schon
+    }
+
     @Test
     public void schweigenWirdErkannt() {
         assertTrue(ProactiveCoach.isStill("[STILL]"));

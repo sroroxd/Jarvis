@@ -7,23 +7,20 @@ wird der zu lang, fängt er einen neuen an. Claude liest zu Beginn jeder Sitzung
 aktuellen Stand – egal, in welchem Fenster.
 
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
-8. November 2026 (06 Uhr).
+8. November 2026 (12 Uhr).
 
-## Wo der aktuelle Stand liegt – ein Zweig, ein PR
+## Wo der aktuelle Stand liegt
 
-Seit dem 8. November gibt es **einen** Arbeitszweig: `ccr-4f440a4a-dx81et`, **PR #22 nach `main`**.
-Er enthält alle früheren Zweige und PRs (#1–#7, #12–#16) plus die Korrekturen der Gesamtprüfung und das
-Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `feinschliff-cache` →
-`geraetetest-schranke` → `gespraechstest-ci` → `selbst-update`) wird nicht mehr weitergeführt.
+**`main` ist seit dem 8. Nov., 11:08 UTC, auf dem Stand von Build 82**: Art hat PR #22 mit Merge-Commit
+übernommen (alle früheren Zweige, Gesamtprüfung, Streaming, proaktives Coaching, Selbst-Update über die API).
+
+Weiter geht es auf demselben Arbeitszweig `ccr-4f440a4a-dx81et`, neu aufgesetzt auf `main`, mit einem
+**neuen PR** nach `main` (der gemergte #22 wird nicht wiederverwendet). Inhalt: Punkt 21 (Spielplan, Kosten,
+Akku) und die Startrunden-Regel des Wächters (Punkt 22).
 
 - **Test-App:** github.com/sroroxd/Jarvis/releases/download/test-ccr-4f440a4a-dx81et/JarvisTest.apk –
-  ab Build 63 aktualisiert sie sich selbst (Knopf „Installieren“ auf dem Startbildschirm).
-- **Zusammenführen** nach Arts Test: #22 mit **Merge-Commit, nicht Squash** – dann landen die
-  Original-Commits in `main`. Die alten PRs #1–#7 und #12–#16 sind seit dem 8. Nov. geschlossen
-  („in #22 aufgegangen“), ihre Commits stecken vollständig in #22.
-- Neue Arbeit kommt auf diesen Zweig, solange #22 offen ist – keine neue Kette.
-
-**`main`** ist noch die ältere Version (Wachwort „Hey Jarvis“, Spielmodus, Tages-Meta, Gedächtnis).
+  aktualisiert sich selbst (Knopf „Installieren“), ab Build 77 über die GitHub-API.
+- **Zusammenführen** nach Arts Test: mit **Merge-Commit, nicht Squash**.
 
 ### Gerätetest 8. Nov. mit Build 69 (Art)
 
@@ -255,7 +252,44 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
       einmal für Planung, schweigt Jarvis – Planung und Kampf einer Runde tragen dieselbe Nummer (Test ergänzt).
     - Noch offen: ein zweites Planungsbild, möglichst ohne offenen Laden und aus Stufe 3 oder 4.
 
-**Geprüft:** Build (Release und Debug), alle 173 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+21. **Abgleich mit Arts Definition vom 30. Okt.** (Dokument „Jarvis – Definition & Build-Prompt“), drei Lücken
+    geschlossen:
+    - *Spielplan:* Claude legt beim ersten lesbaren Brett einen Plan fest (Comp, Carry, Gegenstandsträger), hält ihn
+      und wechselt nur mit Ansage „Planwechsel: …“. Der Plan läuft in der stillen Ablese-Zeile mit
+      (`[STAND: … | Plan …]`) und steht so in jeder Runde im Verlauf. „Plan?“ nennt ihn in einem Satz, „Warum?“
+      begründet den letzten Rat. Bei Schlüsselmomenten (Helden-Verstärkung, Embleme, Artefakte, Gold in
+      Aktualisierungen auf Stufe 8/9) ein dritter Satz. Ungefragte Ansagen sprechen an, was Platzierung kostet.
+    - *Kosten in Cent:* jede Claude-Anfrage wird mit den Preisen der Anthropic-Preisliste (geprüft 8. Nov.: Sonnet 5.5
+      2/2,50/0,10/10 $, Haiku 5.5 0,10/0,125/0,01/0,50 $ je Million Tokens für Eingabe/Cache schreiben/Cache
+      lesen/Ausgabe, Websuche 1 Cent) abgerechnet (`Costs`). „Letzte Antwort“ zeigt die Kosten der Antwort, darunter
+      „Heute bisher: … (US-Cent)“ – inklusive Phasen-Wächter und Meta-Recherche.
+    - *Akku:* Einstellungen → Spielmodus zeigt „Im Hintergrund weiterlaufen lassen“, solange Jarvis der
+      Akku-Optimierung unterliegt (Systemdialog, Berechtigung `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`).
+    - Bewusst nicht übernommen: frei editierbarer Systemprompt (Verbesserungen kämen sonst nicht mehr an).
+      Verschlüsselter API-Schlüssel kommt mit dem Tausch des Signaturschlüssels.
+
+22. **Startrunde 1-1 ist nie Planung** (Gerätetest Build 84): Der Wächter hielt Arts Startbild einmal für
+    „PLANUNG 1-1“ (vorher zweimal richtig „ANDERES“) – ein Sprachmodell antwortet nicht jedes Mal gleich. Jetzt
+    entscheidet die App selbst: 1-1 zählt nie als Planungsphase, also keine Ansage zum Start. Der Gerätetest prüft
+    die Entscheidung der App („=> ANDERES“), nicht nur die Rohantwort.
+
+23. **Immer zuhören statt Wachwort** (Wünsche #47 „Wachwort entfernen“ und #39 „reagiert, sobald Art losredet“):
+    - Solange Jarvis läuft und der Bildschirm an ist, läuft das Dauergespräch von selbst – einfach losreden, ohne
+      „Jarvis“ und ohne Antippen. Bildschirm aus: Zuhören endet still, beim Einschalten geht es weiter. Keine
+      Viertelstunden-Grenze mehr. Antippen oder „Gespräch beenden“ pausiert, bis Art wieder antippt.
+    - Was nicht an Jarvis gerichtet ist (Gespräch mit anderen, Fernseher, Selbstgespräch), beantwortet Claude mit
+      `[STILL]` – Jarvis bleibt stumm (derselbe Weg wie beim proaktiven Coaching). Die Regel steht im Kontext jeder
+      Frage im Dauergespräch (`Persona.turnContext`, openMic).
+    - Das Wachwort als Aktivierung ist entfernt (`Prefs.wakeWord()` liefert immer false; Schalter „Freihändig“ und
+      Chip „Wachwort“ weg, dafür Schalter „Immer zuhören“ und Chip „Zuhören“). „Jarvis“ unterbricht weiter, während
+      er spricht; der Regler heißt jetzt „Empfindlichkeit für „Jarvis““.
+    - Grenzen: Jede gehörte Äußerung geht an Claude (mit Cache rund 0,1–0,2 Cent, mit Bildschirmfreigabe im
+      Spielmodus rund 0,6 Cent) – die Tagessumme steht auf dem Startbildschirm. Akku: die Spracherkennung läuft
+      durchgehend, solange der Bildschirm an ist. Ein sparsamerer Weg (Silero VAD vor der Spracherkennung, #39) ist
+      der nächste Schritt, falls Akku oder Kosten stören.
+    - Im CI-Gesprächstest ist „Immer zuhören“ aus (kein Mikrofon im Emulator).
+
+**Geprüft:** Build (Release und Debug), alle 180 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

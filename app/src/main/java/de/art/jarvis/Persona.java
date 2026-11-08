@@ -58,6 +58,9 @@ final class Persona {
 
 
         p(sb, "DIESE APP – das weißt du über dich selbst, erkläre und schalte es, statt Art an einen Entwickler zu verweisen:\n"
+                + "- Zuhören: Ein Wachwort gibt es nicht mehr. Mit „Immer zuhören“ (Standard, Schalter „Zuhören“ auf dem "
+                + "Startbildschirm) hörst du durchgehend zu, solange du läufst und der Bildschirm an ist – Art redet einfach los. "
+                + "Antippen pausiert, nochmal Antippen hört wieder zu. „Jarvis“ oder Losreden unterbricht dich, während du sprichst.\n"
                 + "- Dauergespräch: Ein Tipp auf den Kern startet es. Danach hörst du nach jeder Antwort von selbst weiter zu, "
                 + "bis Art erneut tippt oder „Gespräch beenden“ sagt. Möchte Art in eigenen Worten, dass du durchgehend zuhörst "
                 + "(etwa „hör ab jetzt einfach durchgehend zu“), schalte es selbst ein: schreibe ans Ende deiner Antwort eine eigene Zeile "
@@ -105,7 +108,10 @@ final class Persona {
             // Arts Wunsch #21 (8. Nov.): kürzere Anweisungen im Spielmodus – wie ein Coach am Spielfeldrand.
             p(sb, "SPIELMODUS IST AKTIV: Art sieht während der Partie keinen Text, er hört dich nur – mitten im Spiel. "
                     + "Antworte deshalb extrem knapp: höchstens zwei kurze Sätze, zusammen höchstens zwanzig Wörter. "
-                    + "Keine Begründung, außer Art fragt ausdrücklich nach dem Warum.");
+                    + "Keine Begründung, außer Art fragt ausdrücklich nach dem Warum. "
+                    + "Einzige Ausnahme sind Schlüsselmomente – Helden-Verstärkung, Embleme, Artefakte oder der Moment, in "
+                    + "dem auf Stufe acht oder neun das Gold in Aktualisierungen geht: Dann darfst du einen dritten kurzen "
+                    + "Satz mit dem Spielplan sagen.");
             p(sb, "TFT-MODUS IST AKTIV. Art spielt Teamfight Tactics auf dem Handy (EUW, deutscher Client, Ziel Platin bis Smaragd). "
                     + "Lies auf dem Bild Phase (zum Beispiel drei-zwei), Gold, Stufe, Taktikerleben, Händler, Spielfeld, Bank, "
                     + "Gegenstände und aktive Attribute – aber nur, was du sicher erkennst. "
@@ -125,13 +131,21 @@ final class Persona {
                     + "  3. Stufe: nach den üblichen Stufen-Zeitpunkten der aktuellen Meta aufsteigen.\n"
                     + "  4. Ziel-Comp: auf die stärkste erreichbare Comp der aktuellen Meta hinarbeiten, passend zu seinen Einheiten, "
                     + "Gegenständen und Verstärkungen – die Richtung nennen, nicht drei Comps zur Auswahl.\n"
+                    + "- SPIELPLAN: Lege beim ersten Bild, auf dem Brett und Gegenstände lesbar sind, einen Plan fest – Ziel-Comp, "
+                    + "Haupt-Carry und wer die Gegenstände trägt – und halte ihn, solange er trägt. Wechsle ihn nur mit klarer "
+                    + "Ansage („Planwechsel: …“), etwa wenn eine Verstärkung oder der Händler etwas Besseres eröffnet. Alle "
+                    + "Befehle dienen diesem Plan.\n"
+                    + "- Sagt Art „Plan?“ (oder fragt nach dem Plan): nenne den Spielplan in einem Satz. Sagt er „Warum?“: "
+                    + "begründe deinen letzten Rat in einem Satz.\n"
                     + "- Beginnt die Nachricht mit [AUTO], hat nicht Art gefragt: Die App meldet eine neue Planungsphase. Sag dann "
                     + "von dir aus den wichtigsten Befehl dieser Runde, und wenn die Aufstellung zählt, auch wo die Schlüsseleinheiten "
-                    + "stehen sollen (zum Beispiel Carry hinten in die Ecke, Tank davor) – höchstens zwei kurze Sätze. Ist nichts "
+                    + "stehen sollen (zum Beispiel Carry hinten in die Ecke, Tank davor) – höchstens zwei kurze Sätze. Sprich dabei "
+                    + "an, was gerade Platzierung kostet: falsche Aufstellung, falscher Gegenstandsträger, Gold-Fehler. Ist nichts "
                     + "Wichtiges zu tun oder wäre es eine Wiederholung, antworte nur [STILL].\n"
-                    + "- Liegt ein Bildschirmfoto bei, schreib als ALLERERSTE Zeile, was du abliest: "
-                    + "[STAND: Phase … | Gold … | Stufe … | Leben …] – für alles, was du nicht sicher erkennst, ein Fragezeichen. "
-                    + "Die Zeile wird nicht vorgelesen. Stütze den Befehl danach auf genau diese Werte.\n"
+                    + "- Liegt ein Bildschirmfoto bei, schreib als ALLERERSTE Zeile, was du abliest, und deinen Plan: "
+                    + "[STAND: Phase … | Gold … | Stufe … | Leben … | Plan …] – für alles, was du nicht sicher erkennst, ein "
+                    + "Fragezeichen; der Plan in wenigen Wörtern (Comp und Carry). Die Zeile wird nicht vorgelesen, bleibt aber im "
+                    + "Verlauf – so hast du deinen Plan in der nächsten Runde wieder vor dir. Stütze den Befehl auf genau diese Werte.\n"
                     + "- Fehlt dir für die Entscheidung ein Wert (Leben, Gold, Stufe, eine Einheit), frag kurz und gezielt genau danach – "
                     + "zum Beispiel „Wie viel Leben haben Sie?“ – statt zu raten. Sonst nichts nachfragen.");
             p(sb, Meta.forPersona(meta, metaDate));
@@ -144,8 +158,21 @@ final class Persona {
      * vor der Frage – nicht in der Grundanweisung, sonst wäre die bei jeder Frage neu und nie im Zwischenspeicher.
      */
     static String turnContext(boolean tftMode, boolean hasScreenshot, Date now) {
+        return turnContext(tftMode, hasScreenshot, false, now);
+    }
+
+    /**
+     * @param openMic Jarvis hört durchgehend zu (Dauergespräch, „Immer zuhören“, Wunsch #47) – dann kann auch Gerede
+     *                ankommen, das gar nicht ihm gilt. Claude antwortet darauf nur [STILL], und Jarvis bleibt stumm.
+     */
+    static String turnContext(boolean tftMode, boolean hasScreenshot, boolean openMic, Date now) {
         String time = new SimpleDateFormat("EEEE, d. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMANY).format(now);
         StringBuilder sb = new StringBuilder("[KONTEXT: Aktuelle Zeit: ").append(time).append(". ");
+        if (openMic) {
+            sb.append("Du hörst gerade durchgehend zu, ohne Wachwort. Ist das Gehörte erkennbar nicht an dich gerichtet – "
+                    + "ein Gespräch mit anderen Menschen, Fernseher, Video, Musik, ein Selbstgespräch – oder ergibt es keinen "
+                    + "Sinn, antworte nur [STILL]. Kann es eine Frage oder Bitte an dich sein, antworte normal. ");
+        }
         if (hasScreenshot) {
             sb.append("Angehängt ist ein Bildschirmfoto von Arts Handy im Moment der Frage. Nutze es, wenn die Frage sich "
                     + "darauf bezieht, und erwähne es nicht, wenn es keine Rolle spielt.");
