@@ -100,4 +100,14 @@ public class TextTest {
         assertTrue(Text.looksUnfinished("ähm"));
         assertTrue(Text.looksUnfinished(""));
     }
+
+    /** Wunsch #46: „Sir“ englisch aussprechen – nur für die Handy-Stimme, Wortteile bleiben unberührt. */
+    @Test
+    public void sirKlingtEnglisch() {
+        assertEquals("Guten Abend, Sör. Alle Systeme laufen, Sör.",
+                Text.sirForDeviceVoice("Guten Abend, Sir. Alle Systeme laufen, Sir."));
+        assertEquals("Ja, sör!", Text.sirForDeviceVoice("Ja, sir!"));
+        assertEquals("Die Sirene und Sirup bleiben.", Text.sirForDeviceVoice("Die Sirene und Sirup bleiben."));
+        assertEquals(null, Text.sirForDeviceVoice(null));
+    }
 }

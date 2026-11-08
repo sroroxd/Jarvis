@@ -1748,7 +1748,8 @@ public class JarvisService extends Service {
     private void speakNow(String clean, int gen, boolean flush) {
         if (gen != speechGen) return;
         int max = TextToSpeech.getMaxSpeechInputLength() - 1;
-        String text = clean.length() > max ? clean.substring(0, max) : clean;
+        String spoken = Text.sirForDeviceVoice(clean); // „Sir“ englisch (Wunsch #46)
+        String text = spoken.length() > max ? spoken.substring(0, max) : spoken;
         setState(State.SPEAKING);
         // Stimme nur neu einstellen, wenn sich etwas geändert hat – das Durchsuchen aller Stimmen
         // vor jedem Satz kostete spürbar Zeit.

@@ -298,16 +298,16 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.chipGame.setChecked(prefs.tftMode());
         b.chipScreen.setChecked(JarvisService.isScreenShared());
 
-        b.hint.setVisibility(running ? View.VISIBLE : View.GONE);
+        // Messzeilen immer zeigen, sobald es welche gibt – auch im Dauergespräch und nach dem Beenden. Vorher standen
+        // sie nur im Leerlauf außerhalb des Dauergesprächs da; Art (TFT, immer Dauergespräch) sah sie nie.
         String timing = JarvisService.lastTiming();
-        if (live) {
-            b.hint.setText("Dauergespräch · Tippen: beenden");
-        } else if (timing.isEmpty() || s != JarvisService.State.IDLE) {
-            b.hint.setText("Tippen: Dauergespräch · Lang drücken: neues Gespräch");
-        } else {
-            String report = JarvisService.bargeInReport();
-            b.hint.setText("Letzte Antwort: " + timing + (report.isEmpty() ? "" : "\nDazwischenreden: " + report));
-        }
+        String report = JarvisService.bargeInReport();
+        StringBuilder hint = new StringBuilder();
+        if (running) hint.append(live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
+        if (!timing.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Letzte Antwort: ").append(timing);
+        if (!report.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Dazwischenreden: ").append(report);
+        b.hint.setVisibility(hint.length() > 0 ? View.VISIBLE : View.GONE);
+        b.hint.setText(hint);
         b.stopButton.setVisibility(running ? View.VISIBLE : View.INVISIBLE);
         if (demo != null) {
             ChatLog d = new ChatLog();
@@ -364,7 +364,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     private static void bindEntry(android.widget.TextView tv, ChatLog.Entry e) {
-        tv.setText(e.art ? "Du: " + e.text : e.text);
+        tv.setText(e.art ? "Sie: " + e.text : e.text); // Wunsch #45: „Sie“ statt „Du“, wie Jarvis Art anspricht
     }
 
     @Override

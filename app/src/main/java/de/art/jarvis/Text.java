@@ -7,6 +7,21 @@ final class Text {
     private Text() {}
 
     /** Entfernt alles, was beim Vorlesen stört: Markdown, Aufzählungszeichen, Nummerierungen, Emojis. */
+    private static final java.util.regex.Pattern SIR = java.util.regex.Pattern.compile("\\b([Ss])ir\\b");
+
+    /**
+     * Wunsch #46: Die deutsche Handy-Stimme liest „Sir“ deutsch („Sier“). Für sie wird es „Sör“ geschrieben – so
+     * klingt es englisch. Nur für die Sprachausgabe; angezeigt wird weiter „Sir“.
+     */
+    static String sirForDeviceVoice(String s) {
+        if (s == null) return null;
+        java.util.regex.Matcher m = SIR.matcher(s);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) m.appendReplacement(sb, m.group(1).equals("S") ? "Sör" : "sör");
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
     static String cleanForSpeech(String s) {
         if (s == null) return "";
         String t = s.replaceAll("(?m)^[ \\t]*[-*•–][ \\t]+", "");

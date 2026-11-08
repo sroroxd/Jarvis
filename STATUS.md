@@ -234,7 +234,16 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
       Qualität wichtiger als Tempo. Arts eigene Fragen bleiben schnell („low“).
     - Knopf „Wiederherstellen“ brach um → „Zurückholen“; Hilfe „So nutzt du Jarvis“ beschreibt TFT und Coaching.
 
-**Geprüft:** Build (Release und Debug), alle 171 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+19. **Arts Test mit Build 79 (8. Nov.):** Meta zeigt jetzt „Set 18 (Enchanted Wilds), Patch 18.6 …“, die
+    Wunschliste den echten Stand – beides bestätigt. Neu umgesetzt:
+    - *Wunsch #45:* Im Verlauf steht „Sie:“ statt „Du:“ vor Arts Eingaben.
+    - *Wunsch #46:* Die Handy-Stimme spricht „Sir“ englisch – für sie wird es „Sör“ geschrieben
+      (`Text.sirForDeviceVoice`, auch bei „Probe hören“). ElevenLabs bekommt weiter „Sir“.
+    - *Messzeilen waren im Dauergespräch nie zu sehen* („Letzte Antwort“, „Dazwischenreden“): Sie standen nur im
+      Leerlauf außerhalb des Dauergesprächs da, nach dem Beenden war die Zeile ganz weg. Jetzt immer, sobald es
+      Werte gibt – auch nach dem Beenden.
+
+**Geprüft:** Build (Release und Debug), alle 172 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

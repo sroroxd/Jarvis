@@ -228,7 +228,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
         b.voiceResult.setVisibility(View.GONE);
         Voices.apply(previewTts, prefs, previewEngine);
-        previewTts.speak(PREVIEW_TEXT, TextToSpeech.QUEUE_FLUSH, null, "preview");
+        previewTts.speak(Text.sirForDeviceVoice(PREVIEW_TEXT), TextToSpeech.QUEUE_FLUSH, null, "preview");
     }
 
     /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */
