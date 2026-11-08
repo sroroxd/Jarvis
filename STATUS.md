@@ -9,58 +9,32 @@ aktuellen Stand – egal, in welchem Fenster.
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
 8. November 2026.
 
-## Was auf `main` läuft
+## Wo der aktuelle Stand liegt – ein Zweig, ein PR
 
-Die APK aus `main` ist die Version auf Arts Galaxy S24 Ultra:
+Seit dem 8. November gibt es **einen** Arbeitszweig: `ccr-4f440a4a-dx81et`, **PR #22 nach `main`**.
+Er enthält alle früheren Zweige und PRs (#1–#7, #12–#16) plus die Korrekturen der Gesamtprüfung und das
+Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `feinschliff-cache` →
+`geraetetest-schranke` → `gespraechstest-ci` → `selbst-update`) wird nicht mehr weitergeführt.
 
-- Wachwort „Hey Jarvis" offline auf dem Handy (openWakeWord, ONNX Runtime),
-  Empfindlichkeit einstellbar, pausiert bei ausgeschaltetem Bildschirm
-- Sprachein- und -ausgabe; Stimme offline über SherpaTTS, Miro (high),
-  Tempo 0,95, Tonhöhe 0,9, Sprechpause 1,5 s
-- Claude als Gehirn über eigenen API-Schlüssel (Gemini als Alternative)
-- Bildschirm teilen, Untertitelleiste, schwebendes J (Standard aus)
-- Spielmodus TFT: verdeckt nichts, Antworten nur per Stimme
-- Tägliche TFT-Meta per Claude-Websuche, Fragen warten nicht darauf
-- Gedächtnis mit „Merk dir …" / „Vergiss …", einsehbar in den Einstellungen
+- **Test-App:** github.com/sroroxd/Jarvis/releases/download/test-ccr-4f440a4a-dx81et/JarvisTest.apk –
+  ab Build 63 aktualisiert sie sich selbst (Knopf „Installieren“ auf dem Startbildschirm).
+- **Zusammenführen** nach Arts Test: #22 mit **Merge-Commit, nicht Squash**. Dann enthält `main` die
+  Original-Commits, und GitHub schließt #1–#7 und #12–#16 von selbst als zusammengeführt.
+- **Danach kann weg** (Art im Browser): die Zweige `jarvis-haende`, `wachwort-jarvis`, `tft-coach`,
+  `gespraech-modus`, `agent-ruckgrat`, `sammeltest`, `fix-dazwischenreden-abbruch`, `feinschliff-cache`,
+  `geraetetest-schranke`, `gespraechstest-ci`, `selbst-update` und deren Test-Releases `test-…`.
+- Neue Arbeit kommt auf diesen Zweig, solange #22 offen ist – keine neue Kette.
 
-## Offene Zweige – zusammengefasst in `sammeltest`
+**`main`** ist noch die ältere Version (Wachwort „Hey Jarvis“, Spielmodus, Tages-Meta, Gedächtnis).
 
-Alle offenen Zweige sind im Zweig `sammeltest` zusammengeführt (PR #7). Art
-testet **eine** App statt fünf und spart das Deinstallieren dazwischen:
-github.com/sroroxd/Jarvis/releases/download/test-sammeltest/JarvisTest.apk
-(vorher eine alte „Jarvis Test“ deinstallieren – alle Test-Apps haben die
-Paket-ID `de.art.jarvis.test`).
+### Was Art auf dem Handy prüfen muss (Test-Build ab 64)
 
-| Zweig | PR | Was drin ist |
-|---|---|---|
-| `wachwort-jarvis` | #2 | Wachwort „Jarvis“ statt „Hey Jarvis“ (selbst trainiertes Modell) |
-| `jarvis-haende` | #1 | Websuche für Alltag und TFT-Meta, Kalender |
-| `tft-coach` | #3 | Fragen warten nie auf die Meta, „Neue Partie“, schärferes Spielbild |
-| `gespraech-modus` | #5 | Gemini-Live-Baustein. Art nutzt Gemini nicht (4. Nov.) – in `sammeltest` wieder entfernt, steht nur noch in der Git-Historie. Das Dauergespräch läuft über Claude. |
-| `agent-ruckgrat` | #6 | Aufträge an Claude Code in Termux (Abo statt Guthaben) |
-
-**Zusammenführen:** Nach Arts Test geht `sammeltest` als Ganzes nach `main` –
-mit **Merge-Commit, nicht Squash**. Dann enthält `main` die Original-Commits
-aller Zweige, und GitHub schließt #1, #2, #3, #5 und #6 von selbst als
-zusammengeführt. `main` bekommt damit genau den Stand, den Art getestet hat.
-
-#4 (Doku) ist am 4. November in `main` zusammengeführt.
-
-### Testliste für Art
-
-Getestet am 5. Nov. (Test-Build 50, Video): Dauergespräch läuft – „Sprach-Thematik
-vorerst okay“. Daraus drei Wünsche, umgesetzt ab Test-Build 51:
-
-1. **Dazwischenreden:** Im Dauergespräch während Jarvis spricht einfach losreden –
-   bricht er sofort ab und hört zu? Unterbricht er sich selbst (Lautsprecher laut)?
-   Dann Einstellungen → „Dazwischenreden unterbricht Jarvis“ aus und Bescheid geben.
-2. **TFT-Coach:** keine Optionen, ein Befehl mit „Danach:“; Reihenfolge
-   Taktikerleben → Gold → Stufe → Ziel-Comp; gezielte Rückfrage statt Raten.
-3. **Wünsche direkt ins Repo:** GitHub-Schlüssel eintragen (Einstellungen →
-   „Wünsche an die Entwicklung“), dann „Notier für die Entwicklung: …“ sagen oder
-   einen Wunsch in eigenen Worten äußern → erscheint als Issue „Wunsch: …“.
-
-Weiter offen: Wachwort im Alltag, Hände (Kalender, Websuche), Agent in Termux.
+1. **Satzweises Sprechen:** Fängt Jarvis bei längeren Antworten spürbar früher an zu sprechen? Klingen die
+   Übergänge zwischen den Sätzen natürlich, oder entstehen Pausen?
+2. **Dazwischenreden:** Unterbricht er sich noch selbst? Kommst du in normaler Lautstärke durch, und
+   unterbricht „Jarvis“ zuverlässig?
+3. **Selbst-Update:** Läuft das nächste Update über den Knopf „Installieren“ durch?
+4. **Spielmodus:** Sind die Antworten jetzt kurz genug (#21)?
 
 ## Aufräumen (geprüft am 4. November)
 
@@ -75,12 +49,12 @@ Alte Releases: **GitHub → Actions → „Alte Releases aufräumen“ → Run w
 `v1.0.43`, `v1.0.32`, `v1.0.29`, `vorschau`, `test-sammeltest`. Starten muss Art
 selbst – Löschen ist aus der Entwicklungsumgebung gesperrt.
 
-Nach dem Zusammenführen von #7 können die Zweige `wachwort-jarvis`,
-`jarvis-haende`, `tft-coach`, `gespraech-modus`, `agent-ruckgrat` und
-`sammeltest` weg.
-
 ## Was als Nächstes kommt
 
+0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** automatische
+   TFT-Erkennung (Jarvis merkt per „Nutzungsdatenzugriff“, dass TFT läuft, schaltet den Spielmodus
+   selbst ein und hört ohne Wachwort zu – von Art gewünscht am 2. Nov.), eigenes Symbol für die
+   Test-App und den Schnellstart („Jarvis zuhören“ mit Mikrofon-Symbol).
 1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 liegt in `sammeltest`
    (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
    Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
@@ -100,8 +74,8 @@ Geprüft gegen den Code und die aktuelle Doku (Anthropic, Android). Reihenfolge 
    vor der Frage, Grundanweisung und Werkzeuge kommen aus dem Zwischenspeicher
    (Sonnet 5.5: Lesen 0,10 statt 2 USD pro Mio. Tokens). Anzeige auf dem
    Startbildschirm: „Cache … gelesen“.
-2. **Antworten streamen und satzweise sprechen.** Heute wartet Jarvis auf die
-   komplette Antwort und spricht sie dann am Stück. Mit Streaming (SSE,
+2. **Antworten streamen und satzweise sprechen – gebaut am 8. Nov. (PR #22).** Vorher wartete Jarvis auf die
+   komplette Antwort und sprach sie dann am Stück. Mit Streaming (SSE,
    `content_block_delta`/`text_delta`) kann der erste Satz gesprochen werden,
    während Claude noch schreibt. Steuerzeilen (`[WUNSCH: …]`, `[MERKEN: …]`,
    `[DAUERGESPRÄCH: …]`) stehen am Ende und müssen zurückgehalten werden. Größter
@@ -158,7 +132,17 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
 9. Kleinkram: Cache-Anzeige wurde von der Meta-Recherche überschrieben; Kalender-Werkzeug verwies
    auf die Uhrzeit „in der Systemanweisung“ (steht seit #13 in der `[KONTEXT]`-Zeile).
 
-**Geprüft:** Build (Release und Debug), alle 130 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+10. **Streaming mit satzweisem Sprechen** (8. Nov., Fortsetzung des claude.ai-Chats): Claude-Antworten kommen
+    als Strom (`stream: true`); jeder fertige Satz geht sofort an die Handy-Stimme, der nächste wird
+    hinten angestellt. Steuerzeilen in eckigen Klammern werden nie vorgelesen. Bricht Art ab, verstummt
+    auch der Rest der noch laufenden Antwort; der Verlauf bleibt vollständig. „KI“ in der Zeitmessung ist
+    jetzt die Wartezeit bis zum ersten Satz. ElevenLabs bekommt die Antwort weiter am Stück.
+11. **`thinking: disabled` scheiterte bei Sonnet 5.5 mit Fehler 400** (laut Claude-Doku seit Sonnet 5.5
+    nicht mehr erlaubt). Betroffen waren der Rückfall „Antwort ohne Text“ – er scheiterte damit immer –
+    und der Schlüsseltest (lief nur über einen zweiten Versuch). Jetzt überall adaptives Nachdenken mit
+    Stufe „low“, wie die Doku es empfiehlt.
+
+**Geprüft:** Build (Release und Debug), alle 143 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben
