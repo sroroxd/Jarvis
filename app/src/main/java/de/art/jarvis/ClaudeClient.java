@@ -50,6 +50,7 @@ final class ClaudeClient {
     }
 
     private static final String ENDPOINT = "https://api.anthropic.com/v1/messages";
+    private static final String WARM_URL = "https://api.anthropic.com/v1/models";
     /** Höchstzahl an Runden pro Frage – schützt vor Endlosschleifen und Kosten. */
     private static final int MAX_ROUNDS = 6;
     /** Höchstens so oft „pause_turn“ fortsetzen (lange Recherchen pausiert die API zwischendurch). */
@@ -67,6 +68,12 @@ final class ClaudeClient {
     private static final ExecutorService quick = Executors.newSingleThreadExecutor();
     /** Filter vor Claude bei offenem Mikrofon – eigener Thread, damit er nie hinter einem Wächter-Bild wartet. */
     private static final ExecutorService gate = Executors.newSingleThreadExecutor();
+    /** Verbindungs-Vorlauf ({@link #warmUp}) – eigener Thread, hält nichts anderes auf. */
+    private static final ExecutorService warm = Executors.newSingleThreadExecutor();
+    /** Zuletzt mit Anthropic gesprochen ({@link Net#now}) – eine frische Verbindung braucht dann keinen Vorlauf. */
+    private static volatile long lastContact;
+    /** Vorlauf nur, wenn die Verbindung länger ungenutzt war. */
+    static final long WARM_IDLE_MS = 20_000;
     /** Lehnt das Konto die Websuche ab (in der Claude Console nicht freigeschaltet), lassen wir sie danach weg. */
     private static volatile boolean webSearchUnavailable;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -153,6 +160,31 @@ final class ClaudeClient {
     /** Wie {@link #sendQuick}, aber für den Filter vor Claude (siehe {@link ListenRules}) auf eigenem Thread. */
     void sendGate(String apiKey, String model, String system, JSONArray messages, Callback callback) {
         gate.execute(() -> quickRequest(apiKey, model, system, messages, callback));
+    }
+
+    /**
+     * Verbindungs-Vorlauf (Wunsch #43): Sobald Art zu sprechen beginnt, baut die App die Verbindung zu Anthropic
+     * schon auf (DNS, TCP, TLS – über Mobilfunk mehrere hundert Millisekunden). Die Frage nutzt sie danach wieder,
+     * statt erst nach Arts letztem Wort zu verbinden. Eine Anfrage ohne Schlüssel an die Modell-Liste: Antwort 401,
+     * kostet nichts, verrät nichts. Nur, wenn die Verbindung über {@link #WARM_IDLE_MS} ungenutzt war.
+     */
+    static void warmUp() {
+        long now = Net.now();
+        if (now - lastContact < WARM_IDLE_MS) return;
+        lastContact = now;
+        warm.execute(() -> {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(WARM_URL).openConnection();
+                c.setConnectTimeout(5000);
+                c.setReadTimeout(5000);
+                c.setRequestProperty("anthropic-version", "2023-06-01");
+                int code = c.getResponseCode();
+                // Antwort ganz lesen und nicht trennen – nur so kommt die Verbindung zurück in den Vorrat.
+                Io.readAll(code >= 400 ? c.getErrorStream() : c.getInputStream());
+            } catch (Exception ignored) {
+                // Nur ein Vorlauf – die echte Frage verbindet zur Not selbst.
+            }
+        });
     }
 
     private void quickRequest(String apiKey, String model, String system, JSONArray messages, Callback callback) {
@@ -466,6 +498,7 @@ final class ClaudeClient {
             if (listener != null) body.put("stream", true);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
             Net net = new Net(Net.now(), payload.length);
+            lastContact = net.start;
             if (answering.get()) lastNet = net;
 
             conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();

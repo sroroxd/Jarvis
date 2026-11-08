@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Latenz-Messung gegen die echte Claude-API (Wunsch #43 „Schnellere Antworten“).
 
-Vergleicht Nachdenk-Einstellungen mit der echten Grundanweisung aus Persona.java (über PromptDump)
-und einem echten TFT-Bild. Gemessen wird per Streaming:
+Vergleicht Varianten der echten Grundanweisung aus Persona.java (über PromptDump) mit einem echten
+TFT-Bild. Seit 8. Nov.: die stille Ablese-Zeile [STAND: …] als erste Zeile (heute) gegen dieselbe Zeile am
+Ende der Antwort – kostet die Zeile vorn messbar Zeit bis zum ersten gesprochenen Satz? Gemessen wird per Streaming:
   erster Text    – Zeit bis zum ersten Text-Stück
   erster Satz    – Zeit bis zum ersten Text, der vorgelesen würde (Zeilen in [eckigen Klammern] zählen nicht)
   gesamt         – bis zum Ende der Antwort
@@ -12,12 +13,18 @@ import base64, json, os, statistics, sys, time, urllib.request
 
 KEY = os.environ["ANTHROPIC_API_KEY"]
 MODEL = os.environ.get("BENCH_MODEL", "claude-sonnet-5-5")
-REPS = int(os.environ.get("BENCH_REPS", "2"))
+REPS = int(os.environ.get("BENCH_REPS", "3"))
 D = sys.argv[1]  # Ordner mit den Prompt-Dateien
 IMG = sys.argv[2]
 
 read = lambda n: open(os.path.join(D, n), encoding="utf-8").read()
 SYS = {"spiel": read("s_spiel.txt"), "alltag": read("s_alltag.txt")}
+# Variante: Ablese-Zeile ans Ende. Bricht ab, wenn sich der Satz in Persona.java ändert – dann hier nachziehen.
+FIRST = "schreib als ALLERERSTE Zeile, was du abliest, und deinen Plan:"
+LAST = "schreib als LETZTE Zeile, nach deiner Antwort, was du abliest, und deinen Plan:"
+assert FIRST in SYS["spiel"], "Ablese-Anweisung in Persona.java geändert"
+SYS["spiel_hinten"] = SYS["spiel"].replace(FIRST, LAST)
+SYS["alltag_hinten"] = SYS["alltag"]
 CTX = {"spiel": read("k_spiel.txt"), "alltag": read("k_alltag.txt")}
 IMG_B64 = base64.b64encode(open(IMG, "rb").read()).decode()
 
@@ -28,10 +35,11 @@ QUESTIONS = [
     ("alltag", "A1", "Wie viel ist siebzehn mal drei?"),
     ("alltag", "A2", "Wenn es bei uns 14 Uhr ist, wie spät ist es dann in New York?"),
 ]
-CONFIGS = [("adaptiv/low (heute)", "adaptive"), ("between_tools/low", "between_tools")]
+# (Name, Nachdenken, Variante der Grundanweisung)
+CONFIGS = [("Zeile vorn (heute)", "adaptive", ""), ("Zeile hinten", "adaptive", "_hinten")]
 
 
-def body(mode, question, thinking, max_tokens=4096):
+def body(mode, question, thinking, max_tokens=4096, variant=""):
     content = []
     if mode == "spiel":
         content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": IMG_B64}})
@@ -40,7 +48,7 @@ def body(mode, question, thinking, max_tokens=4096):
     return {
         "model": MODEL, "max_tokens": max_tokens, "stream": True,
         "thinking": {"type": thinking}, "output_config": {"effort": "low"},
-        "system": [{"type": "text", "text": SYS[mode], "cache_control": {"type": "ephemeral"}}],
+        "system": [{"type": "text", "text": SYS[mode + variant], "cache_control": {"type": "ephemeral"}}],
         "messages": [{"role": "user", "content": content}],
     }
 
@@ -95,15 +103,19 @@ def run(b):
 
 def main():
     # Cache für beide Grundanweisungen vorwärmen, damit kein Lauf das Schreiben bezahlt.
-    for mode in SYS:
-        run(body(mode, "Kurzer Test, antworte nur mit OK.", "between_tools", 64))
+    for mode in ("spiel", "alltag"):
+        for _, thinking, variant in CONFIGS:
+            try:
+                run(body(mode, "Kurzer Test, antworte nur mit OK.", thinking, 256, variant))
+            except Exception as e:  # noqa: BLE001 – Vorwärmen ist nur eine Hilfe
+                print("Vorwärmen fehlgeschlagen:", str(e)[:200], flush=True)
     results = []
     for rep in range(REPS):
         for mode, qid, q in QUESTIONS:
             order = CONFIGS if (rep % 2 == 0) else CONFIGS[::-1]  # Reihenfolge abwechseln
-            for name, thinking in order:
+            for name, thinking, variant in order:
                 try:
-                    res = run(body(mode, q, thinking))
+                    res = run(body(mode, q, thinking, variant=variant))
                 except Exception as e:  # noqa: BLE001 – Messung soll weiterlaufen
                     res = {"fehler": str(e)[:300]}
                 res.update({"frage": qid, "modus": mode, "einstellung": name, "lauf": rep + 1})
@@ -112,7 +124,7 @@ def main():
 
     rows = ["| Einstellung | Modus | erster Satz (Median) | gesamt (Median) | Denk-Zeichen (Mittel) | Ausgabe-Tokens (Mittel) |",
             "|---|---|---|---|---|---|"]
-    for name, _ in CONFIGS:
+    for name, _, _ in CONFIGS:
         for mode in ("spiel", "alltag"):
             rs = [r for r in results if r["einstellung"] == name and r["modus"] == mode and "fehler" not in r]
             if not rs:

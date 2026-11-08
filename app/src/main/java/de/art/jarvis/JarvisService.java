@@ -984,6 +984,8 @@ public class JarvisService extends Service {
             public void onBeginningOfSpeech() {
                 if (current != recognizer) return;
                 heardSomething = true;
+                // Verbindung zu Anthropic aufbauen, während Art noch spricht (kostenlos, siehe ClaudeClient.warmUp).
+                if (!prefs.apiKey().isEmpty()) ClaudeClient.warmUp();
                 if (!finishRequested) main.removeCallbacks(pauseElapsed);
             }
 

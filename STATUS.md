@@ -344,6 +344,21 @@ Art hat am Abend des 8. Nov. grünes Licht für alle drei gegeben.
 - Grenze: Der Emulator hat kein Mikrofon. Ob der Wächter auf dem S24 Ultra je eingreifen muss und wie oft der
   Filter echte Fernseh-Sätze abfängt, zeigt erst Arts Handy (Protokollzeilen oben).
 
+### Punkt 2 begonnen (8. Nov. abends): Latenz
+
+- **Verbindungs-Vorlauf.** Sobald die Spracherkennung Sprache hört, baut die App die Verbindung zu Anthropic
+  schon auf (DNS, TCP, TLS), wenn sie über 20 s ungenutzt war – eine Anfrage ohne Schlüssel an die Modell-Liste,
+  Antwort 401, kostet nichts. Die Frage nutzt die offene Verbindung nach Arts letztem Wort wieder. Das spart den
+  Verbindungsaufbau über Mobilfunk (typisch einige hundert Millisekunden), vor allem bei der ersten Frage nach
+  einer Pause. Im Spiel war die Verbindung durch den Wächter alle 6 s ohnehin meist warm.
+- **Messung „Ablese-Zeile vorn oder hinten“** in `latenz.yml`: dieselben Fragen mit dem echten TFT-Bild, einmal
+  mit `[STAND: …]` als erster Zeile (heute), einmal als letzter. Verglichen werden Zeit bis zum ersten
+  gesprochenen Satz **und** die Antworten selbst – die Zeile vorn kann die Befehle besser machen (Claude liest
+  erst ab, dann rät er). Umgebaut wird nur, wenn hinten deutlich schneller ist und die Befehle gleich gut bleiben.
+- Offen: Arts nächste Partie mit der Aufschlüsselung „Senden (KB) · Claude“ auf dem Startbildschirm. Zeigt sie,
+  dass das Hochladen des Bildes der große Posten ist, ist der nächste Hebel, das Bild schon während Arts Frage
+  hochzuladen (die Anfrage beginnt, sobald er zu sprechen anfängt; die Frage selbst kommt als Letztes dazu).
+
 ## Verfeinerung – Recherche vom 7. November
 
 Geprüft gegen den Code und die aktuelle Doku (Anthropic, Android). Reihenfolge nach Nutzen:
