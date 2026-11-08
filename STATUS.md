@@ -255,7 +255,23 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
       einmal für Planung, schweigt Jarvis – Planung und Kampf einer Runde tragen dieselbe Nummer (Test ergänzt).
     - Noch offen: ein zweites Planungsbild, möglichst ohne offenen Laden und aus Stufe 3 oder 4.
 
-**Geprüft:** Build (Release und Debug), alle 173 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+21. **Abgleich mit Arts Definition vom 30. Okt.** (Dokument „Jarvis – Definition & Build-Prompt“), drei Lücken
+    geschlossen:
+    - *Spielplan:* Claude legt beim ersten lesbaren Brett einen Plan fest (Comp, Carry, Gegenstandsträger), hält ihn
+      und wechselt nur mit Ansage „Planwechsel: …“. Der Plan läuft in der stillen Ablese-Zeile mit
+      (`[STAND: … | Plan …]`) und steht so in jeder Runde im Verlauf. „Plan?“ nennt ihn in einem Satz, „Warum?“
+      begründet den letzten Rat. Bei Schlüsselmomenten (Helden-Verstärkung, Embleme, Artefakte, Gold in
+      Aktualisierungen auf Stufe 8/9) ein dritter Satz. Ungefragte Ansagen sprechen an, was Platzierung kostet.
+    - *Kosten in Cent:* jede Claude-Anfrage wird mit den Preisen der Anthropic-Preisliste (geprüft 8. Nov.: Sonnet 5.5
+      2/2,50/0,10/10 $, Haiku 5.5 0,10/0,125/0,01/0,50 $ je Million Tokens für Eingabe/Cache schreiben/Cache
+      lesen/Ausgabe, Websuche 1 Cent) abgerechnet (`Costs`). „Letzte Antwort“ zeigt die Kosten der Antwort, darunter
+      „Heute bisher: … (US-Cent)“ – inklusive Phasen-Wächter und Meta-Recherche.
+    - *Akku:* Einstellungen → Spielmodus zeigt „Im Hintergrund weiterlaufen lassen“, solange Jarvis der
+      Akku-Optimierung unterliegt (Systemdialog, Berechtigung `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`).
+    - Bewusst nicht übernommen: frei editierbarer Systemprompt (Verbesserungen kämen sonst nicht mehr an).
+      Verschlüsselter API-Schlüssel kommt mit dem Tausch des Signaturschlüssels.
+
+**Geprüft:** Build (Release und Debug), alle 178 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

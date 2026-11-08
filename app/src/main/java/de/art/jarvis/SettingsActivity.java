@@ -333,6 +333,29 @@ public class SettingsActivity extends AppCompatActivity {
         });
         b.grantUsageAccess.setOnClickListener(v -> openUsageAccess());
         updateUsageAccess();
+        b.batteryExempt.setOnClickListener(v -> requestBatteryExemption());
+        updateBattery();
+    }
+
+    /** Hinweis „Im Hintergrund weiterlaufen lassen“ nur, solange Jarvis der Akku-Optimierung unterliegt. */
+    private void updateBattery() {
+        android.os.PowerManager pm = getSystemService(android.os.PowerManager.class);
+        boolean exempt = pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+        b.batteryBox.setVisibility(exempt ? View.GONE : View.VISIBLE);
+    }
+
+    /** Systemdialog „Akku-Optimierung ignorieren?“ direkt für Jarvis – sonst die Liste aller Apps. */
+    private void requestBatteryExemption() {
+        try {
+            startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:" + getPackageName())));
+        } catch (Exception direct) {
+            try {
+                startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+            } catch (Exception ignored) {
+                // sehr ungewöhnlich – der Hinweis bleibt sichtbar
+            }
+        }
     }
 
     /** Knopf „Nutzungsdatenzugriff erlauben“ nur, solange die Erkennung an ist und die Freigabe fehlt. */
@@ -569,6 +592,7 @@ public class SettingsActivity extends AppCompatActivity {
         showMemory();
         updateOverlayWarning();
         updateUsageAccess(); // zurück von der Systemseite: Freigabe erteilt?
+        updateBattery();
         refreshService();
     }
 

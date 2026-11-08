@@ -660,6 +660,29 @@
                         android:text="Nutzungsdatenzugriff erlauben"
                         android:visibility="gone" />
 
+                    <LinearLayout
+                        android:id="@+id/batteryBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            style="@style/Jarvis.Hint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Samsung beendet Apps im Hintergrund gern, um Akku zu sparen – dann verstummt Jarvis mitten in der Partie. Einmal erlauben, dass Jarvis davon ausgenommen ist." />
+
+                        <Button
+                            android:id="@+id/batteryExempt"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Im Hintergrund weiterlaufen lassen" />
+                    </LinearLayout>
+
                     <TextView
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"

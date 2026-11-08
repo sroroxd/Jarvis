@@ -4,6 +4,14 @@ Jarvis ist ein eigener KI-Sprachassistent als native Android-App (Java, Gradle,
 Paket `de.art.jarvis`, Module `app` und `wakeword`). Zielgerät: Galaxy S24 Ultra.
 Besitzer des Projekts: Art. Antworten und Commit-Texte auf Deutsch.
 
+## Entscheidungen (Arts Vorgabe vom 8. Nov. 2026)
+
+**Claude entscheidet jedes Mal selbst – zu Arts Gunsten, in Arts Interesse.** Keine Rückfragen wie
+„Soll ich …?“ oder Optionslisten zum Auswählen: prüfen, entscheiden, umsetzen, berichten.
+Fragen nur bei wirklich wichtigen Dingen: Geld und Konten (Guthaben, Schlüssel bei Anbietern anlegen),
+etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Löschen, Zusammenführen nach
+`main`, und Sicherheitsrisiken für Arts Konten oder Handy. Dann mit klarer Empfehlung, nicht als Auswahl.
+
 ## Arbeitsweise
 
 - `main` bleibt jederzeit lauffähig. Nie direkt nach `main` pushen: jede Änderung

@@ -57,6 +57,24 @@ public class PersonaTest {
         assertFalse(Persona.system(false, "", "", "", true, false).contains("zwanzig Wörter"));
     }
 
+    /** Arts Plan vom 30. Okt.: Spielplan festlegen und halten, „Plan?“ und „Warum?“, dritter Satz nur bei Schlüsselmomenten. */
+    @Test
+    public void spielplanWirdGehaltenUndMitgefuehrt() {
+        String s = Persona.system(true, "", "", "", false, false);
+        assertTrue(s.contains("SPIELPLAN"));
+        assertTrue(s.contains("Planwechsel"));
+        assertTrue(s.contains("„Plan?“"));
+        assertTrue(s.contains("„Warum?“"));
+        assertTrue(s.contains("| Plan …]"));          // der Plan steht in der stillen Ablese-Zeile und bleibt im Verlauf
+        assertTrue(s.contains("dritten kurzen Satz"));
+        assertTrue(s.contains("was gerade Platzierung kostet"));
+        assertFalse(Persona.system(false, "", "", "", true, false).contains("SPIELPLAN"));
+        // Die Ablese-Zeile mit Plan wird weiter erkannt und nie vorgelesen.
+        String antwort = "[STAND: Phase 3-2 | Gold 32 | Stufe 6 | Leben 54 | Plan Ahnenholz, Carry Xayah] Kaufen Sie Ornn.";
+        assertEquals("Phase 3-2 | Gold 32 | Stufe 6 | Leben 54 | Plan Ahnenholz, Carry Xayah", GameReadout.find(antwort));
+        assertEquals("Kaufen Sie Ornn.", GameReadout.strip(antwort));
+    }
+
     @Test
     public void spielmodusOhneBildSagtDasZuerst() {
         String s = Persona.turnContext(true, false, at(20, 0));

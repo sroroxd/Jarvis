@@ -101,11 +101,13 @@ final class ClaudeClient {
     void send(String apiKey, String model, String system, JSONArray messages, String effort,
               ToolRunner tools, TextListener listener, Callback callback) {
         executor.execute(() -> {
+            spentHere.get()[0] = 0;
             Result r = tools == null
                     ? ask(apiKey, model, system, messages, effort, null, listener)
                     : converse(apiKey, model, system, messages, effort, tools, listener);
             // Nur Fragen zählen für die Anzeige – die Meta-Recherche im Hintergrund überschrieb sonst den Wert.
             if (r.usage != null) lastUsage = r.usage;
+            lastCostUsd = Costs.known(model) ? spentHere.get()[0] : -1;
             deliver(r, "Ich habe darauf keine Antwort bekommen. Fragen Sie mich bitte noch einmal.", callback);
         });
     }
@@ -341,23 +343,55 @@ final class ClaudeClient {
     /** Verbrauch der letzten Anfrage (für die Anzeige auf dem Startbildschirm), null = noch keine. */
     static volatile Usage lastUsage;
 
-    /** Eingabe-Tokens einer Antwort, aufgeteilt in normal, aus dem Zwischenspeicher gelesen und neu hineingeschrieben. */
+    /** Kosten der letzten Frage in US-Dollar – alle Teilanfragen zusammen (Rückfall, Werkzeuge); -1 = unbekannt. */
+    static volatile double lastCostUsd = -1;
+
+    /** Bekommt jede abgerechnete Anfrage, auch Phasen-Wächter und Meta-Recherche (für die Tagessumme). Beliebiger Thread. */
+    interface CostListener {
+        void spent(double usd);
+    }
+
+    static volatile CostListener costListener;
+    /** Summe der Anfragen dieses Threads seit dem letzten Zurücksetzen – jeder Executor hat seinen eigenen Thread. */
+    private static final ThreadLocal<double[]> spentHere = ThreadLocal.withInitial(() -> new double[1]);
+
+    private static void account(String model, Usage u) {
+        if (u == null || !Costs.known(model)) return;
+        double usd = Costs.usd(model, u.input, u.cacheWrite, u.cacheRead, u.output, u.searches);
+        spentHere.get()[0] += usd;
+        CostListener l = costListener;
+        if (l != null) l.spent(usd);
+    }
+
+    /** Verbrauch einer Antwort: Eingabe aufgeteilt in normal, aus dem Zwischenspeicher gelesen und neu hineingeschrieben. */
     static final class Usage {
         final int input;
         final int cacheRead;
         final int cacheWrite;
+        final int output;
+        /** Websuchen dieser Anfrage (je 1 Cent). */
+        final int searches;
 
         Usage(int input, int cacheRead, int cacheWrite) {
+            this(input, cacheRead, cacheWrite, 0, 0);
+        }
+
+        Usage(int input, int cacheRead, int cacheWrite, int output, int searches) {
             this.input = input;
             this.cacheRead = cacheRead;
             this.cacheWrite = cacheWrite;
+            this.output = output;
+            this.searches = searches;
         }
 
         static Usage from(JSONObject usage) {
             if (usage == null) return null;
+            JSONObject server = usage.optJSONObject("server_tool_use");
             return new Usage(usage.optInt("input_tokens", 0),
                     usage.optInt("cache_read_input_tokens", 0),
-                    usage.optInt("cache_creation_input_tokens", 0));
+                    usage.optInt("cache_creation_input_tokens", 0),
+                    usage.optInt("output_tokens", 0),
+                    server == null ? 0 : server.optInt("web_search_requests", 0));
         }
 
         /** Kurz für die Anzeige, z. B. „Cache 2,4 Tsd. gelesen“. */
@@ -403,6 +437,7 @@ final class ClaudeClient {
             boolean ok = code >= 200 && code < 300;
             if (ok && listener != null) {
                 readStream(conn.getInputStream(), listener, result);
+                account(model, result.usage);
                 return result;
             }
             String response = readAll(ok ? conn.getInputStream() : conn.getErrorStream());
@@ -419,6 +454,7 @@ final class ClaudeClient {
 
             JSONObject json = new JSONObject(response);
             result.usage = Usage.from(json.optJSONObject("usage"));
+            account(model, result.usage);
             result.stopReason = json.optString("stop_reason", "");
             JSONArray content = json.optJSONArray("content");
             if (content != null) result.content = content;

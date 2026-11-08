@@ -310,6 +310,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (running) hint.append(live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
         if (!timing.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Letzte Antwort: ").append(timing);
         if (!report.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Dazwischenreden: ").append(report);
+        // Tagessumme aller Claude-Anfragen (auch Phasen-Wächter und Meta) – Anthropic rechnet in US-Dollar.
+        double today = prefs.costToday(JarvisService.today());
+        if (today > 0) hint.append(hint.length() > 0 ? "\n" : "").append("Heute bisher: ").append(Costs.cents(today))
+                .append(" (US-Cent)");
         b.hint.setVisibility(hint.length() > 0 ? View.VISIBLE : View.GONE);
         b.hint.setText(hint);
         b.stopButton.setVisibility(running ? View.VISIBLE : View.INVISIBLE);

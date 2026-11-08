@@ -262,6 +262,8 @@ public class JarvisService extends Service {
         prefs = new Prefs(this);
         appliedGameMode = prefs.tftMode();
         claude = new ClaudeClient();
+        // Tagessumme der Kosten: jede Anfrage zählt, auch Phasen-Wächter und Meta-Recherche (Arts Plan vom 30. Okt.).
+        ClaudeClient.costListener = usd -> prefs.addCost(today(), usd);
         gemini = new GeminiClient();
         tools = new Tools(this);
         agent = new AgentClient();
@@ -357,6 +359,7 @@ public class JarvisService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        ClaudeClient.costListener = null;
         continuous = false;
         screenShared = false;
         main.removeCallbacksAndMessages(null);
@@ -1383,7 +1386,7 @@ public class JarvisService extends Service {
                 }
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
                 ClaudeClient.Usage used = prefs.isGemini() ? null : ClaudeClient.lastUsage;
-                testLog("antwort [" + (used == null ? "?" : used.summary()) + "]: " + answer);
+                testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", GameReadout.forHistory(stand, answer));
                 finishStream(stream, answer);
@@ -1761,9 +1764,16 @@ public class JarvisService extends Service {
         bargeIn.voiceStarted(); // ab jetzt lernt die Echo-Schranke Jarvis' eigene Stimme
         if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
             ClaudeClient.Usage usage = prefs.isGemini() ? null : ClaudeClient.lastUsage;
-            lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary()) + ")";
+            lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary())
+                    + costSuffix() + ")";
             notifyUi();
         }
+    }
+
+    /** „ · 0,6 ct“ – Kosten der letzten Antwort in US-Cent; leer bei Gemini oder unbekanntem Modell. */
+    private String costSuffix() {
+        double usd = prefs.isGemini() ? -1 : ClaudeClient.lastCostUsd;
+        return usd < 0 ? "" : " · " + Costs.cents(usd);
     }
 
     /** Bricht ab, was gerade gesprochen wird – auch den Rest einer noch streamenden Antwort. */

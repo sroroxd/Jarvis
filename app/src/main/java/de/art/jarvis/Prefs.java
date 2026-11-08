@@ -167,6 +167,23 @@ public final class Prefs {
         sp.edit().putBoolean("backup_keys", value).apply();
     }
 
+    // ------------------------------------------------------------ Kosten (Tagessumme aller Claude-Anfragen)
+
+    private static final Object COST_LOCK = new Object();
+
+    /** Zählt eine Anfrage zur Tagessumme; ein neuer Tag beginnt bei null. Aus jedem Thread aufrufbar. */
+    public void addCost(String day, double usd) {
+        synchronized (COST_LOCK) {
+            double sum = costToday(day) + usd;
+            sp.edit().putString("cost_day", day).putFloat("cost_usd", (float) sum).apply();
+        }
+    }
+
+    /** Ausgaben heute in US-Dollar (Fragen, ungefragte Ansagen, Phasen-Wächter, Meta-Recherche). */
+    public double costToday(String day) {
+        return day.equals(sp.getString("cost_day", "")) ? sp.getFloat("cost_usd", 0f) : 0;
+    }
+
     // ------------------------------------------------------------ TFT-Meta aus dem Internet (täglich)
 
     public String metaText() {
