@@ -64,6 +64,8 @@ final class ClaudeClient {
      * bis die Recherche fertig war.
      */
     private static final ExecutorService background = Executors.newSingleThreadExecutor();
+    /** Kurze Nebenanfragen (Phasen-Wächter des proaktiven Coachings) – eigener Thread, hält weder Fragen noch Meta auf. */
+    private static final ExecutorService quick = Executors.newSingleThreadExecutor();
     /** Lehnt das Konto die Websuche ab (in der Claude Console nicht freigeschaltet), lassen wir sie danach weg. */
     private static volatile boolean webSearchUnavailable;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -133,6 +135,18 @@ final class ClaudeClient {
                 r = failed("Recherche fehlgeschlagen: " + e.getMessage());
             }
             deliver(r, "Die Recherche hat nichts ergeben.", callback);
+        });
+    }
+
+    /**
+     * Kurze Nebenanfrage ohne Werkzeuge und ohne Streaming (z. B. der Phasen-Wächter: „PLANUNG 3-2“ oder „KAMPF“).
+     * Adaptiv mit „low“ – bei so einfachen Fragen denkt das Modell laut Doku meist gar nicht nach.
+     */
+    void sendQuick(String apiKey, String model, String system, JSONArray messages, Callback callback) {
+        quick.execute(() -> {
+            Result r = request(apiKey, model, system, messages, "adaptive", "low", 1024, null, null);
+            if (r.code == 400 && mentionsThinking(r.detail)) r = request(apiKey, model, system, messages, null, null, 256, null, null);
+            deliver(r, "Keine Antwort.", callback);
         });
     }
 

@@ -50,6 +50,9 @@ Streaming. Die alte Kette (`sammeltest` → `fix-dazwischenreden-abbruch` → `f
 7. **TFT-Coaching (#23):** Kommen die Befehle schneller? Stimmen Gold, Stufe und Leben, auf die er sich
    bezieht? Wenn die Pläne zu flach wirken: Einstellungen → Spielmodus → „Gründlicher nachdenken“ an
    und vergleichen.
+8. **Von selbst coachen (#41, ab Build 71):** Bildschirm freigeben, TFT spielen. Meldet sich Jarvis zu
+   Beginn jeder Planungsphase einmal mit einem sinnvollen Befehl? Schweigt er im Kampf? Redet er zu oft
+   oder zu selten? Bei Störung: Einstellungen → Spielmodus → „Von selbst coachen“ aus.
 
 ## Aufräumen (8. November)
 
@@ -185,7 +188,21 @@ sitzen oben auf `selbst-update` (#16), damit sie nicht mit der Kette kollidieren
     „Echo-Filter wie beim Telefonieren“ (Standard an). Dazu die Messzeile (siehe Gerätetest oben).
     Ungeprüft: Klang, Lautstärke (jetzt Anruflautstärke), Spielsound von TFT im Telefonmodus.
 
-**Geprüft:** Build (Release und Debug), alle 157 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
+16. **Von selbst coachen** (Wunsch #41/#42, 8. Nov.): Jarvis meldet sich zu Beginn jeder Planungsphase
+    ungefragt mit dem wichtigsten Befehl, wenn nötig samt Aufstellung – oder schweigt, wenn nichts zu tun ist.
+    Zwei Stufen: Ein Phasen-Wächter (Claude Haiku, Bild in Alltagsgröße, alle 6 s) antwortet nur
+    „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“. Beginnt danach eine neue Planungsphase (Kampf oder Karussell
+    dazwischen, oder die Phasen-Anzeige hat gewechselt; frühestens 25 s nach der letzten Ansage), schaut Sonnet
+    aufs scharfe Bild und sagt höchstens zwei kurze Sätze – oder antwortet `[STILL]`, dann bleibt Jarvis stumm.
+    Hat Art in dieser Planungsphase selbst gefragt, entfällt die Ansage. Nur wenn Jarvis gerade nichts tut oder
+    im Dauergespräch ohne Worte zuhört; mit Spielerkennung nur, wenn TFT vorne ist. Braucht die
+    Bildschirmfreigabe. Schalter „Von selbst coachen“ (Einstellungen → Spielmodus, Standard an).
+    Kosten (geschätzt, nicht gemessen): Wächter rund 4 Cent pro Partie, Ansagen rund 0,8 Cent pro Stück, zusammen etwa
+    15–20 Cent pro Partie.
+    Logik in `ProactiveCoach` (8 Unit-Tests). **Ungeprüft:** ob Haiku die Phasen auf echten TFT-Bildern
+    sicher erkennt – dafür braucht es ein paar echte Bildschirmfotos von Art (Planung, Kampf, Karussell).
+
+**Geprüft:** Build (Release und Debug), alle 165 Unit-Tests inklusive Wachwort mit echten Aufnahmen.
 **Ungeprüft – nur Arts Handy zeigt es:** ob Echo und Spielsound jetzt unter der Schwelle bleiben, ob
 Art in normaler Lautstärke durchkommt und ob „Jarvis“ auf dem echobereinigten Ton zuverlässig erkannt wird.
 Unterbricht Jarvis sich weiter selbst, ist der nächste Schritt Punkt 3 der Verfeinerung oben

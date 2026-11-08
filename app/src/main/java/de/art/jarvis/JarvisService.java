@@ -247,6 +247,7 @@ public class JarvisService extends Service {
             screenAwake = Intent.ACTION_SCREEN_ON.equals(intent.getAction());
             updateWake();
             updateGameWatch();
+            updateProactive();
             notifyUi();
         }
     };
@@ -417,6 +418,7 @@ public class JarvisService extends Service {
         updateWake();
         updateGameWatch();
         updateTalkAudio();
+        updateProactive();
         updateNotification();
         maybeUpdateMeta();
         notifyUi();
@@ -481,6 +483,99 @@ public class JarvisService extends Service {
             }
             autoGameMode = false;
         }
+    }
+
+    // ---------------------------------------------------------------- Tägliche TFT-Meta
+
+    // ---------------------------------------------------------------- Proaktives Coaching (Wunsch #41/#42)
+
+    private final ProactiveCoach coachPolicy = new ProactiveCoach();
+    private final Runnable proactiveTick = this::proactiveTick;
+    private boolean proactiveScheduled;
+    private boolean proactiveBusy;
+
+    private boolean proactiveWanted() {
+        return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
+                && !prefs.isGemini() && !prefs.apiKey().isEmpty();
+    }
+
+    /** Wächter an, wenn Spielmodus, Bildschirmfreigabe und Einstellung passen; sonst aus. */
+    private void updateProactive() {
+        if (proactiveWanted()) {
+            if (!proactiveScheduled) {
+                proactiveScheduled = true;
+                main.postDelayed(proactiveTick, ProactiveCoach.CHECK_EVERY_MS);
+            }
+        } else {
+            proactiveScheduled = false;
+            main.removeCallbacks(proactiveTick);
+        }
+    }
+
+    /** Ruhig genug für eine Ansage? Leerlauf oder Dauergespräch, in dem Art gerade nichts sagt. */
+    private boolean quietForCoach() {
+        return state == State.IDLE || (state == State.LISTENING && utterance.length() == 0 && !heardSomething);
+    }
+
+    private void proactiveTick() {
+        if (!proactiveWanted()) {
+            proactiveScheduled = false;
+            return;
+        }
+        main.postDelayed(proactiveTick, ProactiveCoach.CHECK_EVERY_MS);
+        if (proactiveBusy || !quietForCoach()) return;
+        // Mit Spielerkennung: nur, wenn TFT wirklich vorne ist.
+        if (prefs.gameAuto() && GameWatch.permitted(this) && !gameWatch.inGame()) return;
+        String image = grabber.captureJpegBase64(false); // Alltagsgröße reicht, um die Phase zu erkennen
+        if (image == null) return;
+        JSONArray messages = new JSONArray();
+        try {
+            JSONArray content = new JSONArray()
+                    .put(new JSONObject().put("type", "image").put("source", new JSONObject()
+                            .put("type", "base64").put("media_type", "image/jpeg").put("data", image)))
+                    .put(new JSONObject().put("type", "text").put("text", ProactiveCoach.WATCH_PROMPT));
+            messages.put(new JSONObject().put("role", "user").put("content", content));
+        } catch (JSONException e) {
+            return;
+        }
+        proactiveBusy = true;
+        // Günstiges Modell: Der Wächter sagt nur „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.
+        claude.sendQuick(prefs.apiKey(), Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, new ClaudeClient.Callback() {
+            @Override
+            public void onResult(String text) {
+                proactiveBusy = false;
+                ProactiveCoach.Phase phase = ProactiveCoach.parse(text);
+                testLog("phase: " + text.trim());
+                long now = SystemClock.elapsedRealtime();
+                if (coachPolicy.due(phase, now) && coachNow(phase)) coachPolicy.coached(phase, now);
+            }
+
+            @Override
+            public void onError(String message) {
+                proactiveBusy = false; // nächster Blick in ein paar Sekunden
+            }
+        });
+    }
+
+    /** Neue Planungsphase: Sonnet schaut aufs scharfe Bild und sagt von selbst den wichtigsten Befehl an. */
+    private boolean coachNow(ProactiveCoach.Phase phase) {
+        if (!running || grabber == null || !quietForCoach()) return false;
+        if (state == State.LISTENING) {
+            // Dauergespräch hört gerade (noch ohne Worte) zu – kurz unterbrechen, danach geht es weiter.
+            main.removeCallbacks(pauseElapsed);
+            releaseRecognizer();
+            setState(State.IDLE);
+        }
+        String key = prefs.apiKey();
+        String image = grabber.captureJpegBase64(true);
+        if (key.isEmpty() || image == null) return false;
+        lastInteraction = System.currentTimeMillis();
+        final int id = ++requestId;
+        timing.reset();
+        timing.speechEndedIfUnknown(SystemClock.elapsedRealtime());
+        setState(State.THINKING);
+        ask(id, key, ProactiveCoach.autoMessage(phase), image);
+        return true;
     }
 
     // ---------------------------------------------------------------- Tägliche TFT-Meta
@@ -553,6 +648,7 @@ public class JarvisService extends Service {
                     projection = null;
                     boolean was = screenShared;
                     screenShared = false;
+                    updateProactive();
                     notifyUi();
                     // Android beendet die Freigabe z. B., wenn eine Bildschirmaufnahme startet.
                     if (was && running) {
@@ -568,6 +664,7 @@ public class JarvisService extends Service {
         grabber = new ScreenGrabber(projection);
         grabber.start(b.width(), b.height(), getResources().getDisplayMetrics().densityDpi);
         screenShared = true;
+        updateProactive();
         notifyUi();
     }
 
@@ -1146,7 +1243,18 @@ public class JarvisService extends Service {
                 String stand = GameReadout.find(answer);
                 answer = GameReadout.strip(answer);
                 if (stand != null) testLog("stand: " + stand);
+                // Proaktive Ansage, aber nichts Wichtiges zu tun: schweigen und weiter zuhören.
+                if (ProactiveCoach.isStill(answer)) {
+                    testLog("still");
+                    setState(State.IDLE);
+                    scheduleRelisten(RELISTEN_DELAY_MS);
+                    return;
+                }
                 if (dauer != null) setContinuousFromAnswer(dauer);
+                // Eigene Frage in der Planungsphase: Die ungefragte Ansage dieser Runde entfällt.
+                if (prefs.tftMode() && !text.startsWith(ProactiveCoach.AUTO_PREFIX)) {
+                    coachPolicy.userAsked(SystemClock.elapsedRealtime());
+                }
                 // Wünsche, die Art in eigenen Worten geäußert hat – Claude meldet sie per Steuerzeile.
                 java.util.List<String[]> wishes = Wishes.tags(answer);
                 answer = Wishes.stripTags(answer);

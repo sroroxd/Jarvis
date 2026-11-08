@@ -319,6 +319,15 @@ public final class Prefs {
         sp.edit().putBoolean("game_auto", value).apply();
     }
 
+    /** Spielmodus: zu Beginn jeder Planungsphase von selbst ansagen (Wunsch #41/#42). Standard an. */
+    public boolean proactiveCoach() {
+        return sp.getBoolean("proactive_coach", true);
+    }
+
+    public void setProactiveCoach(boolean value) {
+        sp.edit().putBoolean("proactive_coach", value).apply();
+    }
+
     /** Spielmodus: gründlicher nachdenken (langsamer). Standard aus – Tempo zuerst (Wunsch #23). */
     public boolean gameThinkDeep() {
         return sp.getBoolean("game_think_deep", false);

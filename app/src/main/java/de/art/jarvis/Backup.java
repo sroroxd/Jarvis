@@ -54,6 +54,7 @@ final class Backup {
         o.put("gameAuto", p.gameAuto());
         o.put("echoCallMode", p.echoCallMode());
         o.put("gameThinkDeep", p.gameThinkDeep());
+        o.put("proactiveCoach", p.proactiveCoach());
         o.put("floatingJ", p.floatingJ());
         o.put("subtitles", p.subtitles());
         o.put("subtitlesGame", p.subtitlesInGame());
@@ -94,6 +95,7 @@ final class Backup {
         p.setGameAuto(o.optBoolean("gameAuto", false));
         p.setEchoCallMode(o.optBoolean("echoCallMode", true));
         p.setGameThinkDeep(o.optBoolean("gameThinkDeep", false));
+        p.setProactiveCoach(o.optBoolean("proactiveCoach", true));
         p.setFloatingJ(o.optBoolean("floatingJ", false));
         p.setSubtitles(o.optBoolean("subtitles", true));
         p.setSubtitlesInGame(o.optBoolean("subtitlesGame", false));

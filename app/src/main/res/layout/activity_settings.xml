@@ -610,6 +610,20 @@
                         android:text="Nichts verdeckt das Spielbild, Jarvis antwortet nur per Stimme und denkt als TFT-Coach mit (Claude Sonnet 5.5). Umschalten auch per Sprache: „Spielmodus an“ oder „Spielmodus aus“." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchProactive"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Von selbst coachen" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Zu Beginn jeder Planungsphase sagt Jarvis ungefragt den wichtigsten Befehl an, wenn nötig mit Aufstellung – sonst schweigt er. Braucht die Bildschirmfreigabe. Kosten (geschätzt): rund 0,8 Cent pro Ansage, etwa 15–20 Cent pro Partie." />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchGameThink"
                         style="@style/Jarvis.Label"
                         android:layout_width="match_parent"

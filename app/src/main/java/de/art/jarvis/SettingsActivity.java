@@ -314,6 +314,11 @@ public class SettingsActivity extends AppCompatActivity {
             prefs.setTftMode(on);
             refreshService();
         });
+        b.switchProactive.setChecked(prefs.proactiveCoach());
+        b.switchProactive.setOnCheckedChangeListener((v, on) -> {
+            prefs.setProactiveCoach(on);
+            refreshService();
+        });
         b.switchGameThink.setChecked(prefs.gameThinkDeep());
         b.switchGameThink.setOnCheckedChangeListener((v, on) -> {
             prefs.setGameThinkDeep(on);
@@ -521,6 +526,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.switchEchoCall.setChecked(prefs.echoCallMode());
         b.switchGameAuto.setChecked(prefs.gameAuto());
         b.switchGameThink.setChecked(prefs.gameThinkDeep());
+        b.switchProactive.setChecked(prefs.proactiveCoach());
         setSlider(b.sliderPause, prefs.pauseMs() / 1000f);
         setSlider(b.sliderRate, prefs.rate());
         setSlider(b.sliderPitch, prefs.pitch());
