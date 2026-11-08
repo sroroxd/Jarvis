@@ -1,0 +1,36 @@
+name: Latenz messen
+
+# Misst mit der echten Claude-API, wie schnell Jarvis antwortet (Wunsch #43). Läuft nur, wenn sich die
+# Messung selbst ändert, oder von Hand. Kostet pro Lauf einige Cent (rund 20 Anfragen).
+on:
+  push:
+    paths:
+      - '.github/bench/**'
+      - '.github/workflows/latenz.yml'
+  workflow_dispatch:
+
+jobs:
+  messen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Echte Grundanweisung aus Persona.java erzeugen
+        run: |
+          mkdir -p out prompts
+          javac -d out app/src/main/java/de/art/jarvis/Persona.java app/src/main/java/de/art/jarvis/Meta.java .github/bench/PromptDump.java
+          java -cp out de.art.jarvis.PromptDump prompts/s_spiel.txt prompts/k_spiel.txt prompts/s_alltag.txt prompts/k_alltag.txt
+          wc -c prompts/*
+      - name: Messen
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 .github/bench/latenz_bench.py prompts .github/testbilder/waechter/planung_1-3__laden-offen.jpg
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: latenz-ergebnis
+          path: latenz_ergebnis.json
