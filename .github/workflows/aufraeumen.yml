@@ -1,0 +1,78 @@
+name: Alte Releases aufräumen
+
+# Einmal von Hand starten: GitHub → Actions → „Alte Releases aufräumen“ → Run workflow.
+# Löscht genau die Liste unten – Release UND Git-Tag (im Browser bleibt der Tag sonst stehen).
+# Stehen bleiben immer: v1.0.43, v1.0.32, v1.0.29 (Rückfall), vorschau (Design-Vorschau schreibt
+# dorthin) und test-sammeltest (aktuelle Test-App). Ein zweiter Lauf schadet nicht: Fehlendes wird übersprungen.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  aufraeumen:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Releases und Tags löschen
+        run: |
+          set -u
+          behalten="v1.0.43 v1.0.32 v1.0.29 vorschau test-sammeltest"
+          weg="test test-wachwort-jarvis test-tft-coach test-jarvis-haende
+               v1.0.1 v1.0.2 v1.0.3 v1.0.4 v1.0.5 v1.0.6 v1.0.7
+               v1.0.10 v1.0.11 v1.0.12 v1.0.13 v1.0.14 v1.0.15 v1.0.16
+               v1.0.22 v1.0.23 v1.0.26"
+
+          # Direkt über die API mit Statuscode: GitHub antwortet beim Löschen gelegentlich mit
+          # HTTP 500/502 (beim ersten Lauf am 4. Nov. siebenmal). Das wird jetzt wiederholt –
+          # und was am Ende übrig bleibt, macht den Lauf rot statt „erfolgreich“.
+          api() { # Methode Pfad [Ausgabedatei]
+            curl -s -o "${3:-/dev/null}" -w '%{http_code}' -X "$1" \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$GH_REPO/$2"
+          }
+          loesche() { # Tag
+            for versuch in 1 2 3 4 5 6; do
+              code=$(api GET "releases/tags/$1" /tmp/release.json)
+              if [ "$code" = 200 ]; then
+                id=$(jq -r .id /tmp/release.json)
+                code=$(api DELETE "releases/$id")
+                if [ "$code" != 204 ] && [ "$code" != 404 ]; then
+                  echo "  $1: Release löschen → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)); continue
+                fi
+              elif [ "$code" != 404 ]; then
+                echo "  $1: Abfrage → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)); continue
+              fi
+              code=$(api DELETE "git/refs/tags/$1")
+              case "$code" in
+                204|404|422) echo "Erledigt: $1"; return 0 ;;   # 422 = Tag gibt es schon nicht mehr
+                *) echo "  $1: Tag löschen → HTTP $code, Versuch $versuch"; sleep $((versuch * 5)) ;;
+              esac
+            done
+            return 1
+          }
+
+          fehler=""
+          for t in $weg; do
+            case " $behalten " in *" $t "*) echo "Geschützt, bleibt: $t"; continue ;; esac
+            loesche "$t" || fehler="$fehler $t"
+          done
+          echo
+          echo "Was jetzt noch da ist:"
+          gh release list --limit 50
+          if [ -n "$fehler" ]; then
+            echo "::error title=Nicht alles gelöscht::Übrig:$fehler – Workflow einfach noch einmal starten."
+            exit 1
+          fi
+
+      - name: Zusammenfassung
+        if: always()
+        run: |
+          {
+            echo "### Releases nach dem Aufräumen"
+            echo
+            gh release list --limit 50 | awk -F'\t' '{print "- " $3 " (" $1 ")"}'
+          } >> "$GITHUB_STEP_SUMMARY"
