@@ -212,10 +212,11 @@ fi
 # Hier ohne Anmeldung geprüft, wie auf dem Handy – mit der APK, die gerade als Test-App veröffentlicht ist.
 if [ "${GITHUB_REF:-}" != "refs/heads/main" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
   rel="https://api.github.com/repos/${GITHUB_REPOSITORY:-sroroxd/Jarvis}/releases/tags/test-${GITHUB_REF_NAME}"
-  asset=$(curl -sS --max-time 20 -A Jarvis-App "$rel" 2>/dev/null | python3 -c '
+  relcode=$(curl -sS --max-time 20 -A Jarvis-App -o /tmp/release.json -w "%{http_code}" "$rel" 2>/dev/null || echo 000)
+  asset=$(python3 -c '
 import json, sys
 try:
-    a = [x for x in json.load(sys.stdin).get("assets", []) if x.get("name", "").endswith(".apk")]
+    a = [x for x in json.load(open("/tmp/release.json")).get("assets", []) if x.get("name", "").endswith(".apk")]
     print(a[0]["url"] if a else "")
 except Exception:
     print("")' || true)
@@ -229,9 +230,14 @@ except Exception:
       say "WARNUNG Update-Weg (GitHub-API, ohne Anmeldung): HTTP $code, $size Bytes – die App nimmt dann den normalen Link"
     fi
     rm -f /tmp/update_test.apk
-  else
+  elif [ "$relcode" = "404" ]; then
     say "Hinweis: Update-Weg nicht geprüft (noch keine Test-App für diesen Zweig veröffentlicht)"
+  else
+    # Build 86: Hier stand „noch keine Test-App“, obwohl Build 85 veröffentlicht war – meist ist es die
+    # Abfragegrenze der GitHub-API ohne Anmeldung (60 pro Stunde, CI-Rechner teilen sich Adressen).
+    say "Hinweis: Update-Weg nicht geprüft (GitHub-API antwortete HTTP $relcode – meist die Abfragegrenze ohne Anmeldung)"
   fi
+  rm -f /tmp/release.json
 fi
 
 # ---------------------------------------------------------------- Auswertung
