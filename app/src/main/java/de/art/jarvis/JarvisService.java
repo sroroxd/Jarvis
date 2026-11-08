@@ -360,6 +360,7 @@ public class JarvisService extends Service {
         }
         wake.release();
         gameWatch.stop();
+        watchExecutor.shutdown();
         talkAudio.exit();
         bargeIn.release();
         destroyRecognizer();
@@ -490,6 +491,8 @@ public class JarvisService extends Service {
     // ---------------------------------------------------------------- Proaktives Coaching (Wunsch #41/#42)
 
     private final ProactiveCoach coachPolicy = new ProactiveCoach();
+    private final java.util.concurrent.ExecutorService watchExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
     private final Runnable proactiveTick = this::proactiveTick;
     private boolean proactiveScheduled;
     private boolean proactiveBusy;
@@ -526,36 +529,48 @@ public class JarvisService extends Service {
         if (proactiveBusy || !quietForCoach()) return;
         // Mit Spielerkennung: nur, wenn TFT wirklich vorne ist.
         if (prefs.gameAuto() && GameWatch.permitted(this) && !gameWatch.inGame()) return;
-        String image = grabber.captureJpegBase64(false); // Alltagsgröße reicht, um die Phase zu erkennen
-        if (image == null) return;
-        JSONArray messages = new JSONArray();
-        try {
-            JSONArray content = new JSONArray()
-                    .put(new JSONObject().put("type", "image").put("source", new JSONObject()
-                            .put("type", "base64").put("media_type", "image/jpeg").put("data", image)))
-                    .put(new JSONObject().put("type", "text").put("text", ProactiveCoach.WATCH_PROMPT));
-            messages.put(new JSONObject().put("role", "user").put("content", content));
-        } catch (JSONException e) {
-            return;
-        }
         proactiveBusy = true;
-        // Günstiges Modell: Der Wächter sagt nur „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.
-        claude.sendQuick(prefs.apiKey(), Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, new ClaudeClient.Callback() {
-            @Override
-            public void onResult(String text) {
-                proactiveBusy = false;
-                ProactiveCoach.Phase phase = ProactiveCoach.parse(text);
-                testLog("phase: " + text.trim());
-                long now = SystemClock.elapsedRealtime();
-                if (coachPolicy.due(phase, now) && coachNow(phase)) coachPolicy.coached(phase, now);
+        final ScreenGrabber g = grabber;
+        final String key = prefs.apiKey();
+        // Bild umwandeln und verkleinern kostet auf dem S24 Ultra (3120 × 1440) spürbar Zeit – alle 6 s nicht auf
+        // dem Haupt-Thread, sonst stocken Spracherkennung und Sprachausgabe.
+        watchExecutor.execute(() -> {
+            String image = g.captureJpegBase64(false); // Alltagsgröße reicht, um die Phase zu erkennen
+            if (image == null) {
+                main.post(() -> proactiveBusy = false);
+                return;
             }
-
-            @Override
-            public void onError(String message) {
-                proactiveBusy = false; // nächster Blick in ein paar Sekunden
+            JSONArray messages = new JSONArray();
+            try {
+                JSONArray content = new JSONArray()
+                        .put(new JSONObject().put("type", "image").put("source", new JSONObject()
+                                .put("type", "base64").put("media_type", "image/jpeg").put("data", image)))
+                        .put(new JSONObject().put("type", "text").put("text", ProactiveCoach.WATCH_PROMPT));
+                messages.put(new JSONObject().put("role", "user").put("content", content));
+            } catch (JSONException e) {
+                main.post(() -> proactiveBusy = false);
+                return;
             }
+            // Günstiges Modell: Der Wächter sagt nur „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.
+            claude.sendQuick(key, Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, watchCallback);
         });
     }
+
+    private final ClaudeClient.Callback watchCallback = new ClaudeClient.Callback() {
+        @Override
+        public void onResult(String text) {
+            proactiveBusy = false;
+            ProactiveCoach.Phase phase = ProactiveCoach.parse(text);
+            testLog("phase: " + text.trim());
+            long now = SystemClock.elapsedRealtime();
+            if (coachPolicy.due(phase, now) && coachNow(phase)) coachPolicy.coached(phase, now);
+        }
+
+        @Override
+        public void onError(String message) {
+            proactiveBusy = false; // nächster Blick in ein paar Sekunden
+        }
+    };
 
     /** Neue Planungsphase: Sonnet schaut aufs scharfe Bild und sagt von selbst den wichtigsten Befehl an. */
     private boolean coachNow(ProactiveCoach.Phase phase) {
@@ -567,14 +582,32 @@ public class JarvisService extends Service {
             setState(State.IDLE);
         }
         String key = prefs.apiKey();
-        String image = grabber.captureJpegBase64(true);
-        if (key.isEmpty() || image == null) return false;
-        lastInteraction = System.currentTimeMillis();
+        if (key.isEmpty()) return false;
+        long now = System.currentTimeMillis();
+        if (now - lastInteraction > CONVERSATION_TIMEOUT_MS) history.clear();
+        lastInteraction = now;
         final int id = ++requestId;
         timing.reset();
         timing.speechEndedIfUnknown(SystemClock.elapsedRealtime());
         setState(State.THINKING);
-        ask(id, key, ProactiveCoach.autoMessage(phase), image);
+        String text = ProactiveCoach.autoMessage(phase);
+        if (floatingJ == null && !subtitles.isShowing()) {
+            ask(id, key, text, grabber.captureJpegBase64(true));
+            return true;
+        }
+        // Wie bei einer Frage: Eingeblendetes kurz verstecken, damit das Brett frei auf dem Bild ist.
+        setCaptureHidden(true);
+        main.postDelayed(() -> {
+            String image = grabber == null ? null : grabber.captureJpegBase64(true);
+            setCaptureHidden(false);
+            if (id != requestId) return;
+            if (image != null) {
+                ask(id, key, text, image);
+                return;
+            }
+            setState(State.IDLE);
+            scheduleRelisten(RELISTEN_DELAY_MS);
+        }, 120);
         return true;
     }
 
@@ -1280,6 +1313,12 @@ public class JarvisService extends Service {
                 testLog("fehler: " + message);
                 // Hat Art die gestreamte Antwort schon unterbrochen, nicht in sein Zuhören hineinreden.
                 if (stream != null && stream.interrupted(speechGen)) return;
+                if (text.startsWith(ProactiveCoach.AUTO_PREFIX)) {
+                    // Ungefragte Ansage fehlgeschlagen (Netz, Überlast): nicht mitten ins Spiel hineinmelden.
+                    setState(State.IDLE);
+                    scheduleRelisten(RELISTEN_DELAY_MS);
+                    return;
+                }
                 setState(State.IDLE);
                 say(message);
             }
