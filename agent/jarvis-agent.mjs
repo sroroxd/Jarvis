@@ -99,7 +99,11 @@ function auftragAusfuehren(text, neu) {
     const kind = spawn('claude', args, {
       cwd: ARBEIT,
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, CI: '1' },
+      // CI=1: nicht-interaktiv. IS_SANDBOX=1: Der proot-Container läuft als root, und Claude Code lehnt
+      // „bypassPermissions“ als root sonst ab („--dangerously-skip-permissions cannot be used with
+      // root/sudo privileges“). Der Container ist gegen das Android-System abgeschottet (kein echtes Root
+      // auf dem Handy) – genau der Sandbox-Fall, für den IS_SANDBOX gedacht ist.
+      env: { ...process.env, CI: '1', IS_SANDBOX: '1' },
     });
     laufend = { kind, beendet: false };
 

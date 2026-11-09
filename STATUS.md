@@ -170,7 +170,11 @@ Erstmals hing Arts Handy per `adb` am Rechner – gemessen statt geschätzt:
 0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die
    Test-App und den Schnellstart („Jarvis zuhören“ mit Mikrofon-Symbol). Die automatische TFT-Erkennung
    ist seit dem 8. Nov. gebaut, Wunsch #23 ebenso (siehe Punkt 14 der Gesamtprüfung).
-1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 liegt in `sammeltest`
+1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 ist in `main` und **läuft seit 9. Nov. auf Arts Handy**
+   (Node, Claude Code 2.1.319, Dienst auf `127.0.0.1:8777`; Anmeldung über Abo; echter Auftrag Ende-zu-Ende
+   bestätigt). Dabei behoben: Der Agent setzt beim Start von Claude `IS_SANDBOX=1` (sonst verweigert Claude
+   Code `bypassPermissions` als root im Container), der Anmelde-Befehl braucht den vollen Pfad
+   `/root/.local/bin/claude`, und `einrichten.sh` erkennt einen bereits vorhandenen Container.
    (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
    Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
    Skill-Ordner im Arbeitsordner, und das automatische Erkennen von Aufgaben, die
