@@ -51,10 +51,11 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 curl -fsSL "$ROH/einrichten-container.sh" -o "$TMP/einrichten-container.sh"
 curl -fsSL "$ROH/jarvis-agent.mjs" -o "$TMP/jarvis-agent.mjs"
+curl -fsSL "$ROH/stream.mjs" -o "$TMP/stream.mjs"
 
 ZIEL="$PREFIX/var/lib/proot-distro/installed-rootfs/$DISTRO/root"
 mkdir -p "$ZIEL/jarvis-agent"
-cp "$TMP/einrichten-container.sh" "$TMP/jarvis-agent.mjs" "$ZIEL/jarvis-agent/"
+cp "$TMP/einrichten-container.sh" "$TMP/jarvis-agent.mjs" "$TMP/stream.mjs" "$ZIEL/jarvis-agent/"
 
 sag "Teil 2 ausführen (Node, Claude Code, Dienst)"
 proot-distro login "$DISTRO" -- /bin/bash /root/jarvis-agent/einrichten-container.sh
