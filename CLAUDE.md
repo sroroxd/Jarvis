@@ -44,6 +44,14 @@ etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Lösc
   `*.png`, direkt über `releases/download/vorschau/<Datei>` abrufbar). Vor jeder
   Übergabe an Art Bericht und Bilder selbst ansehen. Grenze: ohne API-Schlüssel,
   ohne Mikrofon, x86-Emulator statt S24 Ultra.
+- **Grundsatz (Arts Vorgabe, 9. Nov. 2026): Vor jedem Release wird jede Änderung auf
+  Fehler geprüft.** Nichts wird veröffentlicht, was Build, Unit-Tests und Emulator-
+  Gerätetest nicht bestanden hat – die CI veröffentlicht bei einem Fehlschlag keine APK.
+  Jede neue Funktion oder Änderung bekommt nach Möglichkeit eine **eigene automatische
+  Prüfung**, die belegt, dass sie wirklich funktioniert: Unit-Test für Logik, eine
+  Prüfung im Gerätetest (`geraetetest.sh`) für Oberfläche und Ablauf. Erst als Test-App
+  veröffentlichen; nach `main` erst nach Arts Gerätetest. Was sich in der CI nicht prüfen
+  lässt (Mikrofon, Echo, Akku, Stimme), ausdrücklich als ungeprüft benennen.
 - Pushes mit Arts privater Mail-Adresse werden von GitHub abgelehnt. Commits mit
   Autor `sroroxd <193030253+sroroxd@users.noreply.github.com>` und Committer
   `Claude <noreply@anthropic.com>` anlegen.
