@@ -312,13 +312,12 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.chipGame.setChecked(prefs.tftMode());
         b.chipScreen.setChecked(JarvisService.isScreenShared());
 
-        // Messzeilen immer zeigen, sobald es welche gibt – auch im Dauergespräch und nach dem Beenden. Vorher standen
-        // sie nur im Leerlauf außerhalb des Dauergesprächs da; Art (TFT, immer Dauergespräch) sah sie nie.
-        String timing = JarvisService.lastTiming();
+        // Die Dazwischenreden-Diagnose zeigen, sobald es Werte gibt – auch im Dauergespräch und nach dem Beenden.
+        // Die „Letzte Antwort“-Zeile mit den Sekundenangaben (Zuhören/KI/Stimme/…) ist entfernt (Wunsch #71):
+        // Art kann damit nichts anfangen. Die Messung selbst bleibt – sie steht im Gerätetest-Protokoll der CI.
         String report = JarvisService.bargeInReport();
         StringBuilder hint = new StringBuilder();
         if (running) hint.append(live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
-        if (!timing.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Letzte Antwort: ").append(timing);
         if (!report.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Dazwischenreden: ").append(report);
         // Tagessumme aller Claude-Anfragen (auch Phasen-Wächter und Meta) – Anthropic rechnet in US-Dollar.
         double today = prefs.costToday(JarvisService.today());
