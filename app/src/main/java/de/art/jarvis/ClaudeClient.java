@@ -30,9 +30,11 @@ import java.util.function.BooleanSupplier;
  * täglichen TFT-Meta-Recherche ({@link #sendWithWebSearch}).
  */
 final class ClaudeClient {
-    private final Prefs prefs;
-    ClaudeClient() { prefs = null; }
-    ClaudeClient(android.content.Context context) { prefs = new Prefs(context); }
+    // Anbieter an die Client-Instanz binden: ein späterer Umschalter darf alte Zugangsdaten
+    // einer wartenden Anfrage niemals an den anderen Anbieter schicken.
+    private final boolean openAI;
+    ClaudeClient() { openAI = false; }
+    ClaudeClient(android.content.Context context) { openAI = new Prefs(context).useOpenAI(); }
     interface Callback {
         void onResult(String text);
         void onError(String message);
@@ -540,7 +542,6 @@ final class ClaudeClient {
         Result result = new Result();
         HttpURLConnection conn;
         try {
-            boolean openAI = prefs != null && prefs.useOpenAI();
             if (openAI) model = Prefs.OPENAI_MODEL;
             JSONObject body = body(model, maxTokens, thinking, effort, system, messages, tools);
             if (listener != null) body.put("stream", true);
