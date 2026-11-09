@@ -154,6 +154,13 @@ Erstmals hing Arts Handy per `adb` am Rechner – gemessen statt geschätzt:
   - **Tagesgrenze** (Einstellungen → Sprachsteuerung, Standard 5 $, 0 = aus): darüber geht bei offenem Mikrofon
     nur noch an Claude, was „Jarvis“ enthält oder Folgefrage ist; der Phasen-Wächter pausiert. Einmal am Tag
     still eingeblendet. Arts eigene Fragen gehen immer durch.
+- **Bildschirmfoto schlanker** (`ScreenGrabber.toBitmap`, Build 111): legte pro Aufnahme einen ~7 MB großen
+  Zwischenpuffer und ein gepolstertes Bitmap neu an – im Spiel alle 6 s. Jetzt wird bei vollständigem
+  Mitschnitt-Puffer direkt daraus gelesen, sonst durch einen wiederverwendeten Puffer, und das gepolsterte Bitmap
+  bleibt stehen (nur bei Drehung neu). Pixel-Logik unverändert. *Geprüft:* CI-Build, alle Tests, Emulator-Test
+  (Wächter 6/6 auf echten TFT-Bildern), auf dem Handy installiert und stabil (Start 138 ms). *Ungeprüft:* der
+  Aufnahmepfad läuft weder in CI noch im Emulator mit echter Bildschirmfreigabe – die Ersparnis an Wärme und Akku
+  zeigt erst eine echte TFT-Partie.
 - **Handy selbst:** schon gut eingestellt (adaptive Bildrate, Animationen 0,5, Thermik unauffällig).
   `handy/tuning.ps1` sichert die Werte, übersetzt Jarvis vorab (ART „speed“), leert auf Wunsch rund 10 GB
   App-Cache und stellt Animationen auf 0,35 – jede Stufe mit Rückfrage, `-Zurueck` stellt her.
