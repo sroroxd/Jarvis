@@ -83,6 +83,19 @@
                         android:layout_height="wrap_content"
                         android:text="Gehirn (KI)" />
 
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchOpenAI"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="OpenAI verwenden" />
+                    <TextView
+                        android:id="@+id/openAIInfo"
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/keyLayout"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -123,7 +136,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Schlüssel testen" />
+                        android:text="KI-Verbindung prüfen" />
 
                     <TextView
                         android:id="@+id/keyResult"

@@ -19,6 +19,8 @@ final class Costs {
     /** Preise je Million Tokens: Eingabe, Cache schreiben, Cache lesen, Ausgabe. Null = unbekanntes Modell. */
     static double[] prices(String model) {
         String m = model == null ? "" : model.toLowerCase(Locale.ROOT);
+        // OpenAI-Modellseite, 10.11.2026; Standardtarif ohne regionale/Service-Aufschläge.
+        if (m.equals("gpt-6-luna")) return new double[] {0.10, 0.125, 0.01, 0.50};
         if (m.contains("haiku-5-5")) return new double[] {0.10, 0.125, 0.01, 0.50};
         if (m.contains("sonnet-5-5")) return new double[] {2.0, 2.50, 0.10, 10.0};
         if (m.contains("sonnet-5")) return new double[] {2.0, 2.50, 0.20, 10.0};

@@ -264,8 +264,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             mode = ReactorView.Mode.OFF;
             label = "STARTEN";
             status = "Inaktiv";
-            detail = prefs.apiKey().isEmpty()
-                    ? "Trag zuerst in den Einstellungen deinen API-Schlüssel ein."
+            detail = prefs.brainKey().isEmpty()
+                    ? (prefs.useOpenAI() ? "Trag das lokale Kopplungstoken bei Agent in den Einstellungen ein."
+                        : "Trag zuerst in den Einstellungen deinen API-Schlüssel ein.")
                     : "Tippe auf den Kern, um Jarvis zu starten.";
         } else {
             switch (s) {
@@ -414,8 +415,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
     /** Geht Schritt für Schritt alle nötigen Freigaben durch und startet dann Jarvis. */
     private void proceed() {
-        if (prefs.apiKey().isEmpty()) {
-            Snackbar.make(b.getRoot(), "Bitte zuerst den API-Schlüssel eintragen.", Snackbar.LENGTH_LONG)
+        if (prefs.brainKey().isEmpty()) {
+            Snackbar.make(b.getRoot(), prefs.useOpenAI() ? "Bitte zuerst das lokale Kopplungstoken bei Agent eintragen."
+                    : "Bitte zuerst den API-Schlüssel eintragen.", Snackbar.LENGTH_LONG)
                     .setAction("Einstellungen", v -> startActivity(new Intent(this, SettingsActivity.class)))
                     .show();
             return;

@@ -128,17 +128,36 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Gehirn (KI)
 
     private void setupBrain() {
+        b.switchOpenAI.setChecked(prefs.useOpenAI());
+        b.switchOpenAI.setOnCheckedChangeListener((v, enabled) -> {
+            // Keine laufende Unterhaltung während eines Anbieterwechsels weiterführen.
+            stopService(new Intent(this, JarvisService.class));
+            prefs.setUseOpenAI(enabled);
+            updateBrainProvider();
+        });
         b.keyField.setText(prefs.apiKey());
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
         b.modelField.setText(prefs.rawModel());
         b.testKey.setOnClickListener(v -> testKey());
+        updateBrainProvider();
+    }
+
+    private void updateBrainProvider() {
+        b.keyLayout.setVisibility(prefs.useOpenAI() ? View.GONE : View.VISIBLE);
+        b.modelField.setEnabled(!prefs.useOpenAI());
+        b.modelLayout.setVisibility(prefs.useOpenAI() ? View.GONE : View.VISIBLE);
+        b.openAIInfo.setText(prefs.useOpenAI()
+                ? "OpenAI: " + Prefs.OPENAI_MODEL + ". KI benötigt Internet. Handy-Werkzeuge laufen lokal. "
+                  + "Der private OpenAI-Dienst in Termux muss laufen; Kopplungstoken unten bei Agent eintragen."
+                : "Claude ist ausgewählt. OpenAI ist optional; dein Claude-Schlüssel bleibt gespeichert.");
     }
 
     /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
     private void testKey() {
         saveTextFields();
-        if (prefs.apiKey().isEmpty()) {
-            showResult(b.keyResult, "Bitte zuerst einen Schlüssel einfügen.");
+        if (prefs.brainKey().isEmpty()) {
+            showResult(b.keyResult, prefs.useOpenAI() ? "Bitte zuerst das lokale Kopplungstoken bei Agent eintragen."
+                    : "Bitte zuerst einen Schlüssel einfügen.");
             return;
         }
         showResult(b.keyResult, "Teste Schlüssel …");
@@ -159,7 +178,7 @@ public class SettingsActivity extends AppCompatActivity {
                 showResult(b.keyResult, "✗ " + message);
             }
         };
-        new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+        new ClaudeClient(this).send(prefs.brainKey(), prefs.model(), "Test.", messages, cb);
     }
 
     // ---------------------------------------------------------------- Sprachsteuerung
@@ -773,14 +792,14 @@ public class SettingsActivity extends AppCompatActivity {
     /** Recherche sofort starten (z. B. nach einem neuen Patch). */
     private void updateMetaNow() {
         saveTextFields();
-        if (prefs.apiKey().isEmpty()) {
+        if (prefs.brainKey().isEmpty()) {
             b.metaInfo.setText("Die Meta-Recherche braucht einen Claude-Schlüssel (sk-ant-…).");
             return;
         }
         b.metaUpdate.setEnabled(false);
         b.metaInfo.setText("Recherchiere die aktuelle Meta … (dauert etwa 20–40 Sekunden)");
         final String today = JarvisService.today();
-        new ClaudeClient().sendWithWebSearch(prefs.apiKey(), Meta.MODEL, Meta.system(), Meta.prompt(today),
+        new ClaudeClient(this).sendWithWebSearch(prefs.brainKey(), Meta.MODEL, Meta.system(), Meta.prompt(today),
                 Meta.MAX_SEARCHES, new ClaudeClient.Callback() {
                     @Override
                     public void onResult(String text) {

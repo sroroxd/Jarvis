@@ -37,6 +37,12 @@ public final class Prefs {
         return sp.getString("api_key", "").trim();
     }
 
+    /** OpenAI-Schlüssel bleibt im privaten lokalen Dienst; hier nur das Kopplungstoken. */
+    public boolean useOpenAI() { return sp.getBoolean("use_openai", false); }
+    public void setUseOpenAI(boolean enabled) { sp.edit().putBoolean("use_openai", enabled).apply(); }
+    public String brainKey() { return useOpenAI() ? agentToken() : apiKey(); }
+    public static final String OPENAI_MODEL = "gpt-6-luna";
+
     public void setApiKey(String value) {
         sp.edit().putString("api_key", Text.cleanKey(value)).apply();
     }
@@ -60,6 +66,7 @@ public final class Prefs {
 
     /** Eingetragenes Modell oder der Standard. */
     public String model() {
+        if (useOpenAI()) return OPENAI_MODEL;
         String m = rawModel();
         if (isValidModel(m)) return m;
         return tftMode() ? TFT_MODEL : DEFAULT_MODEL;

@@ -32,6 +32,7 @@ final class Backup {
         o.put("gespeichert", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.GERMANY).format(new Date()));
         o.put("memory", p.memory());
         o.put("model", p.rawModel());
+        o.put("useOpenAI", p.useOpenAI());
         o.put("tft", p.tftMode());
         o.put("engine", p.engine());
         o.put("voice", p.voiceName());
@@ -68,6 +69,7 @@ final class Backup {
         JSONObject o = new JSONObject(json);
         p.setMemory(o.optString("memory", ""));
         p.setModel(o.optString("model", ""));
+        p.setUseOpenAI(o.optBoolean("useOpenAI", false));
         p.setTftMode(o.optBoolean("tft", false));
         p.setEngine(o.optString("engine", ""));
         p.setVoiceName(o.optString("voice", ""));

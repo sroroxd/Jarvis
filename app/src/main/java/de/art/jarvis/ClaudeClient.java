@@ -30,6 +30,9 @@ import java.util.function.BooleanSupplier;
  * täglichen TFT-Meta-Recherche ({@link #sendWithWebSearch}).
  */
 final class ClaudeClient {
+    private final Prefs prefs;
+    ClaudeClient() { prefs = null; }
+    ClaudeClient(android.content.Context context) { prefs = new Prefs(context); }
     interface Callback {
         void onResult(String text);
         void onError(String message);
@@ -537,6 +540,8 @@ final class ClaudeClient {
         Result result = new Result();
         HttpURLConnection conn;
         try {
+            boolean openAI = prefs != null && prefs.useOpenAI();
+            if (openAI) model = Prefs.OPENAI_MODEL;
             JSONObject body = body(model, maxTokens, thinking, effort, system, messages, tools);
             if (listener != null) body.put("stream", true);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -544,7 +549,7 @@ final class ClaudeClient {
             lastContact = net.start;
             if (answering.get()) lastNet = net;
 
-            conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
+            conn = (HttpURLConnection) new URL(openAI ? "http://127.0.0.1:8778/v1/messages" : ENDPOINT).openConnection();
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(90000);

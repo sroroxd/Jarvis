@@ -31,8 +31,9 @@ jobs:
 
       - name: Agent prüfen
         run: |
-          bash -n agent/einrichten.sh agent/einrichten-container.sh
+          bash -n agent/einrichten.sh agent/einrichten-container.sh agent/openai-einrichten.sh
           node --test agent/stream.test.mjs
+          node --test agent/openai-bridge.test.mjs
 
       - name: Gradle 8.9
         uses: gradle/actions/setup-gradle@v5
