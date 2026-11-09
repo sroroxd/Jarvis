@@ -452,14 +452,15 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     /**
-     * Ab Android 14 bietet der Freigabe-Dialog „Eine App teilen“ als Vorauswahl an – dann sieht
-     * Jarvis nur diese eine App. Mit dieser Einstellung fragt Android nur nach dem ganzen Bildschirm.
+     * Ab Android 14 lässt {@code createConfigForUserChoice()} den Freigabe-Dialog wieder zwischen
+     * „Gesamter Bildschirm“ und „Eine App teilen“ wählen. So kann Art z. B. nur das Spiel teilen,
+     * ohne Jarvis' eigene Einblendungen mitzuspiegeln. Vor Android 14 gibt es die Wahl ohnehin.
      */
     private Intent screenCaptureIntent() {
         MediaProjectionManager mpm = getSystemService(MediaProjectionManager.class);
         if (Build.VERSION.SDK_INT >= 34) {
             return mpm.createScreenCaptureIntent(
-                    android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay());
+                    android.media.projection.MediaProjectionConfig.createConfigForUserChoice());
         }
         return mpm.createScreenCaptureIntent();
     }
