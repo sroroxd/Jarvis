@@ -187,6 +187,8 @@ public class JarvisService extends Service {
     /** Offline-Stimme (Pocket TTS), siehe {@link PocketSpeaker}; wird erst bei Bedarf erzeugt. */
     private PocketSpeaker pocket;
     private boolean elevenWarned;
+    /** ElevenLabs hat in diesem Gespräch versagt – bis zum nächsten Gespräch bei der Handy-Stimme bleiben (Wunsch #62). */
+    private boolean elevenFailed;
     private WindowManager wm;
     private MediaProjection projection;
     private ScreenGrabber grabber;
@@ -969,6 +971,9 @@ public class JarvisService extends Service {
     private void resetConversation() {
         history.clear();
         requestId++;
+        // Neues Gespräch: ElevenLabs darf wieder ran (Wunsch #62). Innerhalb eines Gesprächs bleibt die Stimme gleich.
+        elevenFailed = false;
+        elevenWarned = false;
         // Auch der Agent fängt neu an, sonst zieht er den alten Zusammenhang mit.
         agentJobId++;
         if (prefs.agentReady()) agent.neueSitzung(prefs.agentPort(), prefs.agentToken());
@@ -1919,17 +1924,18 @@ public class JarvisService extends Service {
         }
         caption(clean);
         publishExchange(null, clean);
-        // Offline-Stimme, wenn Art sie gewählt hat – sonst Premium-Stimme (ElevenLabs), wenn eingerichtet,
-        // sonst die Stimme des Handys.
-        if (pocketWanted()) {
-            speakPocket(clean, gen, true);
-            return;
+        // Offline-Stimme, wenn Art sie gewählt hat – sonst Premium-Stimme (ElevenLabs), wenn eingerichtet und in
+        // diesem Gespräch noch nicht ausgefallen, sonst die Stimme des Handys (Wunsch #62: kein Hin- und Herspringen).
+        switch (VoicePick.choose(pocketWanted(), !prefs.elevenKey().isEmpty(), elevenFailed)) {
+            case POCKET:
+                speakPocket(clean, gen, true);
+                return;
+            case PREMIUM:
+                speakPremium(clean, gen);
+                return;
+            default:
+                speakDevice(clean, gen, true);
         }
-        if (!prefs.elevenKey().isEmpty()) {
-            speakPremium(clean, gen);
-            return;
-        }
-        speakDevice(clean, gen, true);
     }
 
     private void speakPremium(String clean, int gen) {
@@ -1945,7 +1951,9 @@ public class JarvisService extends Service {
             @Override
             public void onError(String message) {
                 if (gen != speechGen) return;
-                // Einmal pro Sitzung Bescheid geben, dann mit der Handy-Stimme weitermachen.
+                // Ab jetzt im ganzen Gespräch bei der Handy-Stimme bleiben, statt bei jedem Satz neu ElevenLabs
+                // zu versuchen (Wunsch #62). Einmal pro Sitzung Bescheid geben.
+                elevenFailed = true;
                 if (!elevenWarned) {
                     elevenWarned = true;
                     statusBriefly(message + " Ich spreche mit der Handy-Stimme weiter.");
