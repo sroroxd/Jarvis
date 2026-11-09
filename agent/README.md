@@ -35,9 +35,27 @@ Danach zweimal von Hand:
 jarvis-agent
 ```
 
-Hält über `termux-wake-lock` das Handy für den Dienst wach. Termux-Fenster offen
-lassen oder die Termux-Benachrichtigung behalten – schließt Art Termux, ist der
-Agent weg und Jarvis meldet den Auftrag als nicht zustellbar.
+`jarvis-agent` ist ein **Aufseher**: Er hält über `termux-wake-lock` das Handy wach
+und startet den Dienst nach Absturz oder Beenden automatisch neu, damit er
+durchgehend läuft. Termux-Benachrichtigung behalten – solange sie steht, bleibt der
+Agent an. Zwei Starts stören sich nicht: Wer merkt, dass der Port `8777` schon
+bedient wird, wartet nur. Protokoll: `~/.jarvis-agent.log`.
+
+## Durchgehend und automatisch (Arts Vorgabe 9. Nov. 2026)
+
+Der Agent soll durchgehend laufen und sich von selbst verbinden – ohne dass jemand
+am PC nachhilft.
+
+- **Nach Absturz/Beenden:** der Aufseher startet den Dienst von selbst neu.
+- **Nach Handy-Neustart:** einmalig die App **Termux:Boot** (F-Droid) installieren und
+  einmal öffnen. `einrichten.sh` legt die Boot-Datei `~/.termux/boot/jarvis-agent`
+  schon an – mit Termux:Boot startet der Aufseher dann beim Hochfahren automatisch.
+  Ohne die App ist die Datei wirkungslos, schadet also nicht.
+- **Akku:** Termux in den Android-Einstellungen von der Akku-Optimierung ausnehmen,
+  sonst beendet das System den Dienst im Hintergrund.
+
+Die App verbindet sich bei jedem Auftrag selbst mit `127.0.0.1:8777`; läuft der Agent,
+ist er also automatisch erreichbar.
 
 ## Benutzen
 
