@@ -59,19 +59,47 @@ cp "$TMP/einrichten-container.sh" "$TMP/jarvis-agent.mjs" "$ZIEL/jarvis-agent/"
 sag "Teil 2 ausführen (Node, Claude Code, Dienst)"
 proot-distro login "$DISTRO" -- /bin/bash /root/jarvis-agent/einrichten-container.sh
 
-sag "Startbefehl anlegen"
+sag "Startbefehl (Aufseher) anlegen"
 mkdir -p "$HOME/.shortcuts" "$HOME/bin"
+# Aufseher statt Einmalstart: hält das Handy wach und startet den Agenten nach Absturz oder Beenden
+# automatisch neu, damit er durchgehend läuft (Arts Vorgabe 9. Nov. 2026). Startet keinen zweiten
+# Agenten, wenn der Port 8777 schon bedient wird – so stören sich Fenster-Start und Boot-Start nicht.
 cat > "$HOME/bin/jarvis-agent" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-# Hält das Handy für den Agenten wach und startet ihn im Container.
+# Hält den Jarvis-Agenten durchgehend am Laufen: Wake-Lock und automatischer Neustart.
+# Läuft im Termux-Fenster oder headless über Termux:Boot. Protokoll: ~/.jarvis-agent.log
+set -u
+LOG="$HOME/.jarvis-agent.log"
 termux-wake-lock 2>/dev/null || true
-echo "Jarvis-Agent startet. Fenster offen lassen oder Termux-Benachrichtigung behalten."
-proot-distro login ubuntu -- /bin/bash /root/jarvis-agent/starten.sh
-termux-wake-unlock 2>/dev/null || true
+trap 'termux-wake-unlock 2>/dev/null || true' EXIT
+echo "$(date '+%F %T') Aufseher gestartet" >>"$LOG"
+echo "Jarvis-Agent läuft (Aufseher). Termux-Benachrichtigung behalten, dann bleibt er durchgehend an."
+while true; do
+  # Bedient schon jemand den Port? Dann keinen zweiten Agenten starten, nur wachen.
+  if curl -s -m 2 http://127.0.0.1:8777/status >/dev/null 2>&1; then
+    sleep 15
+    continue
+  fi
+  echo "$(date '+%F %T') Agent startet" >>"$LOG"
+  proot-distro login ubuntu -- /bin/bash /root/jarvis-agent/starten.sh >>"$LOG" 2>&1
+  echo "$(date '+%F %T') Agent beendet (Code $?), Neustart in 5 s" >>"$LOG"
+  sleep 5
+done
 EOF
 chmod +x "$HOME/bin/jarvis-agent"
 cp "$HOME/bin/jarvis-agent" "$HOME/.shortcuts/Jarvis-Agent" 2>/dev/null || true
 chmod +x "$HOME/.shortcuts/Jarvis-Agent" 2>/dev/null || true
+
+sag "Automatischer Start beim Hochfahren (Termux:Boot) anlegen"
+# Termux:Boot führt ausführbare Dateien in ~/.termux/boot/ beim Einschalten des Handys aus. Die Datei
+# ist ohne die App „Termux:Boot“ wirkungslos – sie schadet also nicht, falls Art sie (noch) nicht hat.
+mkdir -p "$HOME/.termux/boot"
+cat > "$HOME/.termux/boot/jarvis-agent" <<'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+# Startet den Jarvis-Agenten automatisch beim Hochfahren (braucht die App „Termux:Boot“).
+exec "$HOME/bin/jarvis-agent"
+EOF
+chmod +x "$HOME/.termux/boot/jarvis-agent"
 
 TOKEN_DATEI="$ZIEL/.jarvis-agent/token"
 sag "Fertig"
@@ -87,3 +115,8 @@ else
 fi
 echo "Noch offen: einmal 'proot-distro login ubuntu -- claude' aufrufen und mit"
 echo "dem Claude-Abo anmelden. Ohne Anmeldung lehnt der Agent jeden Auftrag ab."
+echo
+echo "Durchgehend laufen: 'jarvis-agent' startet jetzt einen Aufseher, der den Agenten"
+echo "nach Absturz oder Beenden automatisch neu startet. Für den Start nach einem"
+echo "Handy-Neustart einmalig die App 'Termux:Boot' (F-Droid) installieren und einmal"
+echo "öffnen – die Boot-Datei dafür ist schon angelegt."
