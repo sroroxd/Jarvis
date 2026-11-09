@@ -165,6 +165,71 @@ Erstmals hing Arts Handy per `adb` am Rechner – gemessen statt geschätzt:
   `handy/tuning.ps1` sichert die Werte, übersetzt Jarvis vorab (ART „speed“), leert auf Wunsch rund 10 GB
   App-Cache und stellt Animationen auf 0,35 – jede Stufe mit Rückfrage, `-Zurueck` stellt her.
 
+## Optimierungsplan (9. Nov., nach PR #74)
+
+**Leitlinien (Arts Vorgaben):** Qualität vor Tempo, Kosten sind in Ordnung, wenn die Qualität steigt; jede Änderung
+bekommt eine eigene Prüfung; was sich nur auf dem Handy zeigt, wird ausdrücklich als ungeprüft benannt.
+
+**Stand:** `main` enthält alles bis Build 116. Fertig: Immer zuhören abgesichert, Kostenbremse mit Tagesgrenze, Offline-Stimme
+wählbar (im Spiel ungeprüft), Agent Baustein 1 und 2 (der Strom am Handy ungeprüft). Offen sind 12 Wünsche; sie
+bündeln sich in fünf Spuren.
+
+### Spur A – Hören zuverlässig machen (#66, #68, #62) – größtes Alltagsproblem
+1. **Diagnose per USB statt Raten** (Windows-Sitzung): Logcat und Dazwischenreden-Messzeile während eines Gesprächs,
+   dazu die Wiedergabe mitschneiden. Verdächtige für die Geräusche nach wenigen Wörtern: Telefonmodus
+   (`VOICE_COMMUNICATION`) mit dem Strom des neuen `PocketSpeaker`, Signalton, Neustart des Dazwischenreden-Mikrofons.
+2. **„Stopp“ als eigenes Kommando:** ein zweites Wachwort-Modell („Stopp“/„Halt“) mit der vorhandenen Trainings-Pipeline
+   (`training/wakeword`, wird in der CI bewertet) – unabhängig von Claude und vom Echo-Filter. 1–2 Tage.
+3. **Stimmenwechsel (#62):** Verdacht Rückfallkette Miro → Thorsten → Alan und Engine-Wechsel. Protokoll, welche Stimme
+   spricht; mit der Offline-Stimme als Standard gibt es keinen Wechsel mehr.
+**Fertig wenn:** Arts Messzeile zeigt „unterbrochen: ja“ bei Zwischenrufen in drei Gesprächen; kein unerklärliches Geräusch.
+
+### Spur B – Stimme (#57, #62, #64, #52)
+Offline-Stimme nach Arts Test zum Standard machen. 3–5 wählbare Sprachproben aus **freien Quellen** (CC0-Spenden,
+VCTK), darunter eine tiefe, langsame („Optimus“-artig – nur mit freien Aufnahmen, kein Klonen echter Schauspieler).
+Aussprache-Liste für TFT-Namen („Ornn“ …). Qualitätsprüfung in der CI: erzeugte Sätze per Whisper zurücklesen
+(wie am 8. Nov. von Hand). Häufige Sätze („Zu Diensten“) vorab erzeugen. 2–3 Tage.
+
+### Spur C – Coaching-Qualität (#59, #43) – das Kernprodukt
+1. **Messbar machen:** Prüfsatz aus ~30 echten TFT-Bildern (Spielernamen unkenntlich) mit erwarteten Aussagen;
+   Claude bewertet Antworten nach Rubrik (Ablesen stimmt, Befehl sinnvoll, höchstens zwei Sätze); nächtlich per CI-Zeitplan,
+   rund 1 $ pro Lauf.
+2. **Spielverlauf:** die `[STAND: …]`-Zeilen je Runde als Tabelle in die Anfrage, statt nur im Verlauf zu stehen.
+3. **Latenz:** Die Anzeige ist weg (#71); die Werte kommen aus dem USB-Protokoll. Hebel zuerst: Bildgröße und
+   Upload (27 MB/Tag gemessen), dann erst Modell.
+Aufwand 3–5 Tage. **Fertig wenn:** der Prüfsatz eine messbare Verbesserung gegenüber heute zeigt.
+
+### Spur D – Agent und Steuerung (#65, #72, #70, #73)
+1. Strom am Handy prüfen (Art startet einen langen Auftrag).
+2. Skill-Ordner im Agent-Arbeitsordner (Wünsche umsetzen, Recherche); Wünsche automatisch übernehmen (#65) – der
+   Agent arbeitet nur auf Zweigen mit PR, nie auf `main`.
+3. **#70 „Einzelne App freigeben“:** Ursache gefunden – `MainActivity` erzwingt mit `createConfigForDefaultDisplay()`
+   den ganzen Bildschirm. Wieder die normale Auswahl anbieten. ½ Tag.
+4. App-Steuerung (Bedienungshilfe) **erst nach dem Tausch des Signaturschlüssels**. #73 (PC-Modus) und
+   whisper.cpp danach.
+
+### Spur E – Werkzeuge für bessere Ergebnisse
+- **Lint als harte Prüfung** in der CI (`abortOnError` ist aus): Der Absturz durch die fehlende Berechtigung
+  `ACCESS_NETWORK_STATE` stand als Lint-Fehler schon da. ½ Tag.
+- **Skills im Repo (`.claude/skills/`)** gegen Fehler, die heute mehrfach vorkamen: `pr-pruefen` (Lint, Berechtigungen,
+  Manifest-Diff, Gerätetest-Bericht lesen), `release-uebergabe` (richtiger Build und Link prüfen), `tft-coach-eval`.
+- **Zeitgesteuerte Cloud-Aufgaben:** nächtlich Coaching-Prüfsatz und Latenz-Messung, wöchentlich Abhängigkeiten
+  (ONNX, sherpa-onnx) und Kostenbericht.
+- **Mikrofon im Emulator:** prüfen, ob sich Sprache einspeisen lässt – das würde Dazwischenreden und Filter erstmals
+  automatisch testbar machen (bisher nur Handy).
+- **Zwei Sitzungen arbeiten parallel** (Cloud, Windows mit Handy): ein Zweig je Sitzung, Übernahme im Issue vermerken.
+
+### Fragen an Art (nur die wichtigen, mit Empfehlung)
+1. **Signaturschlüssel tauschen** (Sicherheit; einmal Neuinstallation, Einstellungen sind gesichert): **ja, jetzt**, vor der
+   App-Steuerung.
+2. **Echte Geräte in der Cloud (z. B. Firebase Test Lab):** neues Konto und Kosten – **zunächst nein**; erst USB-Handy und
+   Emulator-Mikrofon ausreizen.
+3. **Cloud-Prüfläufe mit ~1 $ pro Nacht:** **ja**, begrenzt auf 10 $ im Monat.
+
+### Reihenfolge
+Woche 1: Lint hart · #70 · Hören-Diagnose (A1) · Offline-Stimme zum Standard (B). Woche 2: Stopp-Wort (A2) ·
+Prüfsatz fürs Coaching (C1) · Skills und Zeitpläne (E). Danach C2/C3, D.
+
 ## Was als Nächstes kommt
 
 0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die
