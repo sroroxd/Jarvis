@@ -175,9 +175,14 @@ Erstmals hing Arts Handy per `adb` am Rechner – gemessen statt geschätzt:
    bestätigt). Dabei behoben: Der Agent setzt beim Start von Claude `IS_SANDBOX=1` (sonst verweigert Claude
    Code `bypassPermissions` als root im Container), der Anmelde-Befehl braucht den vollen Pfad
    `/root/.local/bin/claude`, und `einrichten.sh` erkennt einen bereits vorhandenen Container.
-   (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
-   Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
-   Skill-Ordner im Arbeitsordner, und das automatische Erkennen von Aufgaben, die
+   (Aufträge über Claude Code in Termux, Abo statt Guthaben). **Zwischenstände gebaut
+   (Zweig `agent-fortschritt`):** Der Agent läuft mit `--output-format stream-json --verbose`,
+   verfolgt die Schritte und bietet sie über `GET /fortschritt` an; die App sagt bei langen
+   Aufträgen alle 60 s an, woran gerade gearbeitet wird (statt minutenlang zu schweigen).
+   Parse-Logik als eigenes Modul `agent/stream.mjs` mit `node --test` geprüft, die Ansage-Logik
+   als `AgentProgress` mit Unit-Tests. **Ungeprüft:** der Strom am echten Handy (dafür muss der
+   Agent auf die neue Fassung aktualisiert und ein langer Auftrag ausgelöst werden). Als Nächstes:
+   eigene Skill-Ordner im Arbeitsordner, und das automatische Erkennen von Aufgaben, die
    zum Agenten gehören – bisher muss Art sie ausdrücklich abgeben.
 2. **Design und Bedienung.** Die Oberfläche wirkt billig und soll überarbeitet
    werden.

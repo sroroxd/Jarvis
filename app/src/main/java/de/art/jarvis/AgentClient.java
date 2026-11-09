@@ -26,8 +26,15 @@ final class AgentClient {
         void onResult(AgentReply reply);
     }
 
+    /** Zwischenstand eines laufenden Auftrags (siehe {@link #fortschritt}). */
+    interface FortschrittCallback {
+        void onFortschritt(boolean beschaeftigt, String text);
+    }
+
     /** Eigener Thread: ein Auftrag kann Minuten dauern und darf die Anfragen an Claude nicht blockieren. */
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** Eigener Thread fürs Nachfragen nach dem Zwischenstand – darf nicht hinter dem langen Auftrag warten. */
+    private static final ExecutorService poll = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
     /** So lange wartet die App auf das Ergebnis eines Auftrags. */
@@ -44,6 +51,19 @@ final class AgentClient {
         executor.execute(() -> {
             AgentReply r = postAuftrag(port, token, text, neu);
             main.post(() -> callback.onResult(r));
+        });
+    }
+
+    /**
+     * Fragt den Zwischenstand des laufenden Auftrags ab ({@code GET /fortschritt}). Antwort kommt auf
+     * dem Hauptthread. Fehler oder kein Agent → {@code beschaeftigt=false}, leerer Text.
+     */
+    void fortschritt(int port, String token, FortschrittCallback callback) {
+        poll.execute(() -> {
+            Antwort a = anfrage(port, token, "/fortschritt", null, STATUS_TIMEOUT_MS);
+            boolean beschaeftigt = a.code == 200 && a.body.contains("\"beschaeftigt\":true");
+            String text = a.code == 200 ? AgentReply.text(a.body, "fortschritt") : "";
+            main.post(() -> callback.onFortschritt(beschaeftigt, text));
         });
     }
 

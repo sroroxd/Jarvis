@@ -50,8 +50,10 @@ Aufträge gibt Art per Sprache ab:
 - „Arbeite daran, räum den Ordner auf"
 
 Alles andere geht weiter den schnellen Weg. Im Spielmodus ist der Agent aus.
-Jarvis bestätigt sofort („Ich kümmere mich darum, Sir.") und spricht das Ergebnis,
-sobald es da ist – auch wenn Art zwischenzeitlich etwas anderes gefragt hat.
+Jarvis bestätigt sofort („Ich kümmere mich darum, Sir.") und sagt bei langen Aufträgen
+gelegentlich den Zwischenstand an („Moment noch, Sir – führe gerade einen Befehl aus."),
+damit es nicht minutenlang still ist. Das Ergebnis spricht er, sobald es da ist – auch
+wenn Art zwischenzeitlich etwas anderes gefragt hat.
 
 ## Technik
 
@@ -59,9 +61,10 @@ sobald es da ist – auch wenn Art zwischenzeitlich etwas anderes gefragt hat.
 |---|---|
 | Schnittstelle | HTTP auf `127.0.0.1:8777`, nur lokal, Token im `Authorization`-Kopf |
 | `GET /status` | läuft der Agent? (ohne Token) |
-| `POST /auftrag` | `{"text": "…", "neu": false}` → `{"antwort", "sitzung", "kosten", "dauer"}` |
+| `GET /fortschritt` | Zwischenstand des laufenden Auftrags → `{"beschaeftigt", "fortschritt", "schritte"}` |
+| `POST /auftrag` | `{"text": "…", "neu": false}` → `{"antwort", "sitzung", "kosten", "dauer", "schritte"}` |
 | `POST /neu` | Sitzung zurücksetzen, nächster Auftrag fängt frisch an |
-| KI | `claude -p --output-format json --permission-mode bypassPermissions` |
+| KI | `claude -p --output-format stream-json --verbose --permission-mode bypassPermissions` (Schritte für den Zwischenstand) |
 | Arbeitsordner | `~/jarvis-arbeit` im Container |
 | Zeitlimit | 10 Minuten pro Auftrag, danach Abbruch |
 
