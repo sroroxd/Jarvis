@@ -149,6 +149,7 @@ final class BargeIn {
         String report = "Mikrofon nicht verfügbar";
         SpeechGate g = null;
         double peak = -90;
+        double rawPeak = -90; // lautester Pegel über den ganzen Lauf, auch in der Lernphase (Wunsch #66)
         try {
             WakeWordDetector wakeWord = wakeThreshold >= 0 ? detector() : null;
             if (wakeWord != null) wakeWord.reset();
@@ -184,11 +185,13 @@ final class BargeIn {
                     filled += n;
                 }
                 if (!active) break;
+                double db = SpeechGate.dbfs(frame, 0, frame.length);
+                rawPeak = Math.max(rawPeak, db);
                 if (g.feed(frame, 0, frame.length)) {
                     heard = true;
                     trigger = "Stimme";
                 }
-                if (g.armed()) peak = Math.max(peak, SpeechGate.dbfs(frame, 0, frame.length));
+                if (g.armed()) peak = Math.max(peak, db);
                 if (!heard && wakeWord != null) {
                     System.arraycopy(frame, 0, chunk, chunkFill, frame.length);
                     chunkFill += frame.length;
@@ -210,7 +213,7 @@ final class BargeIn {
         } catch (Throwable ignored) {
             // Kein Dazwischenreden ist besser als ein Absturz: Jarvis spricht dann einfach zu Ende.
         } finally {
-            if (g != null) report = SpeechGate.report(g.armed(), g.echoDb(), g.thresholdDb(), peak, echoCanceller, trigger);
+            if (g != null) report = SpeechGate.report(g.armed(), g.echoDb(), g.thresholdDb(), peak, rawPeak, echoCanceller, trigger);
             gate = null;
             if (aec != null) aec.release();
             if (ns != null) ns.release();

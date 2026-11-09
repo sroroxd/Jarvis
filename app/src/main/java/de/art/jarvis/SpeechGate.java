@@ -107,11 +107,19 @@ final class SpeechGate {
      * Messzeile für den Startbildschirm, damit ein Gerätetest zeigt, woran das Dazwischenreden hängt:
      * Liegt der lauteste Moment (auch Arts Stimme) unter der Schwelle, kam Art nicht über Jarvis' Echo.
      */
-    static String report(boolean armed, double echoDb, double thresholdDb, double peakDb, boolean echoFilter, String trigger) {
-        if (!armed) return "zu kurz zum Messen";
+    static String report(boolean armed, double echoDb, double thresholdDb, double peakDb, double rawPeakDb,
+                         boolean echoFilter, String trigger) {
+        // „Mikro roh“ ist der lauteste Pegel über den ganzen Lauf – auch während der Lernphase und unter der
+        // Schwelle. Er entscheidet, woran das Dazwischenreden hängt (Wunsch #66): Bleibt er bei -90 dB, liefert
+        // das Mikrofon nur Stille, während Jarvis spricht – dann drosselt der Telefonmodus den Eingang
+        // (Halb-Duplex), und keine Schwelle der Welt hilft. Ist „Mikro roh“ laut, aber „lautester Moment“ still,
+        // kam Art nur in der Lernphase durch und die Schwelle steht zu hoch.
+        if (!armed) {
+            return String.format(java.util.Locale.GERMANY, "zu kurz zum Messen · Mikro roh %.0f dB", rawPeakDb);
+        }
         return String.format(java.util.Locale.GERMANY, "Echo %.0f dB · Schwelle %.0f dB · lautester Moment %.0f dB · "
-                        + "Echo-Filter %s · unterbrochen: %s",
-                echoDb, thresholdDb, peakDb, echoFilter ? "an" : "aus", trigger == null ? "nein" : trigger);
+                        + "Mikro roh %.0f dB · Echo-Filter %s · unterbrochen: %s",
+                echoDb, thresholdDb, peakDb, rawPeakDb, echoFilter ? "an" : "aus", trigger == null ? "nein" : trigger);
     }
 
     /** Aktuelle Schwelle in dBFS (für Anzeige und Tests). */

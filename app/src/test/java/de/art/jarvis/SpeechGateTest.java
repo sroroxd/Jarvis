@@ -209,11 +209,26 @@ public class SpeechGateTest {
 
     @Test
     public void messzeileFuerDenGeraetetest() {
-        assertEquals("Echo -31 dB · Schwelle -21 dB · lautester Moment -24 dB · Echo-Filter an · unterbrochen: nein",
-                SpeechGate.report(true, -31.2, -21.2, -24.4, true, null));
-        assertEquals("Echo -40 dB · Schwelle -30 dB · lautester Moment -12 dB · Echo-Filter aus · unterbrochen: Stimme",
-                SpeechGate.report(true, -40, -30, -12, false, "Stimme"));
-        assertEquals("zu kurz zum Messen", SpeechGate.report(false, -90, -40, -90, true, null));
+        assertEquals("Echo -31 dB · Schwelle -21 dB · lautester Moment -24 dB · Mikro roh -18 dB · "
+                        + "Echo-Filter an · unterbrochen: nein",
+                SpeechGate.report(true, -31.2, -21.2, -24.4, -18.0, true, null));
+        assertEquals("Echo -40 dB · Schwelle -30 dB · lautester Moment -12 dB · Mikro roh -12 dB · "
+                        + "Echo-Filter aus · unterbrochen: Stimme",
+                SpeechGate.report(true, -40, -30, -12, -12, false, "Stimme"));
+        assertEquals("zu kurz zum Messen · Mikro roh -90 dB", SpeechGate.report(false, -90, -40, -90, -90, true, null));
+    }
+
+    /**
+     * Wunsch #66: Die „Mikro roh“-Zahl trennt die zwei Ursachen, warum Dazwischenreden scheitert.
+     */
+    @Test
+    public void mikroRohTrenntStummVonSchwelleZuHoch() {
+        // Telefonmodus drosselt den Eingang: das Mikro liefert durchgehend Stille – nichts hilft.
+        assertTrue(SpeechGate.report(true, -90, -40, -90, -90, true, null).contains("Mikro roh -90 dB"));
+        // Mikro hört Art laut (roh -18 dB), aber nach dem Lernen ist „lautester Moment“ still: Schwelle zu hoch.
+        String zuHoch = SpeechGate.report(true, -20, -10, -90, -18, true, null);
+        assertTrue(zuHoch.contains("lautester Moment -90 dB"));
+        assertTrue(zuHoch.contains("Mikro roh -18 dB"));
     }
 
     /** Fehlt das Startsignal ganz, lernt die Schranke nach der Wartezeit trotzdem und wird scharf. */
