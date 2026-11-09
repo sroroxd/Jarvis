@@ -184,6 +184,10 @@ public class JarvisService extends Service {
     private WishSender wishSender;
     /** Eigene Zählung für Aufträge an den Agenten – siehe beauftrageAgenten(). */
     private int agentJobId;
+    /** Für welchen Agenten-Auftrag der Fortschritts-Wächter gerade läuft; -1 = keiner. */
+    private int agentPollFor = -1;
+    /** Zeitpunkt der letzten Zwischenansage (oder des Auftragsstarts), für den Abstand. */
+    private long agentAnsageZeit;
     private ElevenTts eleven;
     /** Offline-Stimme (Pocket TTS), siehe {@link PocketSpeaker}; wird erst bei Bedarf erzeugt. */
     private PocketSpeaker pocket;
@@ -1635,6 +1639,8 @@ public class JarvisService extends Service {
         status("Auftrag an den Agenten: „" + auftrag + "“");
         agent.auftrag(prefs.agentPort(), prefs.agentToken(), auftrag, false, reply -> {
             if (job != agentJobId || !running) return;
+            main.removeCallbacks(agentPoll); // Auftrag fertig: keine Zwischenansagen mehr
+            agentPollFor = -1;
             if (state == State.LISTENING && utterance.length() == 0) {
                 // Dauergespräch hört gerade (noch ohne Worte) zu – kurz unterbrechen, damit die
                 // Antwort nicht von der Spracherkennung mitgehört wird. Danach geht es weiter.
@@ -1653,6 +1659,33 @@ public class JarvisService extends Service {
         });
         // Sofort eine kurze Rückmeldung, damit Art nicht minutenlang ins Leere wartet.
         speak("Ich kümmere mich darum, Sir.");
+        // Danach alle AgentProgress.ABSTAND_MS einen Zwischenstand ansagen, solange der Auftrag läuft.
+        agentPollFor = job;
+        agentAnsageZeit = SystemClock.elapsedRealtime();
+        main.postDelayed(agentPoll, AgentProgress.ABSTAND_MS);
+    }
+
+    /** Fragt den Zwischenstand ab und sagt ihn an, wenn fällig und Jarvis gerade ruhig ist; plant sich neu. */
+    private final Runnable agentPoll = new Runnable() {
+        @Override
+        public void run() {
+            final int job = agentPollFor;
+            if (!running || job < 0 || job != agentJobId) return; // Auftrag vorbei oder neuer gestartet
+            agent.fortschritt(prefs.agentPort(), prefs.agentToken(), (beschaeftigt, text) -> {
+                if (!running || job != agentJobId) return;
+                if (beschaeftigt && ruhigFuerAgentAnsage()
+                        && AgentProgress.faellig(SystemClock.elapsedRealtime(), agentAnsageZeit)) {
+                    agentAnsageZeit = SystemClock.elapsedRealtime();
+                    speak(AgentProgress.ansage(text));
+                }
+            });
+            main.postDelayed(this, AgentProgress.ABSTAND_MS);
+        }
+    };
+
+    /** Nur ansagen, wenn Jarvis nicht gerade selbst spricht und Art nicht mitten im Satz ist. */
+    private boolean ruhigFuerAgentAnsage() {
+        return state != State.SPEAKING && !(state == State.LISTENING && (utterance.length() > 0 || heardSomething));
     }
 
     // ---------------------------------------------------------------- Dauergespräch

@@ -24,8 +24,9 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { verarbeite } from './stream.mjs';
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.JARVIS_AGENT_PORT || 8777);
 
@@ -80,6 +81,13 @@ function tokenStimmt(wert) {
 let sitzung = null;
 let laufend = null; // { kind, beendet }
 
+/**
+ * Zwischenstand des laufenden Auftrags, damit Jarvis bei langen Aufgaben nicht minutenlang schweigt.
+ * Die App fragt {@code GET /fortschritt} ab und sagt den Stand gelegentlich an. Die reine Parse-Logik
+ * steht in stream.mjs (dort auch geprüft); hier nur der Zustand und das Netz.
+ */
+const stand = { fortschritt: '', schritte: 0, ergebnis: null };
+
 // ----------------------------------------------------------------- Claude Code
 
 /**
@@ -92,7 +100,13 @@ let laufend = null; // { kind, beendet }
  */
 function auftragAusfuehren(text, neu) {
   return new Promise((fertig) => {
-    const args = ['-p', '--output-format', 'json', '--permission-mode', 'bypassPermissions',
+    stand.fortschritt = '';
+    stand.schritte = 0;
+    stand.ergebnis = null;
+    // stream-json statt json: Claude Code meldet jeden Schritt einzeln (Werkzeug-Aufrufe, Zwischentext),
+    // damit die App bei langen Aufträgen ansagen kann, woran gerade gearbeitet wird. „--verbose“ ist dabei
+    // Pflicht. Das Ergebnis kommt am Ende als „result“-Ereignis mit denselben Feldern wie zuvor.
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'bypassPermissions',
       '--append-system-prompt', SYSTEM, '--add-dir', ARBEIT];
     if (!neu && sitzung) args.push('--resume', sitzung);
 
@@ -107,7 +121,7 @@ function auftragAusfuehren(text, neu) {
     });
     laufend = { kind, beendet: false };
 
-    let aus = '';
+    let puffer = '';
     let fehlerText = '';
     const uhr = setTimeout(() => {
       laufend.beendet = true;
@@ -115,22 +129,35 @@ function auftragAusfuehren(text, neu) {
       setTimeout(() => kind.kill('SIGKILL'), 3000);
     }, ZEITLIMIT_MS);
 
-    kind.stdout.on('data', (d) => { aus += d; });
+    kind.stdout.on('data', (d) => {
+      puffer += d;
+      let nl;
+      // Zeilenweise verarbeiten; der Rest (unvollständige Zeile) bleibt im Puffer.
+      while ((nl = puffer.indexOf('\n')) >= 0) {
+        const zeile = puffer.slice(0, nl).trim();
+        puffer = puffer.slice(nl + 1);
+        if (zeile.startsWith('{')) verarbeite(zeile, stand);
+      }
+    });
     kind.stderr.on('data', (d) => { fehlerText += d; });
     kind.on('error', (e) => {
       clearTimeout(uhr);
       laufend = null;
+      stand.fortschritt = '';
       fertig({ fehler: 'Claude Code lässt sich nicht starten: ' + e.message });
     });
     kind.on('close', (code) => {
       clearTimeout(uhr);
+      const rest = puffer.trim();
+      if (rest.startsWith('{')) verarbeite(rest, stand);
       const abgebrochen = laufend && laufend.beendet;
       laufend = null;
+      stand.fortschritt = '';
       if (abgebrochen) {
         fertig({ fehler: 'Der Auftrag hat zu lange gedauert und wurde abgebrochen.' });
         return;
       }
-      fertig(antwortZerlegen(aus, fehlerText, code));
+      fertig(ergebnisAusStream(stand.ergebnis, fehlerText, code));
     });
 
     kind.stdin.end(text, 'utf8');
@@ -138,21 +165,14 @@ function auftragAusfuehren(text, neu) {
 }
 
 /**
- * Zerlegt die JSON-Zeile von „claude -p --output-format json“.
- * Felder geprüft gegen Claude Code 2.1.318: result, session_id, total_cost_usd,
+ * Macht aus dem „result“-Ereignis von stream-json die Antwort für die App.
+ * Felder geprüft gegen Claude Code 2.1.319: result, session_id, total_cost_usd,
  * duration_ms, is_error, num_turns.
  */
-function antwortZerlegen(aus, fehlerText, code) {
-  const zeile = aus.trim().split('\n').filter((z) => z.trim().startsWith('{')).pop();
-  if (!zeile) {
+function ergebnisAusStream(j, fehlerText, code) {
+  if (!j) {
     const grund = (fehlerText || '').trim().split('\n').pop() || ('Beendet mit Code ' + code);
     return { fehler: 'Der Agent hat nichts zurückgegeben. ' + grund };
-  }
-  let j;
-  try {
-    j = JSON.parse(zeile);
-  } catch {
-    return { fehler: 'Die Antwort des Agenten war unlesbar.' };
   }
   const text = typeof j.result === 'string' ? j.result.trim() : '';
   if (j.session_id) sitzung = j.session_id;
@@ -165,7 +185,7 @@ function antwortZerlegen(aus, fehlerText, code) {
     sitzung: j.session_id || null,
     kosten: typeof j.total_cost_usd === 'number' ? j.total_cost_usd : 0,
     dauer: typeof j.duration_ms === 'number' ? j.duration_ms : 0,
-    schritte: typeof j.num_turns === 'number' ? j.num_turns : 0,
+    schritte: typeof j.num_turns === 'number' ? j.num_turns : stand.schritte,
   };
 }
 
@@ -226,6 +246,12 @@ const server = createServer(async (req, res) => {
   const mitgebracht = kopf.startsWith('Bearer ') ? kopf.slice(7).trim() : '';
   if (!tokenStimmt(mitgebracht)) {
     senden(res, 401, { fehler: 'Falsches oder fehlendes Token. Trag das Token aus ~/.jarvis-agent/token in die Jarvis-Einstellungen ein.' });
+    return;
+  }
+
+  if (req.method === 'GET' && pfad === '/fortschritt') {
+    // Zwischenstand des laufenden Auftrags (mit Token, weil er verrät, woran gearbeitet wird).
+    senden(res, 200, { beschaeftigt: laufend !== null, fortschritt: stand.fortschritt, schritte: stand.schritte });
     return;
   }
 
