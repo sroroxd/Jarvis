@@ -91,7 +91,6 @@ public class JarvisService extends Service {
     private static UiListener ui;
     private static String lastYou = "";
     private static String lastJarvis = "";
-    private static volatile String lastTiming = "";
     /** Messzeile des letzten Dazwischenreden-Durchgangs (Startbildschirm, Gerätetest). */
     private static volatile String lastBargeInReport = "";
     /** Ganzer Gesprächsverlauf für den Startbildschirm (überlebt das Schließen der App, solange Jarvis läuft). */
@@ -118,10 +117,6 @@ public class JarvisService extends Service {
 
     static boolean isContinuous() {
         return continuous;
-    }
-
-    static String lastTiming() {
-        return lastTiming;
     }
 
     static String bargeInReport() {
@@ -1960,15 +1955,11 @@ public class JarvisService extends Service {
         });
     }
 
-    /** Erster Ton einer Antwort: Messung abschließen und auf dem Startbildschirm zeigen. */
+    /** Erster Ton einer Antwort: die Zeitmessung abschließen. Die Werte stehen im CI-Gerätetest-Protokoll
+     *  (siehe testLog „antwort […]“); auf dem Startbildschirm werden sie nicht mehr gezeigt (Wunsch #71). */
     private void onVoiceStarted() {
         bargeIn.voiceStarted(); // ab jetzt lernt die Echo-Schranke Jarvis' eigene Stimme
-        if (timing.voiceStarted(SystemClock.elapsedRealtime())) {
-            ClaudeClient.Usage usage = ClaudeClient.lastUsage;
-            lastTiming = timing.summary() + " (" + lastModel + (usage == null ? "" : ", " + usage.summary())
-                    + costSuffix() + netSuffix() + ")";
-            notifyUi();
-        }
+        timing.voiceStarted(SystemClock.elapsedRealtime());
     }
 
     /** „ · Senden 0,4 s (380 KB) · Claude 0,9 s“ – zerlegt die Wartezeit „KI“ (Wunsch #43). */
