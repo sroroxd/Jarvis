@@ -39,6 +39,7 @@ sag "Ubuntu-Container prüfen"
 # „install“ bricht dann aber mit „already exists“ ab (unter set -e stürbe das ganze Skript). Dann lieber
 # den vorhandenen Container nehmen und mit Teil 2 weitermachen.
 if proot-distro list --installed 2>/dev/null | grep -qw "$DISTRO" \
+   || [ -d "$PREFIX/var/lib/proot-distro/containers/$DISTRO/rootfs" ] \
    || [ -d "$PREFIX/var/lib/proot-distro/installed-rootfs/$DISTRO" ]; then
   echo "Ubuntu ist schon da."
 else
@@ -51,13 +52,17 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 curl -fsSL "$ROH/einrichten-container.sh" -o "$TMP/einrichten-container.sh"
 curl -fsSL "$ROH/jarvis-agent.mjs" -o "$TMP/jarvis-agent.mjs"
-
-ZIEL="$PREFIX/var/lib/proot-distro/installed-rootfs/$DISTRO/root"
-mkdir -p "$ZIEL/jarvis-agent"
-cp "$TMP/einrichten-container.sh" "$TMP/jarvis-agent.mjs" "$ZIEL/jarvis-agent/"
+curl -fsSL "$ROH/stream.mjs" -o "$TMP/stream.mjs"
 
 sag "Teil 2 ausführen (Node, Claude Code, Dienst)"
-proot-distro login "$DISTRO" -- /bin/bash /root/jarvis-agent/einrichten-container.sh
+# Über den Container kopieren: neue proot-distro-Versionen verwenden containers/.../rootfs;
+# ein fest verdrahteter installed-rootfs-Pfad kann in einen unbenutzten Altbestand schreiben.
+proot-distro login --bind "$TMP:/mnt/jarvis-install" "$DISTRO" -- /bin/bash -c '
+  set -e
+  mkdir -p /root/jarvis-agent
+  cp /mnt/jarvis-install/{einrichten-container.sh,jarvis-agent.mjs,stream.mjs} /root/jarvis-agent/
+  exec /bin/bash /root/jarvis-agent/einrichten-container.sh
+'
 
 sag "Startbefehl anlegen"
 mkdir -p "$HOME/.shortcuts" "$HOME/bin"
@@ -73,17 +78,9 @@ chmod +x "$HOME/bin/jarvis-agent"
 cp "$HOME/bin/jarvis-agent" "$HOME/.shortcuts/Jarvis-Agent" 2>/dev/null || true
 chmod +x "$HOME/.shortcuts/Jarvis-Agent" 2>/dev/null || true
 
-TOKEN_DATEI="$ZIEL/.jarvis-agent/token"
 sag "Fertig"
 echo "Agent starten:   jarvis-agent      (oder ~/bin/jarvis-agent)"
 echo
-if [ -f "$TOKEN_DATEI" ]; then
-  echo "Token für die Jarvis-Einstellungen:"
-  echo
-  cat "$TOKEN_DATEI"
-  echo
-else
-  echo "Das Token steht nach dem ersten Start in ~/.jarvis-agent/token im Container."
-fi
+echo "Das Token steht nach dem ersten Start in ~/.jarvis-agent/token im Container."
 echo "Noch offen: einmal 'proot-distro login ubuntu -- claude' aufrufen und mit"
 echo "dem Claude-Abo anmelden. Ohne Anmeldung lehnt der Agent jeden Auftrag ab."

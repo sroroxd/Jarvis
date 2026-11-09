@@ -29,6 +29,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Agent prüfen
+        run: |
+          bash -n agent/einrichten.sh agent/einrichten-container.sh
+          node --test agent/stream.test.mjs
+
       - name: Gradle 8.9
         uses: gradle/actions/setup-gradle@v5
         with:

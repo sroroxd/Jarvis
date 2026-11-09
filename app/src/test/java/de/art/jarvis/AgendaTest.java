@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -57,6 +58,54 @@ public class AgendaTest {
     @Test(expected = IllegalArgumentException.class)
     public void endeVorBeginnWirdAbgelehnt() {
         Agenda.slot("2026-11-03T10:00", "2026-11-03T09:00", false, BERLIN);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void beginnInZeitumstellungslueckeWirdNichtHinterDasEndeVerschoben() {
+        // Früher wurde 02:30 still zu 03:30, also hinter das ausdrücklich genannte Ende 03:00.
+        Agenda.slot("2026-03-29T02:30", "2026-03-29T03:00", false, BERLIN);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void beginnInZeitumstellungslueckeWirdAuchOhneEndeAbgelehnt() {
+        Agenda.slot("2026-03-29T02:30", "", false, BERLIN);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void ausdruecklichesEndeInZeitumstellungslueckeWirdAbgelehnt() {
+        Agenda.slot("2026-03-29T01:30", "2026-03-29T02:30", false, BERLIN);
+    }
+
+    @Test
+    public void eineStundeOhneEndeUeberspringtDieFruehlingsluecke() {
+        Agenda.Slot s = Agenda.slot("2026-03-29T01:30", "", false, BERLIN);
+        assertEquals(3_600_000L, s.end - s.begin);
+        assertEquals(Instant.parse("2026-03-29T01:30:00Z").toEpochMilli(), s.end);
+        assertEquals("Sonntag, 29. März 2026, 01:30 bis 03:30 Uhr: Test",
+                Agenda.describe(new Agenda.Entry("Test", s.begin, s.end, false, "", ""), BERLIN));
+    }
+
+    @Test
+    public void eineStundeOhneEndeBleibtAuchBeiRueckstellungEineStunde() {
+        Agenda.Slot s = Agenda.slot("2026-10-25T02:30", "", false, BERLIN);
+        assertEquals(3_600_000L, s.end - s.begin);
+        assertEquals(Instant.parse("2026-10-25T00:30:00Z").toEpochMilli(), s.begin);
+        assertEquals(Instant.parse("2026-10-25T01:30:00Z").toEpochMilli(), s.end);
+    }
+
+    @Test
+    public void gueltigerExpliziterZeitraumUeberZeitumstellungBleibtErhalten() {
+        Agenda.Slot s = Agenda.slot("2026-03-29T01:30", "2026-03-29T03:30", false, BERLIN);
+        assertEquals(Instant.parse("2026-03-29T00:30:00Z").toEpochMilli(), s.begin);
+        assertEquals(Instant.parse("2026-03-29T01:30:00Z").toEpochMilli(), s.end);
+    }
+
+    @Test
+    public void ganztaegigBleibtAmZeitumstellungstagUtc() {
+        Agenda.Slot s = Agenda.slot("2026-03-29", "", true, BERLIN);
+        assertTrue(s.allDay);
+        assertEquals(utcDay(2026, 3, 29), s.begin);
+        assertEquals(utcDay(2026, 3, 30), s.end);
     }
 
     @Test(expected = IllegalArgumentException.class)

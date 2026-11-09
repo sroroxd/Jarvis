@@ -95,9 +95,28 @@ final class Agenda {
             return new Slot(b, e, true);
         }
         LocalDateTime start = parseDateTime(beginn);
-        LocalDateTime stop = ende == null || ende.trim().isEmpty() ? start.plusHours(1) : parseDateTime(ende);
-        if (!stop.isAfter(start)) throw new IllegalArgumentException("Das Ende muss nach dem Beginn liegen.");
-        return new Slot(start.atZone(zone).toInstant().toEpochMilli(), stop.atZone(zone).toInstant().toEpochMilli(), false);
+        long b = localInstant(start, zone);
+        long e;
+        if (ende == null || ende.trim().isEmpty()) {
+            // Eine Stunde dauert auch bei einer Zeitumstellung genau 60 Minuten. Die Uhrzeit kann
+            // dabei z. B. von 01:30 auf 03:30 springen oder im Herbst zweimal 02:30 anzeigen.
+            e = Instant.ofEpochMilli(b).plusSeconds(3600).toEpochMilli();
+        } else {
+            LocalDateTime stop = parseDateTime(ende);
+            if (!stop.isAfter(start)) throw new IllegalArgumentException("Das Ende muss nach dem Beginn liegen.");
+            e = localInstant(stop, zone);
+        }
+        if (e <= b) throw new IllegalArgumentException("Das Ende muss nach dem Beginn liegen.");
+        return new Slot(b, e, false);
+    }
+
+    /** Nicht existierende Ortszeiten nie still verschieben oder als verkehrten Zeitraum speichern. */
+    private static long localInstant(LocalDateTime time, ZoneId zone) {
+        if (zone.getRules().getValidOffsets(time).isEmpty()) {
+            throw new IllegalArgumentException("Die Uhrzeit „" + time + "“ gibt es wegen der Zeitumstellung nicht. "
+                    + "Bitte eine andere Uhrzeit nennen.");
+        }
+        return time.atZone(zone).toInstant().toEpochMilli();
     }
 
     /** Erster Moment des Tages „from“ bis erster Moment nach dem Tag „to“ – in Ortszeit, als Millisekunden. */

@@ -63,6 +63,7 @@ public class SettingsActivity extends AppCompatActivity {
         prefs = new Prefs(this);
         b.toolbar.setNavigationOnClickListener(v -> finish());
 
+        setupAvailability();
         setupBrain();
         setupVoiceControl();
         setupVoice();
@@ -73,6 +74,49 @@ public class SettingsActivity extends AppCompatActivity {
         setupBackup();
         b.versionText.setText("Jarvis " + versionName());
         hideTicks(b.sliderSensitivity, b.sliderBargeIn, b.sliderPause, b.sliderCostLimit, b.sliderRate, b.sliderPitch);
+    }
+
+    private final ActivityResultLauncher<String> readyPermission = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), granted -> updateReadyStatus());
+
+    private void setupAvailability() {
+        b.switchReady.setChecked(prefs.readyAfterRestart());
+        b.switchReady.setOnCheckedChangeListener((button, enabled) -> {
+            prefs.setReadyAfterRestart(enabled);
+            if (!enabled) ReadyReceiver.cancel(this);
+            if (enabled && android.os.Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                readyPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+            }
+            updateReadyStatus();
+        });
+        b.addQuickTile.setOnClickListener(v -> {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                android.app.StatusBarManager bar = getSystemService(android.app.StatusBarManager.class);
+                bar.requestAddTileService(new android.content.ComponentName(this, JarvisTileService.class),
+                        getString(R.string.app_name), android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_jarvis),
+                        getMainExecutor(), result -> android.widget.Toast.makeText(this,
+                                result == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED
+                                        || result == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED
+                                        ? "Jarvis-Kachel verfügbar." : "Kachel wurde nicht hinzugefügt.",
+                                android.widget.Toast.LENGTH_SHORT).show());
+            } else {
+                android.widget.Toast.makeText(this, "Schnelleinstellungen öffnen, bearbeiten und Jarvis hinzufügen.",
+                        android.widget.Toast.LENGTH_LONG).show();
+            }
+        });
+        updateReadyStatus();
+    }
+
+    private void updateReadyStatus() {
+        android.app.NotificationManager nm = getSystemService(android.app.NotificationManager.class);
+        android.app.NotificationChannel channel = nm.getNotificationChannel("jarvis_ready");
+        boolean allowed = nm.areNotificationsEnabled()
+                && (channel == null || channel.getImportance() != android.app.NotificationManager.IMPORTANCE_NONE);
+        b.readyStatus.setText(!prefs.readyAfterRestart() ? "Neustarthinweis ausgeschaltet."
+                : allowed ? "Nach Neustart oder Update erscheint ein stiller Hinweis. Antippen, dann Jarvis starten."
+                : "Hinweis vorgemerkt, aber Benachrichtigungen sind blockiert. In Android für Jarvis erlauben.");
     }
 
     /** Ohne die Rasterpunkte wirken die Regler ruhiger. */
@@ -653,6 +697,7 @@ public class SettingsActivity extends AppCompatActivity {
         updateOverlayWarning();
         updateUsageAccess(); // zurück von der Systemseite: Freigabe erteilt?
         updateBattery();
+        updateReadyStatus();
         refreshService();
     }
 

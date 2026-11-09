@@ -200,7 +200,8 @@ public class JarvisService extends Service {
     private boolean heardSomething;
     private boolean finishRequested;
     /** Jede Anfrage bekommt eine Nummer; Antworten auf überholte Anfragen werden verworfen. */
-    private int requestId;
+    // Haupt-Thread schreibt; die Werkzeug-Schleife prüft den Auftrag auf ihrem Netzwerk-Thread.
+    private volatile int requestId;
     /** Zuletzt angewendeter Modus – wechselt er (Alltag ↔ Spiel), beginnt ein frisches Gespräch. */
     private boolean appliedGameMode;
 
@@ -339,6 +340,7 @@ public class JarvisService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        requestId++; // Alte Instanz bleibt auch nach einem späteren Dienst-Neustart ungültig.
         ClaudeClient.costListener = null;
         continuous = false;
         screenShared = false;
@@ -1552,7 +1554,8 @@ public class JarvisService extends Service {
         // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
         // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
         claude.send(key, prefs.model(), system, messages, effortFor(text),
-                withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
+                withTools ? ClaudeClient.whileActive(tools, () -> running && id == requestId) : null,
+                stream == null ? null : delta -> onStreamText(stream, delta), callback);
     }
 
     /**
@@ -1705,7 +1708,7 @@ public class JarvisService extends Service {
         if (!continuous) return;
         continuous = false;
         main.removeCallbacks(relisten);
-        if (state == State.THINKING) requestId++; // Art hat beendet – die ausstehende Antwort nicht mehr vorlesen
+        requestId++; // Auch beim Streaming: keine verspätete Antwort und keine weiteren Kalender-Aufrufe.
         stopSpeaking();
         if (state == State.LISTENING) {
             main.removeCallbacks(pauseElapsed);

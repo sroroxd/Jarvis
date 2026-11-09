@@ -210,26 +210,29 @@ final class Tools implements ClaudeClient.ToolRunner {
         String place = input.optString("ort", "").trim();
         if (!place.isEmpty()) v.put(CalendarContract.Events.EVENT_LOCATION, place);
         ContentResolver cr = context.getContentResolver();
-        Uri created = cr.insert(CalendarContract.Events.CONTENT_URI, v);
-        if (created == null) throw new IllegalStateException("Der Kalender hat den Termin nicht angenommen.");
-
         int reminder = input.has("erinnerung_minuten")
                 ? input.optInt("erinnerung_minuten", DEFAULT_REMINDER_MIN)
                 : (slot.allDay ? -1 : DEFAULT_REMINDER_MIN);
-        if (reminder >= 0) {
-            ContentValues r = new ContentValues();
-            r.put(CalendarContract.Reminders.EVENT_ID, ContentUris.parseId(created));
-            r.put(CalendarContract.Reminders.MINUTES, reminder);
-            r.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
-            try {
-                cr.insert(CalendarContract.Reminders.CONTENT_URI, r);
-            } catch (Exception ignored) {
-                // Termin steht – nur die Erinnerung fehlt dann.
+        CalendarWrite.Result result = CalendarWrite.save(new CalendarWrite.Store() {
+            private Uri created;
+
+            @Override
+            public boolean insertEvent() {
+                created = cr.insert(CalendarContract.Events.CONTENT_URI, v);
+                return created != null;
             }
-        }
+
+            @Override
+            public boolean insertReminder(int minutes) {
+                ContentValues r = new ContentValues();
+                r.put(CalendarContract.Reminders.EVENT_ID, ContentUris.parseId(created));
+                r.put(CalendarContract.Reminders.MINUTES, minutes);
+                r.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
+                return cr.insert(CalendarContract.Reminders.CONTENT_URI, r) != null;
+            }
+        }, reminder);
         Agenda.Entry e = new Agenda.Entry(title, slot.begin, slot.end, slot.allDay, place, calendarName);
-        return "Eingetragen: " + Agenda.describe(e, zone)
-                + (reminder >= 0 ? ", Erinnerung " + reminder + " Minuten vorher." : ".");
+        return result.describe(Agenda.describe(e, zone));
     }
 
     /** Fehlertext, den {@link #run} als is_error markiert. */
