@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Nur zu fragen, ob das Netz Mobilfunk ist (Warnung vor dem Modell-Download); wird ohne Nachfrage erteilt. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Selbst-Update: neue geprüfte Version direkt einspielen, ohne Datei im Download-Ordner -->
@@ -81,6 +82,23 @@
         <receiver
             android:name=".UpdateReceiver"
             android:exported="false" />
+
+        <receiver android:name=".ReadyReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name=".JarvisTileService"
+            android:label="@string/app_name"
+            android:icon="@drawable/ic_jarvis"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".JarvisService"

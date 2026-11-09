@@ -86,7 +86,7 @@ if vorne | grep -q SettingsActivity; then
   # „Sprechpause“ gibt es schon lange: ist es sichtbar, hat das Auslesen funktioniert – dann ist ein fehlendes
   # neues Bedienelement ein echter Fehler. Ist selbst „Sprechpause“ nicht auslesbar, lag es am Emulator (nur Hinweis).
   if grep -qF "Sprechpause" shots/einstellungen_ui.txt; then
-    for label in "Tagesgrenze"; do
+    for label in "Tagesgrenze" "Nach Neustart erinnern" "Jarvis-Kachel hinzufügen"; do
       if grep -qF "$label" shots/einstellungen_ui.txt; then
         say "  Einstellung vorhanden: $label"
       else
@@ -336,6 +336,57 @@ except Exception:
     say "Hinweis: Update-Weg nicht geprüft (GitHub-API antwortete HTTP $relcode – meist die Abfragegrenze ohne Anmeldung)"
   fi
   rm -f /tmp/release.json
+fi
+
+# ---------------------------------------------------------------- Bereitschaft nach echtem Paket-Update
+# Kein künstlich gesendeter Boot-Broadcast: erneutes Installieren löst MY_PACKAGE_REPLACED aus.
+# Aktivierung wie am Handy über die Oberfläche, ohne Test-Hintertür in der Release-App.
+adb shell am start -n "$ACT" >/dev/null 2>&1
+sleep 2
+adb shell input tap 989 228
+sleep 2
+adb shell uiautomator dump /sdcard/ready_ui.xml >/dev/null 2>&1
+adb shell cat /sdcard/ready_ui.xml > /tmp/ready_ui.xml
+ready_tap=$(python3 - "$PKG" <<'PY'
+import re, sys, xml.etree.ElementTree as ET
+try:
+    root = ET.parse('/tmp/ready_ui.xml')
+    node = next(n for n in root.iter('node') if n.get('resource-id') == sys.argv[1] + ':id/switchReady')
+    if node.get('checked') == 'true':
+        print('enabled')
+    else:
+        x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds', '')))
+        print((x1+x2)//2, (y1+y2)//2)
+except Exception:
+    print('missing')
+PY
+)
+if [ "$ready_tap" = missing ]; then
+  say "FEHLER: Neustarthinweis-Schalter fehlt"; uifail=1
+else
+  if [ "$ready_tap" != enabled ]; then adb shell input tap $ready_tap; fi
+  sleep 2
+  adb shell input keyevent KEYCODE_HOME
+  if ! adb install -r "$APK" >> "$report" 2>&1; then
+    say "FEHLER: Bereitschafts-Update konnte nicht installiert werden"; uifail=1
+  else
+    sleep 8
+    if adb shell dumpsys notification | grep -E "NotificationRecord.*pkg=$PKG .*id=2002" >/dev/null; then
+      say "BESTANDEN: Echter Paket-Update erzeugt Bereitschaftshinweis."
+    else
+      say "FEHLER: Bereitschaftshinweis nach Paket-Update fehlt"; uifail=1
+    fi
+    if adb shell dumpsys activity services "$PKG" | grep -q 'JarvisService'; then
+      say "FEHLER: Paket-Update hat ohne Antippen den Sprachdienst gestartet"; uifail=1
+    fi
+    adb shell am start -n "$ACT" >/dev/null 2>&1
+    sleep 2
+    if adb shell dumpsys notification | grep -E "NotificationRecord.*pkg=$PKG .*id=2002" >/dev/null; then
+      say "FEHLER: Bereitschaftshinweis nach Öffnen noch aktiv"; uifail=1
+    else
+      say "BESTANDEN: Öffnen entfernt Bereitschaftshinweis."
+    fi
+  fi
 fi
 
 # ---------------------------------------------------------------- Auswertung

@@ -31,6 +31,40 @@
             android:orientation="vertical"
             android:paddingHorizontal="16dp">
 
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Jarvis.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchReady"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Nach Neustart erinnern" />
+                    <TextView
+                        android:id="@+id/readyStatus"
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Der Hinweis und die Kachel öffnen Jarvis. Mikrofon und Bildschirmfreigabe starten erst in der App. Kein dauerhaft laufender Zusatzdienst." />
+                    <Button
+                        android:id="@+id/addQuickTile"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Jarvis-Kachel hinzufügen" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- ===================================================== Gehirn -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Jarvis.Card"

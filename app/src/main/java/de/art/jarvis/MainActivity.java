@@ -170,6 +170,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     @Override
     protected void onStart() {
         super.onStart();
+        ReadyReceiver.cancel(this);
         JarvisService.setUiListener(this);
         render();
         checkForUpdate();

@@ -27,6 +27,12 @@ public final class Prefs {
         sp = context.getSharedPreferences("jarvis", Context.MODE_PRIVATE);
     }
 
+    public boolean readyAfterRestart() { return sp.getBoolean("ready_after_restart", false); }
+
+    public void setReadyAfterRestart(boolean enabled) {
+        sp.edit().putBoolean("ready_after_restart", enabled).apply();
+    }
+
     public String apiKey() {
         return sp.getString("api_key", "").trim();
     }
