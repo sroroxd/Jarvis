@@ -12,10 +12,28 @@ Fragen nur bei wirklich wichtigen Dingen: Geld und Konten (Guthaben, Schlüssel 
 etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Löschen, Zusammenführen nach
 `main`, und Sicherheitsrisiken für Arts Konten oder Handy. Dann mit klarer Empfehlung, nicht als Auswahl.
 
+## Umgebung
+
+- **Windows-Rechner.** Standard-Shell ist **Git Bash** für Git, Dateien und Skripte;
+  **PowerShell** nur für Windows- oder Gerätesachen (adb, Installer, `Invoke-WebRequest`).
+  Nicht raten, welche Shell: diese Aufteilung gilt.
+- **Kein lokales JDK und kein Gradle.** Gebaut und getestet wird **nicht hier, sondern in
+  der CI** bei jedem Push (`.github/workflows/build.yml`): `gradle --no-daemon [-PtestApp]
+  :wakeword:test testDebugUnitTest assembleRelease assembleDebug`, danach der Emulator-
+  Gerätetest. Darum Änderungen auf einen Zweig pushen und das CI-Ergebnis abwarten, statt
+  einen lokalen Build zu versuchen. Unit-Tests lassen sich nur über die CI prüfen.
+- **Zugang zu Arts Handy über USB (adb)**, wenn es angesteckt ist: Test-App installieren
+  und starten, messen (CPU, Bilder/s, Speicher, Akku, Netz), Logcat und Abstürze lesen,
+  Bildschirmfotos. Kein Root (`su` fehlt); die Test-App ist Release, also nicht `run-as`-
+  lesbar. Systemeinstellungen auf dem Handy nicht selbst ändern – dafür `handy/tuning.ps1`,
+  das Art mit Rückfrage startet.
+
 ## Arbeitsweise
 
 - `main` bleibt jederzeit lauffähig. Nie direkt nach `main` pushen: jede Änderung
   auf einem eigenen Zweig mit Pull Request.
+- Nach dem Push das CI-/PR-Ergebnis prüfen (Build, Unit-Tests, Emulator-Gerätetest) und
+  fehlgeschlagene Prüfungen melden, bevor etwas als fertig gilt.
 - Jeder Arbeitszweig baut automatisch die Test-App „Jarvis Test“ (eigene Paket-ID
   `de.art.jarvis.test`, eigene Einstellungen). Art testet dort, bevor etwas nach
   `main` kommt.
@@ -26,9 +44,20 @@ etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Lösc
   `*.png`, direkt über `releases/download/vorschau/<Datei>` abrufbar). Vor jeder
   Übergabe an Art Bericht und Bilder selbst ansehen. Grenze: ohne API-Schlüssel,
   ohne Mikrofon, x86-Emulator statt S24 Ultra.
+- **Grundsatz (Arts Vorgabe, 9. Nov. 2026): Vor jedem Release wird jede Änderung auf
+  Fehler geprüft.** Nichts wird veröffentlicht, was Build, Unit-Tests und Emulator-
+  Gerätetest nicht bestanden hat – die CI veröffentlicht bei einem Fehlschlag keine APK.
+  Jede neue Funktion oder Änderung bekommt nach Möglichkeit eine **eigene automatische
+  Prüfung**, die belegt, dass sie wirklich funktioniert: Unit-Test für Logik, eine
+  Prüfung im Gerätetest (`geraetetest.sh`) für Oberfläche und Ablauf. Erst als Test-App
+  veröffentlichen; nach `main` erst nach Arts Gerätetest. Was sich in der CI nicht prüfen
+  lässt (Mikrofon, Echo, Akku, Stimme), ausdrücklich als ungeprüft benennen.
 - Pushes mit Arts privater Mail-Adresse werden von GitHub abgelehnt. Commits mit
   Autor `sroroxd <193030253+sroroxd@users.noreply.github.com>` und Committer
   `Claude <noreply@anthropic.com>` anlegen.
+- Commit-Texte: deutsche, beschreibende Betreffzeile (was und warum), kein
+  Conventional-Commits-Schema (`feat:`/`fix:`). Reine Doku-Commits mit `[skip actions]`,
+  damit sie keinen App-Build auslösen.
 - Zweige und Releases löschen ist aus der Entwicklungsumgebung gesperrt. Das
   erledigt Art im Browser.
 - Nichts als erledigt melden, was nicht gebaut oder getestet wurde. Wenn Tests in

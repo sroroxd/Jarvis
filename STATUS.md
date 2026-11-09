@@ -136,12 +136,45 @@ GitHub-Antworten geprüft.
 **Lint:** keine Fehler mehr (`clearCommunicationDevice` braucht API 31), keine ungenutzte Ressource
 (`ic_mic.xml` entfernt). README auf den heutigen Stand gebracht.
 
+### Messung per USB direkt am S24 Ultra (8. Nov., 23:30–0:30 Uhr)
+
+Erstmals hing Arts Handy per `adb` am Rechner – gemessen statt geschätzt:
+
+- **Abstürze:** 10 echte Abstürze heute, alle in Build 100–103, alle dieselbe Ursache (fehlende Berechtigung
+  `ACCESS_NETWORK_STATE` beim Knopf „Offline-Stimme ausprobieren“). Seit Build 104 behoben; im Protokoll danach
+  keiner mehr.
+- **Kaltstart:** 161 ms. **Ruckler:** 0,2 % langsame Bilder. **Speicher:** 106 MB PSS, davon 77 MB Grafik.
+- **Reaktor-Knopf zeichnete durchgehend 55–61 Bilder/s, die App lag bei 20–28 % CPU.** Jetzt gedrosselt
+  (`ReactorView.frameGapMs`, ein einziger Zeichentakt): Nachdenken und Sprechen bleiben flüssig.
+  Nachgemessen auf dem Handy mit Build 110: aus 10 Bilder/s bei 6 % CPU, zuhören 23 Bilder/s bei 13–17 % CPU,
+  0 langsame Bilder. (Build 109 hatte noch gestapelte Zeichenschleifen – 55 Bilder/s beim Zuhören.)
+- **Kosten: 875 ct an einem Tag**, laut Netzstatistik rund 27 MB Upload (mehrere hundert Bildschirmfotos) – der
+  größte Teil vor der Kostenbremse aus PR #56. Wofür genau, ließ sich nicht sagen. Jetzt:
+  - Aufschlüsselung je Weg (Fragen, Filter, Wächter, Recherche) auf dem Startbildschirm (`Costs.Kind`).
+  - **Tagesgrenze** (Einstellungen → Sprachsteuerung, Standard 5 $, 0 = aus): darüber geht bei offenem Mikrofon
+    nur noch an Claude, was „Jarvis“ enthält oder Folgefrage ist; der Phasen-Wächter pausiert. Einmal am Tag
+    still eingeblendet. Arts eigene Fragen gehen immer durch.
+- **Bildschirmfoto schlanker** (`ScreenGrabber.toBitmap`, Build 111): legte pro Aufnahme einen ~7 MB großen
+  Zwischenpuffer und ein gepolstertes Bitmap neu an – im Spiel alle 6 s. Jetzt wird bei vollständigem
+  Mitschnitt-Puffer direkt daraus gelesen, sonst durch einen wiederverwendeten Puffer, und das gepolsterte Bitmap
+  bleibt stehen (nur bei Drehung neu). Pixel-Logik unverändert. *Geprüft:* CI-Build, alle Tests, Emulator-Test
+  (Wächter 6/6 auf echten TFT-Bildern), auf dem Handy installiert und stabil (Start 138 ms). *Ungeprüft:* der
+  Aufnahmepfad läuft weder in CI noch im Emulator mit echter Bildschirmfreigabe – die Ersparnis an Wärme und Akku
+  zeigt erst eine echte TFT-Partie.
+- **Handy selbst:** schon gut eingestellt (adaptive Bildrate, Animationen 0,5, Thermik unauffällig).
+  `handy/tuning.ps1` sichert die Werte, übersetzt Jarvis vorab (ART „speed“), leert auf Wunsch rund 10 GB
+  App-Cache und stellt Animationen auf 0,35 – jede Stufe mit Rückfrage, `-Zurueck` stellt her.
+
 ## Was als Nächstes kommt
 
 0. **Aus dem claude.ai-Chat „Jarvis APK Verbesserung“ (2.–8. Nov.) noch offen:** eigenes Symbol für die
    Test-App und den Schnellstart („Jarvis zuhören“ mit Mikrofon-Symbol). Die automatische TFT-Erkennung
    ist seit dem 8. Nov. gebaut, Wunsch #23 ebenso (siehe Punkt 14 der Gesamtprüfung).
-1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 liegt in `sammeltest`
+1. **Agenten-Rückgrat, Baustein 2.** Baustein 1 ist in `main` und **läuft seit 9. Nov. auf Arts Handy**
+   (Node, Claude Code 2.1.319, Dienst auf `127.0.0.1:8777`; Anmeldung über Abo; echter Auftrag Ende-zu-Ende
+   bestätigt). Dabei behoben: Der Agent setzt beim Start von Claude `IS_SANDBOX=1` (sonst verweigert Claude
+   Code `bypassPermissions` als root im Container), der Anmelde-Befehl braucht den vollen Pfad
+   `/root/.local/bin/claude`, und `einrichten.sh` erkennt einen bereits vorhandenen Container.
    (Aufträge über Claude Code in Termux, Abo statt Guthaben). Als Nächstes:
    Zwischenstände während langer Aufträge (`--output-format stream-json`), eigene
    Skill-Ordner im Arbeitsordner, und das automatische Erkennen von Aufgaben, die

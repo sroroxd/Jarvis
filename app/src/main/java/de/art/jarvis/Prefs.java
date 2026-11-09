@@ -165,16 +165,59 @@ public final class Prefs {
     private static final Object COST_LOCK = new Object();
 
     /** Zählt eine Anfrage zur Tagessumme; ein neuer Tag beginnt bei null. Aus jedem Thread aufrufbar. */
-    public void addCost(String day, double usd) {
+    public void addCost(String day, Costs.Kind kind, double usd) {
         synchronized (COST_LOCK) {
+            boolean sameDay = day.equals(sp.getString("cost_day", ""));
+            SharedPreferences.Editor e = sp.edit();
+            // Neuer Tag: alle Posten auf null, nicht nur die Summe.
+            if (!sameDay) for (Costs.Kind k : Costs.Kind.values()) e.remove(costKey(k));
             double sum = costToday(day) + usd;
-            sp.edit().putString("cost_day", day).putFloat("cost_usd", (float) sum).apply();
+            String k = costKey(kind);
+            double part = (sameDay ? sp.getFloat(k, 0f) : 0) + usd;
+            e.putString("cost_day", day).putFloat("cost_usd", (float) sum).putFloat(k, (float) part).apply();
         }
+    }
+
+    private static String costKey(Costs.Kind kind) {
+        return "cost_usd_" + kind.name().toLowerCase(java.util.Locale.ROOT);
     }
 
     /** Ausgaben heute in US-Dollar (Fragen, ungefragte Ansagen, Phasen-Wächter, Meta-Recherche). */
     public double costToday(String day) {
         return day.equals(sp.getString("cost_day", "")) ? sp.getFloat("cost_usd", 0f) : 0;
+    }
+
+    /** Ausgaben heute je {@link Costs.Kind}, in derselben Reihenfolge. */
+    public double[] costTodayByKind(String day) {
+        Costs.Kind[] kinds = Costs.Kind.values();
+        double[] out = new double[kinds.length];
+        if (!day.equals(sp.getString("cost_day", ""))) return out;
+        for (int i = 0; i < kinds.length; i++) out[i] = sp.getFloat(costKey(kinds[i]), 0f);
+        return out;
+    }
+
+    /** Tagesgrenze in US-Cent; 0 = keine. Standard 5 Dollar – ein normaler Tag lag bei 0,5–1 Dollar. */
+    public static final int DEFAULT_COST_LIMIT_CENTS = 500;
+
+    public int costLimitCents() {
+        return sp.getInt("cost_limit_cents", DEFAULT_COST_LIMIT_CENTS);
+    }
+
+    public void setCostLimitCents(int value) {
+        sp.edit().putInt("cost_limit_cents", Math.max(0, value)).apply();
+    }
+
+    public boolean overCostLimit(String day) {
+        return Costs.overLimit(costToday(day), costLimitCents());
+    }
+
+    /** Tag, an dem Jarvis die Tagesgrenze schon angesagt hat (nur einmal pro Tag). */
+    public String costLimitNoticeDay() {
+        return sp.getString("cost_limit_notice_day", "");
+    }
+
+    public void setCostLimitNoticeDay(String day) {
+        sp.edit().putString("cost_limit_notice_day", day).apply();
     }
 
     // ------------------------------------------------------------ TFT-Meta aus dem Internet (täglich)

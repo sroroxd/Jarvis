@@ -274,6 +274,41 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="So lange wartet Jarvis nach deinem letzten Wort, bevor er antwortet. Länger = mehr Zeit zum Nachdenken." />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/Jarvis.Label"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Tagesgrenze für Kosten" />
+
+                        <TextView
+                            android:id="@+id/costLimitValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorPrimary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderCostLimit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:stepSize="1"
+                        android:valueFrom="0"
+                        android:valueTo="20" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Ab dieser Summe am Tag (US-Dollar) antwortet Jarvis bei offenem Mikrofon nur noch, wenn du „Jarvis“ sagst oder ihr gerade im Gespräch seid, und das ungefragte Coaching pausiert. Deine Fragen gehen immer durch. 0 = keine Grenze. Standard: 5 $." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

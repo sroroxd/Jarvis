@@ -128,6 +128,7 @@ final class ClaudeClient {
      */
     void sendWithWebSearch(String apiKey, String model, String system, String userText, int maxUses, Callback callback) {
         background.execute(() -> {
+            kindHere.set(Costs.Kind.RECHERCHE);
             Result r;
             try {
                 JSONArray tools = new JSONArray().put(webSearchTool(maxUses));
@@ -154,12 +155,18 @@ final class ClaudeClient {
      * Adaptiv mit „low“ – bei so einfachen Fragen denkt das Modell laut Doku meist gar nicht nach.
      */
     void sendQuick(String apiKey, String model, String system, JSONArray messages, Callback callback) {
-        quick.execute(() -> quickRequest(apiKey, model, system, messages, callback));
+        quick.execute(() -> {
+            kindHere.set(Costs.Kind.WAECHTER);
+            quickRequest(apiKey, model, system, messages, callback);
+        });
     }
 
     /** Wie {@link #sendQuick}, aber für den Filter vor Claude (siehe {@link ListenRules}) auf eigenem Thread. */
     void sendGate(String apiKey, String model, String system, JSONArray messages, Callback callback) {
-        gate.execute(() -> quickRequest(apiKey, model, system, messages, callback));
+        gate.execute(() -> {
+            kindHere.set(Costs.Kind.FILTER);
+            quickRequest(apiKey, model, system, messages, callback);
+        });
     }
 
     /**
@@ -389,8 +396,14 @@ final class ClaudeClient {
 
     /** Bekommt jede abgerechnete Anfrage, auch Phasen-Wächter und Meta-Recherche (für die Tagessumme). Beliebiger Thread. */
     interface CostListener {
-        void spent(double usd);
+        void spent(Costs.Kind kind, double usd);
     }
+
+    /**
+     * Wofür dieser Thread abrechnet. Jeder Weg zu Claude hat seinen eigenen Executor-Thread; die Threads von
+     * Recherche, Wächter und Filter setzen ihre Art beim ersten Auftrag, alle anderen zählen als Fragen.
+     */
+    private static final ThreadLocal<Costs.Kind> kindHere = ThreadLocal.withInitial(() -> Costs.Kind.FRAGEN);
 
     static volatile CostListener costListener;
     /** Summe der Anfragen dieses Threads seit dem letzten Zurücksetzen – jeder Executor hat seinen eigenen Thread. */
@@ -401,7 +414,7 @@ final class ClaudeClient {
         double usd = Costs.usd(model, u.input, u.cacheWrite, u.cacheRead, u.output, u.searches);
         spentHere.get()[0] += usd;
         CostListener l = costListener;
-        if (l != null) l.spent(usd);
+        if (l != null) l.spent(kindHere.get(), usd);
     }
 
     /** Verbrauch einer Antwort: Eingabe aufgeteilt in normal, aus dem Zwischenspeicher gelesen und neu hineingeschrieben. */

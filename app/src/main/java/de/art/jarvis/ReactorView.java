@@ -213,7 +213,41 @@ public class ReactorView extends View {
         float ty = cy - (textPaint.descent() + textPaint.ascent()) / 2f;
         canvas.drawText(label, cx, ty, textPaint);
 
-        if (getWindowVisibility() == VISIBLE && isAttachedToWindow()) postInvalidateOnAnimation();
+        // Genau EIN geplanter Takt: Ruft jemand von außen invalidate() (die Startseite aktualisiert sich laufend),
+        // darf daraus keine zweite Schleife werden. Mit postInvalidateDelayed stapelten sich die Schleifen –
+        // gemessen 55 statt 30 Bilder/s beim Zuhören (Build 109).
+        removeCallbacks(tick);
+        if (getWindowVisibility() == VISIBLE && isAttachedToWindow()) {
+            long gap = frameGapMs(mode);
+            if (gap <= 0) postInvalidateOnAnimation();
+            else postDelayed(tick, gap);
+        }
+    }
+
+    private final Runnable tick = this::invalidate;
+
+    @Override
+    protected void onDetachedFromWindow() {
+        removeCallbacks(tick);
+        super.onDetachedFromWindow();
+    }
+
+    /**
+     * Pause bis zum nächsten Bild. Gemessen auf Arts S24 Ultra (Build 107): Der Knopf zeichnete im Ruhezustand
+     * durchgehend 61 Bilder pro Sekunde, die App lag dabei bei 27 % CPU, und das Display kam nicht in seine
+     * sparsame niedrige Bildrate. Langsame Drehungen (6–60 °/s) und das Atmen brauchen das nicht: aus 12, bereit
+     * und zuhören 30 Bilder pro Sekunde. Nur Nachdenken (220 °/s) und Sprechen bleiben flüssig.
+     */
+    static long frameGapMs(Mode m) {
+        switch (m) {
+            case THINKING:
+            case SPEAKING:
+                return 0;
+            case OFF:
+                return 83;
+            default:
+                return 33;
+        }
     }
 
     /** Farbverläufe nur neu bauen, wenn sich Farbe oder Größe ändert. */

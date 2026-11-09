@@ -32,6 +32,13 @@ final class ScreenGrabber {
     private Image latest;
     private int width;
     private int height;
+    /**
+     * Wiederverwendete Arbeitsflächen für {@link #toBitmap} – nur unter {@link #lock} angefasst. Vorher legte jedes
+     * Foto einen rund 7 MB großen Puffer und ein gepolstertes Bitmap neu an; im Spiel alle 6 Sekunden. Das kostete
+     * Wärme und Müllsammeln. Jetzt bleibt beides stehen und wird nur bei einer anderen Größe (Drehung) neu gebaut.
+     */
+    private ByteBuffer copyScratch;
+    private Bitmap paddedScratch;
 
     ScreenGrabber(MediaProjection projection) {
         this.projection = projection;
@@ -60,6 +67,11 @@ final class ScreenGrabber {
                 if (latest != null) {
                     latest.close();
                     latest = null;
+                }
+                // Andere Größe: die große Arbeitsfläche freigeben, toBitmap baut sie beim nächsten Bild neu.
+                if (paddedScratch != null) {
+                    paddedScratch.recycle();
+                    paddedScratch = null;
                 }
             }
             reader = newReader(s[0], s[1]);
@@ -117,7 +129,9 @@ final class ScreenGrabber {
         return out.toByteArray();
     }
 
-    private static Bitmap toBitmap(Image img) {
+    /** Nur unter {@link #lock} aufrufen – nutzt die wiederverwendeten Arbeitsflächen. Gibt ein eigenes Bitmap zurück,
+     *  das der Aufrufer freigeben darf; die Arbeitsflächen bleiben stehen. */
+    private Bitmap toBitmap(Image img) {
         Image.Plane plane = img.getPlanes()[0];
         ByteBuffer src = plane.getBuffer();
         int pixelStride = plane.getPixelStride();
@@ -125,22 +139,34 @@ final class ScreenGrabber {
         int w = img.getWidth();
         int h = img.getHeight();
         int paddedWidth = rowStride / pixelStride;
+        int needed = rowStride * h; // = paddedWidth * pixelStride * h
 
-        // Puffer auf volle Größe bringen – die letzte Zeile hat oft kein Padding.
-        ByteBuffer dst = ByteBuffer.allocate(paddedWidth * pixelStride * h);
         src.rewind();
-        int count = Math.min(src.remaining(), dst.capacity());
-        ByteBuffer slice = src.duplicate();
-        slice.limit(slice.position() + count);
-        dst.put(slice);
-        dst.rewind();
+        ByteBuffer buf;
+        if (src.remaining() >= needed) {
+            // Mitschnitt-Puffer ist vollständig: direkt daraus lesen, ohne eine zweite ~7-MB-Kopie.
+            buf = src;
+        } else {
+            // Letzte Zeile ohne Padding: in den wiederverwendeten Puffer kopieren (keine Allokation je Bild). Die
+            // fehlenden Bytes liegen in der Polster-Spalte der letzten Zeile und werden gleich weggeschnitten.
+            if (copyScratch == null || copyScratch.capacity() < needed) copyScratch = ByteBuffer.allocate(needed);
+            copyScratch.clear();
+            int count = Math.min(src.remaining(), needed);
+            ByteBuffer slice = src.duplicate();
+            slice.limit(slice.position() + count);
+            copyScratch.put(slice);
+            copyScratch.rewind();
+            buf = copyScratch;
+        }
 
-        Bitmap padded = Bitmap.createBitmap(paddedWidth, h, Bitmap.Config.ARGB_8888);
-        padded.copyPixelsFromBuffer(dst);
-        if (paddedWidth == w) return padded;
-        Bitmap cropped = Bitmap.createBitmap(padded, 0, 0, w, h);
-        padded.recycle();
-        return cropped;
+        // Gepolstertes Bitmap stehen lassen und wiederverwenden; nur bei anderer Größe neu bauen.
+        if (paddedScratch == null || paddedScratch.getWidth() != paddedWidth || paddedScratch.getHeight() != h) {
+            if (paddedScratch != null) paddedScratch.recycle();
+            paddedScratch = Bitmap.createBitmap(paddedWidth, h, Bitmap.Config.ARGB_8888);
+        }
+        paddedScratch.copyPixelsFromBuffer(buf);
+        // Immer ein eigenes Bitmap (w × h) zurückgeben; paddedScratch bleibt die Arbeitsfläche.
+        return Bitmap.createBitmap(paddedScratch, 0, 0, w, h);
     }
 
     private static Bitmap scale(Bitmap b, int maxEdge) {
@@ -157,6 +183,11 @@ final class ScreenGrabber {
                 latest.close();
                 latest = null;
             }
+            if (paddedScratch != null) {
+                paddedScratch.recycle();
+                paddedScratch = null;
+            }
+            copyScratch = null;
         }
         if (display != null) {
             display.release();

@@ -5,8 +5,7 @@
 # Start in Termux (eine Zeile):
 #   curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/main/agent/einrichten.sh | bash
 #
-# Solange der Sammelstand noch nicht in main ist, mit Zweig davor:
-#   JARVIS_REF=sammeltest bash -c "$(curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/sammeltest/agent/einrichten.sh)"
+# (Von einem anderen Zweig testen: JARVIS_REF=<zweig> davorsetzen.)
 #
 # Was das Skript tut:
 #   1. Termux-Pakete nachziehen (proot-distro, curl)
@@ -36,11 +35,15 @@ done
 command -v proot-distro >/dev/null 2>&1 || pkg install -y proot-distro
 
 sag "Ubuntu-Container prüfen"
-if proot-distro list --installed 2>/dev/null | grep -q "$DISTRO"; then
+# Auch den Rootfs-Ordner prüfen: „list --installed“ zeigt einen vorhandenen Container nicht immer an,
+# „install“ bricht dann aber mit „already exists“ ab (unter set -e stürbe das ganze Skript). Dann lieber
+# den vorhandenen Container nehmen und mit Teil 2 weitermachen.
+if proot-distro list --installed 2>/dev/null | grep -qw "$DISTRO" \
+   || [ -d "$PREFIX/var/lib/proot-distro/installed-rootfs/$DISTRO" ]; then
   echo "Ubuntu ist schon da."
 else
   echo "Ubuntu wird installiert – das dauert ein paar Minuten."
-  proot-distro install "$DISTRO"
+  proot-distro install "$DISTRO" || echo "Ubuntu war schon vorhanden – weiter mit Teil 2."
 fi
 
 sag "Teil 2 in den Container holen"

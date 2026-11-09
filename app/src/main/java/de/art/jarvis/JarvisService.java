@@ -243,7 +243,11 @@ public class JarvisService extends Service {
         appliedGameMode = prefs.tftMode();
         claude = new ClaudeClient();
         // Tagessumme der Kosten: jede Anfrage zählt, auch Phasen-Wächter und Meta-Recherche (Arts Plan vom 30. Okt.).
-        ClaudeClient.costListener = usd -> prefs.addCost(today(), usd);
+        ClaudeClient.costListener = (kind, usd) -> {
+            prefs.addCost(today(), kind, usd);
+            // Grenze gerade überschritten: einmal am Tag auf dem Haupt-Thread ansagen und den Wächter anhalten.
+            if (prefs.overCostLimit(today())) main.post(this::onCostLimit);
+        };
         tools = new Tools(this);
         agent = new AgentClient();
         eleven = new ElevenTts(this);
@@ -530,7 +534,7 @@ public class JarvisService extends Service {
 
     private boolean proactiveWanted() {
         return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
-                && !prefs.apiKey().isEmpty();
+                && !prefs.apiKey().isEmpty() && !prefs.overCostLimit(today());
     }
 
     /** Wächter an, wenn Spielmodus, Bildschirmfreigabe und Einstellung passen; sonst aus. */
@@ -1329,7 +1333,16 @@ public class JarvisService extends Service {
         long nowRt = SystemClock.elapsedRealtime();
         boolean openMic = continuous || testOpen;
         final PendingAsk pending = new PendingAsk(id, key, text);
-        if (ListenRules.needsGate(openMic, nowRt, lastExchangeAt, text)) {
+        boolean gateNeeded = ListenRules.needsGate(openMic, nowRt, lastExchangeAt, text);
+        if (gateNeeded && prefs.overCostLimit(today())) {
+            // Über der Tagesgrenze: nicht beim Namen genannt und kein laufendes Gespräch – schweigen, ohne Filter,
+            // ohne Bild, ohne Sonnet. Mit „Jarvis“ im Satz oder als Folgefrage geht es weiter normal.
+            testLog("antwort [kostengrenze]: –");
+            setState(State.IDLE);
+            scheduleRelisten(RELISTEN_DELAY_MS);
+            return;
+        }
+        if (gateNeeded) {
             askGate(key, text, nowRt, pending);
         } else {
             pending.gateDone = true;
@@ -1840,6 +1853,22 @@ public class JarvisService extends Service {
 
     private void say(String text) {
         speak(text);
+    }
+
+    /**
+     * Tagesgrenze der Kosten erreicht (Einstellungen → Sprachsteuerung). Einmal am Tag still einblenden – nicht
+     * sprechen, damit es nicht in eine laufende Antwort oder ins Spiel fährt – und den Phasen-Wächter anhalten.
+     * Ab jetzt gehen bei offenem Mikrofon nur noch Sätze mit „Jarvis“ und Folgefragen an Claude (siehe {@link #handleUtterance}).
+     */
+    private void onCostLimit() {
+        String day = today();
+        updateProactive();
+        if (day.equals(prefs.costLimitNoticeDay())) return;
+        prefs.setCostLimitNoticeDay(day);
+        testLog("kostengrenze erreicht");
+        caption("Tagesgrenze von " + Costs.cents(prefs.costLimitCents() / 100.0)
+                + " erreicht – ich antworte nur noch, wenn Sie „Jarvis“ sagen.");
+        notifyUi();
     }
 
     private boolean debuggable() {

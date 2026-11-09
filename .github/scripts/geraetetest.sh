@@ -12,6 +12,7 @@ mkdir -p shots
 report=shots/geraetetest.txt
 : > "$report"
 say() { echo "$*" | tee -a "$report"; }
+uifail=0  # 1, wenn ein neues Bedienelement nachweislich in der Oberfläche fehlt (siehe Einstellungen-Prüfung)
 
 # Der langsame CI-Emulator zeigt manchmal „Pixel Launcher isn't responding“ – ein Dialog einer FREMDEN App, der
 # dann alle Fingertipps abfängt (so am 8. Nov. in Build 74: Die Bilder „Einstellungen“ zeigten nur den Dialog).
@@ -68,14 +69,33 @@ if ! vorne | grep -q SettingsActivity; then
 fi
 if vorne | grep -q SettingsActivity; then
   einstellungen="Einstellungen geöffnet"
+  # Beim Durchscrollen die Oberfläche mitlesen, um zu prüfen, dass neue Bedienelemente wirklich da sind (#34):
+  # ein stilles Wiring-Problem (Regler fehlt im Layout) fiele sonst erst bei Art auf.
+  dump_ui() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml 2>/dev/null; }
+  : > shots/einstellungen_ui.txt
   adb exec-out screencap -p > shots/02_einstellungen_1.png
+  dump_ui >> shots/einstellungen_ui.txt
   for i in 2 3 4 5 6 7 8; do
     adb shell input swipe 540 1900 540 750 600
     sleep 2
     adb exec-out screencap -p > shots/02_einstellungen_$i.png
+    dump_ui >> shots/einstellungen_ui.txt
   done
   adb shell input keyevent KEYCODE_BACK
   sleep 2
+  # „Sprechpause“ gibt es schon lange: ist es sichtbar, hat das Auslesen funktioniert – dann ist ein fehlendes
+  # neues Bedienelement ein echter Fehler. Ist selbst „Sprechpause“ nicht auslesbar, lag es am Emulator (nur Hinweis).
+  if grep -qF "Sprechpause" shots/einstellungen_ui.txt; then
+    for label in "Tagesgrenze"; do
+      if grep -qF "$label" shots/einstellungen_ui.txt; then
+        say "  Einstellung vorhanden: $label"
+      else
+        say "  FEHLER Einstellung fehlt in der Oberfläche: $label"; uifail=1
+      fi
+    done
+  else
+    say "  Hinweis: Einstellungen ließen sich nicht auslesen (uiautomator) – neue Bedienelemente nicht geprüft"
+  fi
 else
   einstellungen="Einstellungen NICHT geprüft"
   say "WARNUNG: Einstellungen ließen sich nicht öffnen – vorne: $(vorne | tr -s ' ')"
@@ -320,6 +340,7 @@ fi
 
 # ---------------------------------------------------------------- Auswertung
 fail=$gfail
+[ "$uifail" = 1 ] && fail=1
 crashes=$(adb logcat -d -b crash 2>/dev/null | grep -A25 "Process: $PKG" || true)
 if [ -n "$crashes" ]; then
   say "FEHLER: Absturz"

@@ -16,11 +16,7 @@ In Termux eine Zeile:
 curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/main/agent/einrichten.sh | bash
 ```
 
-Solange der Sammelstand (PR #7) noch nicht in `main` ist:
-
-```sh
-JARVIS_REF=sammeltest bash -c "$(curl -fsSL https://raw.githubusercontent.com/sroroxd/Jarvis/sammeltest/agent/einrichten.sh)"
-```
+(Von einem anderen Zweig testen: `JARVIS_REF=<zweig>` davorsetzen.)
 
 Das Skript legt Ubuntu über `proot-distro` an, installiert Node und Claude Code,
 richtet den Dienst ein und zeigt am Ende das **Token**.
@@ -28,7 +24,8 @@ richtet den Dienst ein und zeigt am Ende das **Token**.
 Danach zweimal von Hand:
 
 1. **Anmelden** (einmalig, braucht Arts Konto):
-   `proot-distro login ubuntu -- claude` → mit dem Abo anmelden, dann beenden.
+   `proot-distro login ubuntu -- /root/.local/bin/claude` → mit dem Abo anmelden, dann
+   beenden. (Voller Pfad, weil `claude` ohne Login-Shell nicht im PATH liegt.)
 2. **Token** aus der Skriptausgabe in die Jarvis-Einstellungen eintragen,
    Abschnitt „Agent-Rückgrat", und den Schalter einschalten.
 
