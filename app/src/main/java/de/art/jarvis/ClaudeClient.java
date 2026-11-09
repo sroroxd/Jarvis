@@ -14,8 +14,10 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BooleanSupplier;
 
 /**
  * Schickt eine Unterhaltung an die Claude-API und liefert die Textantwort auf dem Hauptthread.
@@ -47,6 +49,31 @@ final class ClaudeClient {
         JSONArray definitions() throws JSONException;
         /** Führt einen „tool_use“-Block aus und liefert den passenden „tool_result“-Block. */
         JSONObject run(JSONObject toolUse) throws JSONException;
+        /** Gilt der Auftrag noch? Wird auch auf dem Netzwerk-Thread abgefragt. */
+        default boolean isActive() { return true; }
+    }
+
+    /** Bindet Werkzeuge an genau eine Frage; ein neuer/abgebrochener Auftrag darf nichts mehr ändern. */
+    static ToolRunner whileActive(ToolRunner delegate, BooleanSupplier active) {
+        return new ToolRunner() {
+            @Override public JSONArray definitions() throws JSONException { return delegate.definitions(); }
+            @Override public boolean isActive() { return active.getAsBoolean() && delegate.isActive(); }
+            @Override public JSONObject run(JSONObject call) throws JSONException {
+                if (!isActive()) throw new CancellationException("Anfrage abgebrochen.");
+                return delegate.run(call);
+            }
+        };
+    }
+
+    /** Derselbe Ausführungsweg für echte Antworten und Tests mit verspäteten Werkzeugaufrufen. */
+    static JSONArray runClientTools(ToolRunner tools, JSONArray content) throws JSONException {
+        if (!tools.isActive()) throw new CancellationException("Anfrage abgebrochen.");
+        JSONArray results = new JSONArray();
+        for (JSONObject call : clientToolCalls(content)) {
+            if (!tools.isActive()) throw new CancellationException("Anfrage abgebrochen.");
+            results.put(tools.run(call));
+        }
+        return results;
     }
 
     private static final String ENDPOINT = "https://api.anthropic.com/v1/messages";
@@ -220,6 +247,7 @@ final class ClaudeClient {
             return failed("Interner Fehler beim Vorbereiten der Anfrage.");
         }
         for (int round = 0; round < MAX_ROUNDS; round++) {
+            if (!tools.isActive()) return failed("Anfrage abgebrochen.");
             JSONArray defs;
             try {
                 defs = toolDefinitions(tools);
@@ -227,6 +255,7 @@ final class ClaudeClient {
                 return failed("Interner Fehler bei den Werkzeugen.");
             }
             Result r = ask(apiKey, model, system, convo, effort, defs, listener);
+            if (!tools.isActive()) return failed("Anfrage abgebrochen.");
             if (r.code == 400 && mentionsWebSearch(r.detail) && !webSearchUnavailable) {
                 // Websuche im Konto nicht freigeschaltet → ohne sie weitermachen statt ganz zu scheitern.
                 webSearchUnavailable = true;
@@ -237,8 +266,7 @@ final class ClaudeClient {
             try {
                 if ("tool_use".equals(r.stopReason)) {
                     convo.put(new JSONObject().put("role", "assistant").put("content", r.content));
-                    JSONArray results = new JSONArray();
-                    for (JSONObject call : clientToolCalls(r.content)) results.put(tools.run(call));
+                    JSONArray results = runClientTools(tools, r.content);
                     if (results.length() == 0) return r; // nichts auszuführen – Antwort so nehmen
                     convo.put(new JSONObject().put("role", "user").put("content", results));
                     continue;
@@ -250,6 +278,8 @@ final class ClaudeClient {
                 }
             } catch (JSONException e) {
                 return failed("Interner Fehler bei einem Werkzeug.");
+            } catch (CancellationException e) {
+                return failed("Anfrage abgebrochen.");
             }
             return r;
         }

@@ -8,11 +8,7 @@ import android.os.Looper;
 
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -39,9 +35,10 @@ final class ElevenTts {
     private final Context context;
     private final Handler main = new Handler(Looper.getMainLooper());
     private MediaPlayer player;
+    private File playingFile;
     /** Im Telefonmodus (Dauergespräch) als Sprachkommunikation abspielen, damit die Echo-Unterdrückung greift. */
     private int usage = AudioAttributes.USAGE_ASSISTANT;
-    private int generation;
+    private ElevenDownload download;
 
     ElevenTts(Context context) {
         this.context = context.getApplicationContext();
@@ -49,12 +46,11 @@ final class ElevenTts {
 
     void speak(String apiKey, String voiceId, String text, float rate, Listener listener) {
         stop();
-        final int gen = ++generation;
+        final ElevenDownload current = new ElevenDownload();
+        download = current;
         final String voice = voiceId == null || voiceId.trim().isEmpty() ? DEFAULT_VOICE : voiceId.trim();
         final float speed = Math.max(0.7f, Math.min(1.2f, rate));
-        executor.execute(() -> {
-            HttpURLConnection conn = null;
-            try {
+        try {
                 JSONObject settings = new JSONObject()
                         .put("stability", 0.6)
                         .put("similarity_boost", 0.8)
@@ -65,7 +61,8 @@ final class ElevenTts {
                         .put("voice_settings", settings);
                 byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
 
-                conn = (HttpURLConnection) new URL("https://api.elevenlabs.io/v1/text-to-speech/" + voice
+            current.start(executor, () -> {
+                HttpURLConnection conn = (HttpURLConnection) new URL("https://api.elevenlabs.io/v1/text-to-speech/" + voice
                         + "?output_format=mp3_44100_128").openConnection();
                 conn.setRequestMethod("POST");
                 conn.setConnectTimeout(10000);
@@ -75,59 +72,67 @@ final class ElevenTts {
                 conn.setRequestProperty("content-type", "application/json");
                 conn.setRequestProperty("accept", "audio/mpeg");
                 conn.setRequestProperty("xi-api-key", apiKey);
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(payload);
+                return conn;
+            }, payload, context.getCacheDir(), new ElevenDownload.Listener() {
+                @Override
+                public void onAudio(File out) {
+                    if (!main.post(() -> {
+                        if (isCurrent(current)) play(out, current, listener);
+                        else out.delete();
+                    })) out.delete();
                 }
-                int code = conn.getResponseCode();
-                if (code < 200 || code >= 300) {
-                    final String msg = describeError(code, readText(conn.getErrorStream()));
+
+                @Override
+                public void onHttpError(int code, String body) {
+                    final String msg = describeError(code, body);
                     main.post(() -> {
-                        if (gen == generation) listener.onError(msg);
+                        if (isCurrent(current)) listener.onError(msg);
                     });
-                    return;
                 }
-                File out = new File(context.getCacheDir(), "jarvis_stimme.mp3");
-                try (InputStream in = conn.getInputStream(); FileOutputStream fos = new FileOutputStream(out)) {
-                    byte[] buf = new byte[8192];
-                    int n;
-                    while ((n = in.read(buf)) != -1) fos.write(buf, 0, n);
+
+                @Override
+                public void onFailure() {
+                    main.post(() -> {
+                        if (isCurrent(current)) listener.onError("ElevenLabs nicht erreichbar.");
+                    });
                 }
-                main.post(() -> {
-                    if (gen == generation) play(out, listener);
-                });
-            } catch (Exception e) {
-                main.post(() -> {
-                    if (gen == generation) listener.onError("ElevenLabs nicht erreichbar.");
-                });
-            }
-            // Kein disconnect(): Verbindung bleibt offen und wird wiederverwendet.
-        });
+            });
+        } catch (Exception e) {
+            if (isCurrent(current)) listener.onError("ElevenLabs nicht erreichbar.");
+        }
     }
 
-    private void play(File file, Listener listener) {
+    private boolean isCurrent(ElevenDownload request) {
+        return download == request && !request.cancelled();
+    }
+
+    private void play(File file, ElevenDownload request, Listener listener) {
+        playingFile = file;
         try {
             MediaPlayer mp = new MediaPlayer();
+            player = mp;
             mp.setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(usage)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build());
             mp.setDataSource(file.getAbsolutePath());
             mp.setOnCompletionListener(p -> {
+                if (p != player || !isCurrent(request)) return;
                 release();
                 listener.onDone();
             });
             mp.setOnErrorListener((p, what, extra) -> {
+                if (p != player || !isCurrent(request)) return true;
                 release();
                 listener.onError("Wiedergabe fehlgeschlagen.");
                 return true;
             });
             mp.prepare();
-            player = mp;
             mp.start();
-            listener.onStart();
+            if (isCurrent(request)) listener.onStart();
         } catch (Exception e) {
             release();
-            listener.onError("Wiedergabe fehlgeschlagen.");
+            if (isCurrent(request)) listener.onError("Wiedergabe fehlgeschlagen.");
         }
     }
 
@@ -137,7 +142,9 @@ final class ElevenTts {
 
     /** Bricht Laden und Wiedergabe ab (z. B. wenn Art aufs J tippt). */
     void stop() {
-        generation++;
+        ElevenDownload old = download;
+        download = null;
+        if (old != null) old.cancel();
         release();
     }
 
@@ -151,6 +158,10 @@ final class ElevenTts {
             player.release();
             player = null;
         }
+        if (playingFile != null) {
+            playingFile.delete();
+            playingFile = null;
+        }
     }
 
     private static String describeError(int code, String body) {
@@ -162,16 +173,4 @@ final class ElevenTts {
         return "ElevenLabs-Fehler " + code + ".";
     }
 
-    private static String readText(InputStream in) {
-        if (in == null) return "";
-        try (InputStream is = in) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = is.read(buf)) != -1) out.write(buf, 0, n);
-            return out.toString("UTF-8");
-        } catch (Exception e) {
-            return "";
-        }
-    }
 }
