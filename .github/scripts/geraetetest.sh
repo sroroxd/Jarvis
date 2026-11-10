@@ -392,12 +392,17 @@ then
 else
   say "BESTANDEN: Internetwerkzeug ist im lokalen Modus standardmäßig aus."
 fi
-adb shell input keyevent KEYCODE_BACK
-
 # Tastatur muss die Eingabeaktionen nach oben verschieben (Edge-to-edge/IME).
+# Back nur bei wirklich offener Tastatur: sonst würde es die Activity verlassen.
+if adb shell dumpsys input_method | grep -q 'mInputShown=true'; then
+  adb shell input keyevent KEYCODE_BACK
+  sleep 1
+fi
+adb shell uiautomator dump /sdcard/local_baseline.xml >/dev/null 2>&1
+adb shell cat /sdcard/local_baseline.xml > shots/local_baseline.txt
 input_tap=$(python3 - <<'PY'
 import re, xml.etree.ElementTree as ET
-root = ET.parse('shots/local_ui.txt')
+root = ET.parse('shots/local_baseline.txt')
 n = next(n for n in root.iter('node') if n.get('content-desc') == 'Nachricht an Jarvis')
 x1,y1,x2,y2 = map(int, re.findall(r'\d+', n.get('bounds')))
 print((x1+x2)//2, (y1+y2)//2)
@@ -416,7 +421,7 @@ def bottom(path):
     n = next(n for n in root.iter('node') if n.get('content-desc') == 'Lokale Nachricht senden')
     return int(re.findall(r'\d+', n.get('bounds'))[3])
 assert 'mInputShown=true' in open('shots/local_keyboard_state.txt').read()
-assert bottom('shots/local_keyboard.txt') < bottom('shots/local_ui.txt') - 100
+assert bottom('shots/local_keyboard.txt') < bottom('shots/local_baseline.txt') - 100
 PY
 then
   say "FEHLER: Lokale Senden-Aktion wird nicht über die Tastatur verschoben."; uifail=1
