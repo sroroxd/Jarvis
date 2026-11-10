@@ -23,6 +23,15 @@ dialoge_weg() {
     adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1 || return 0
     xml=$(adb shell cat /sdcard/ui.xml 2>/dev/null)
     echo "$xml" | grep -qE "isn[^ ]{1,6}t responding|reagiert nicht" || return 0
+    # „Warten“ behebt den festhängenden Pixel-Launcher nicht immer. Ausschließlich im
+    # wegwerfbaren Emulator dessen Prozess zurücksetzen, niemals Jarvis oder ein echtes Handy.
+    if echo "$xml" | grep -qF 'Pixel Launcher' \
+        && [ "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" = 1 ]; then
+      adb shell am force-stop com.google.android.apps.nexuslauncher >/dev/null 2>&1
+      say "Hinweis: Festhängenden Pixel-Launcher nur im CI-Emulator zurückgesetzt"
+      sleep 2
+      continue
+    fi
     b=$(echo "$xml" | grep -oE 'text="(Wait|Warten)"[^>]*bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' \
           | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1)
     [ -z "$b" ] && return 0
