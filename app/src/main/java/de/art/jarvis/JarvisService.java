@@ -241,7 +241,7 @@ public class JarvisService extends Service {
         super.onCreate();
         prefs = new Prefs(this);
         appliedGameMode = prefs.tftMode();
-        claude = new ClaudeClient();
+        claude = new ClaudeClient(this);
         // Tagessumme der Kosten: jede Anfrage zählt, auch Phasen-Wächter und Meta-Recherche (Arts Plan vom 30. Okt.).
         ClaudeClient.costListener = (kind, usd) -> {
             prefs.addCost(today(), kind, usd);
@@ -535,7 +535,7 @@ public class JarvisService extends Service {
 
     private boolean proactiveWanted() {
         return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
-                && !prefs.apiKey().isEmpty() && !prefs.overCostLimit(today());
+                && !prefs.brainKey().isEmpty() && !prefs.overCostLimit(today());
     }
 
     /** Wächter an, wenn Spielmodus, Bildschirmfreigabe und Einstellung passen; sonst aus. */
@@ -567,7 +567,7 @@ public class JarvisService extends Service {
         if (prefs.gameAuto() && GameWatch.permitted(this) && !gameWatch.inGame()) return;
         proactiveBusy = true;
         final ScreenGrabber g = grabber;
-        final String key = prefs.apiKey();
+        final String key = prefs.brainKey();
         // Bild umwandeln und verkleinern kostet auf dem S24 Ultra (3120 × 1440) spürbar Zeit – alle 6 s nicht auf
         // dem Haupt-Thread, sonst stocken Spracherkennung und Sprachausgabe.
         watchExecutor.execute(() -> {
@@ -672,7 +672,7 @@ public class JarvisService extends Service {
             testWatchFile(files, i + 1);
             return;
         }
-        sendWatch(prefs.apiKey(), image, new ClaudeClient.Callback() {
+        sendWatch(prefs.brainKey(), image, new ClaudeClient.Callback() {
             @Override
             public void onResult(String text) {
                 // Rohantwort und was Jarvis daraus macht – der Gerätetest prüft die Entscheidung („=> …“).
@@ -708,7 +708,7 @@ public class JarvisService extends Service {
         bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out);
         bmp.recycle();
         testLog("waechter-test gesendet");
-        sendWatch(prefs.apiKey(), android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
+        sendWatch(prefs.brainKey(), android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
     }
 
     private final ClaudeClient.Callback watchCallback = new ClaudeClient.Callback() {
@@ -737,7 +737,7 @@ public class JarvisService extends Service {
             releaseRecognizer();
             setState(State.IDLE);
         }
-        String key = prefs.apiKey();
+        String key = prefs.brainKey();
         if (key.isEmpty()) return false;
         long now = System.currentTimeMillis();
         if (now - lastInteraction > CONVERSATION_TIMEOUT_MS) history.clear();
@@ -769,14 +769,14 @@ public class JarvisService extends Service {
      * Nach einem Fehlschlag frühestens nach 30 Minuten erneut.
      */
     private void maybeUpdateMeta() {
-        if (metaRunning || !prefs.tftMode() || prefs.apiKey().isEmpty()) return;
+        if (metaRunning || !prefs.tftMode() || prefs.brainKey().isEmpty()) return;
         final String today = today();
         if (Meta.isFresh(prefs.metaDate(), today)) return;
         long now = SystemClock.elapsedRealtime();
         if (metaLastAttempt != 0 && now - metaLastAttempt < 30 * 60 * 1000L) return;
         metaLastAttempt = now;
         metaRunning = true;
-        claude.sendWithWebSearch(prefs.apiKey(), Meta.MODEL, Meta.system(), Meta.prompt(today), Meta.MAX_SEARCHES,
+        claude.sendWithWebSearch(prefs.brainKey(), Meta.MODEL, Meta.system(), Meta.prompt(today), Meta.MAX_SEARCHES,
                 new ClaudeClient.Callback() {
                     @Override
                     public void onResult(String text) {
@@ -1040,7 +1040,7 @@ public class JarvisService extends Service {
                 if (current != recognizer) return;
                 heardSomething = true;
                 // Verbindung zu Anthropic aufbauen, während Art noch spricht (kostenlos, siehe ClaudeClient.warmUp).
-                if (!prefs.apiKey().isEmpty()) ClaudeClient.warmUp();
+                if (!prefs.useOpenAI() && !prefs.brainKey().isEmpty()) ClaudeClient.warmUp();
                 if (!finishRequested) main.removeCallbacks(pauseElapsed);
             }
 
@@ -1309,17 +1309,22 @@ public class JarvisService extends Service {
             noteWish(Wishes.titleFrom(wish), wish, true);
             return;
         }
-        // Lange Aufgaben gibt Art ausdrücklich ab („Übernimm das: …“). Die macht der
-        // Agent in Termux über Claude Code – das zählt gegen das Abo, nicht gegen das
-        // API-Guthaben. Im Spielmodus nie: der Agent braucht Sekunden bis Minuten.
-        if (prefs.agentReady() && !prefs.tftMode()) {
-            String auftrag = Commands.agentTask(text);
-            if (auftrag != null) {
-                beauftrageAgenten(auftrag);
+        // Ausdrückliche Aufträge gehen an den Agenten. Fehlt ein separater API-Schlüssel,
+        // übernimmt der eingerichtete Agent auch normale Fragen. Im Spielmodus nie:
+        // der Agent braucht Sekunden bis Minuten und verarbeitet keine Spielbilder.
+        String auftrag = AgentRouting.task(text, !prefs.brainKey().isEmpty(), prefs.agentReady(), prefs.tftMode());
+        if (auftrag != null) {
+            if (!AgentRouting.addressed(text, !prefs.brainKey().isEmpty(), continuous || testOpen,
+                    SystemClock.elapsedRealtime(), lastExchangeAt)) {
+                setState(State.IDLE);
+                status("Agentbetrieb: Nach einer Pause bitte Jarvis beim Namen nennen oder antippen.");
+                scheduleRelisten(RELISTEN_DELAY_MS);
                 return;
             }
+            beauftrageAgenten(auftrag);
+            return;
         }
-        String key = prefs.apiKey();
+        String key = prefs.brainKey();
         if (key.isEmpty()) {
             setState(State.IDLE);
             say("Mir fehlt noch der API-Schlüssel. Bitte tragen Sie ihn in den Jarvis-Einstellungen ein.");

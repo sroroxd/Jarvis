@@ -9,3 +9,6 @@ __pycache__/
 
 # sherpa-onnx (Offline-Stimme), lädt app/build.gradle mit Prüfsumme
 .sherpa/
+.env
+.env.local
+.env.*.local

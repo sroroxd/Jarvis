@@ -30,6 +30,11 @@ import java.util.function.BooleanSupplier;
  * täglichen TFT-Meta-Recherche ({@link #sendWithWebSearch}).
  */
 final class ClaudeClient {
+    // Anbieter an die Client-Instanz binden: ein späterer Umschalter darf alte Zugangsdaten
+    // einer wartenden Anfrage niemals an den anderen Anbieter schicken.
+    private final boolean openAI;
+    ClaudeClient() { openAI = false; }
+    ClaudeClient(android.content.Context context) { openAI = new Prefs(context).useOpenAI(); }
     interface Callback {
         void onResult(String text);
         void onError(String message);
@@ -537,6 +542,7 @@ final class ClaudeClient {
         Result result = new Result();
         HttpURLConnection conn;
         try {
+            if (openAI) model = Prefs.OPENAI_MODEL;
             JSONObject body = body(model, maxTokens, thinking, effort, system, messages, tools);
             if (listener != null) body.put("stream", true);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -544,7 +550,7 @@ final class ClaudeClient {
             lastContact = net.start;
             if (answering.get()) lastNet = net;
 
-            conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
+            conn = (HttpURLConnection) new URL(openAI ? "http://127.0.0.1:8778/v1/messages" : ENDPOINT).openConnection();
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(90000);

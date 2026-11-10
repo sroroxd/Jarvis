@@ -86,7 +86,7 @@ if vorne | grep -q SettingsActivity; then
   # „Sprechpause“ gibt es schon lange: ist es sichtbar, hat das Auslesen funktioniert – dann ist ein fehlendes
   # neues Bedienelement ein echter Fehler. Ist selbst „Sprechpause“ nicht auslesbar, lag es am Emulator (nur Hinweis).
   if grep -qF "Sprechpause" shots/einstellungen_ui.txt; then
-    for label in "Tagesgrenze" "Nach Neustart erinnern" "Jarvis-Kachel hinzufügen"; do
+    for label in "Tagesgrenze" "Nach Neustart erinnern" "Jarvis-Kachel hinzufügen" "OpenAI verwenden"; do
       if grep -qF "$label" shots/einstellungen_ui.txt; then
         say "  Einstellung vorhanden: $label"
       else

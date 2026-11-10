@@ -12,6 +12,23 @@ import org.junit.Test;
 /** Gestreamte Antwort wieder zusammensetzen – Format laut Claude-Doku (Server-Sent Events). */
 public class StreamAccumulatorTest {
 
+    @Test
+    public void openAIWerkzeugkontextBleibtErhaltenUndWirdNichtGesprochen() throws Exception {
+        StringBuilder spoken = new StringBuilder();
+        StreamAccumulator a = feed(spoken,
+                "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"tool_use\",\"id\":\"call_1\",\"name\":\"kalender_lesen\",\"input\":{\"von\":\"2026-11-10\"}}}",
+                "data: {\"type\":\"content_block_stop\",\"index\":0}",
+                "data: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"jarvis_openai_context\",\"id\":\"opaque-context\"}}",
+                "data: {\"type\":\"content_block_stop\",\"index\":1}",
+                "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\"}}",
+                "data: {\"type\":\"message_stop\"}");
+        assertTrue(a.complete());
+        assertEquals("2026-11-10", a.content().getJSONObject(0).getJSONObject("input").getString("von"));
+        assertEquals("opaque-context", a.content().getJSONObject(1).getString("id"));
+        assertEquals("", spoken.toString());
+        assertEquals("", ClaudeClient.spokenText(a.content()));
+    }
+
     private static StreamAccumulator feed(StringBuilder spoken, String... lines) throws Exception {
         StreamAccumulator a = new StreamAccumulator(spoken::append);
         for (String l : lines) a.line(l);

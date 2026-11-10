@@ -10,6 +10,13 @@ import org.junit.Test;
 public class CostsTest {
 
     @Test
+    public void openAICacheNichtDoppeltBerechnen() {
+        assertTrue(Costs.known("gpt-6-luna"));
+        assertEquals(15 * 0.10e-6 + 5 * 0.01e-6 + 7 * 0.50e-6,
+                Costs.usd("gpt-6-luna", 15, 0, 5, 7, 0), 1e-12);
+    }
+
+    @Test
     public void typischeSpielfrageMitSonnet() {
         // 6.000 Tokens Grundanweisung aus dem Zwischenspeicher, 2.500 Tokens Bild und Frage, 60 Tokens Antwort.
         double usd = Costs.usd("claude-sonnet-5-5", 2500, 0, 6000, 60, 0);
