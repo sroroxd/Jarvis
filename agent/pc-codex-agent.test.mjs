@@ -63,6 +63,22 @@ test('Nur vollständig erfolgreicher Codex-Turn gilt als Antwort, Aufruf bleibt 
   assert.equal(result.antwort, 'Guten Tag.');
   assert.ok(captured.args.includes('read-only')); assert.ok(captured.args.includes('--ephemeral'));
   assert.equal(captured.options.windowsHide, true);
+  assert.equal(captured.options.env.OPENAI_API_KEY, undefined);
+  assert.equal(captured.options.env.CODEX_API_KEY, undefined);
+});
+test('Geteilte UTF-8-Zeichen bleiben in der gesprochenen Antwort erhalten', async () => {
+  const stream = Buffer.from(JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'Grüße 👋' } })
+    + '\n' + JSON.stringify({ type: 'turn.completed' }));
+  const spawnProcess = () => {
+    const child = new EventEmitter();
+    child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.stderr = new PassThrough();
+    child.stdin.on('finish', () => queueMicrotask(() => {
+      for (const byte of stream) child.stdout.write(Buffer.from([byte]));
+      child.emit('close', 0);
+    }));
+    return child;
+  };
+  assert.equal((await codexAntwort('Hallo', { spawnProcess })).antwort, 'Grüße 👋');
 });
 test('Teilantwort und Anbieterfehler werden nicht als Erfolg ausgegeben', async () => {
   const partial = JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'Teil' } });

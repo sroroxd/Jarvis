@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { StringDecoder } from 'node:string_decoder';
 
 const gleich = (a, b) => typeof a === 'string' && typeof b === 'string'
   && Buffer.byteLength(a) === Buffer.byteLength(b)
@@ -13,7 +14,12 @@ export function codexAntwort(text, { cwd, binary = 'codex', timeout = 120000, si
   return new Promise((done) => {
     const args = ['exec', '--ignore-user-config', '--ephemeral', '--skip-git-repo-check',
       '--sandbox', 'read-only', '--json', '-c', 'model_reasoning_effort=low', '-'];
-    const child = spawnProcess(binary, args, { cwd, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    const env = { ...process.env };
+    // Dieser Ersatzweg soll ausschließlich die bestätigte ChatGPT-Anmeldung nutzen.
+    delete env.CODEX_API_KEY;
+    delete env.OPENAI_API_KEY;
+    const child = spawnProcess(binary, args, { cwd, env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    const decoder = new StringDecoder('utf8');
     let buffer = '', answer = '', completed = false, error = '', size = 0, ended = false;
     const stop = () => {
       if (child.pid && process.platform === 'win32') {
@@ -39,7 +45,7 @@ export function codexAntwort(text, { cwd, binary = 'codex', timeout = 120000, si
     child.stdout.on('data', data => {
       size += data.length;
       if (size > 2 * 1024 * 1024) { stop(); finish({ fehler: 'Antwort des PC-Agenten zu groß.' }); return; }
-      buffer += data.toString();
+      buffer += decoder.write(data);
       let i;
       while ((i = buffer.indexOf('\n')) >= 0) { line(buffer.slice(0, i)); buffer = buffer.slice(i + 1); }
     });
@@ -47,6 +53,7 @@ export function codexAntwort(text, { cwd, binary = 'codex', timeout = 120000, si
     child.stderr.resume();
     child.on('error', () => finish({ fehler: 'Codex lässt sich auf dem PC nicht starten.' }));
     child.on('close', code => {
+      buffer += decoder.end();
       if (buffer.trim()) line(buffer);
       finish(code === 0 && completed && answer.trim() && !error
         ? { antwort: answer.trim(), modus: 'PC über USB, ChatGPT-Anmeldung, nur lesend' }
