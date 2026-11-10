@@ -338,6 +338,42 @@ except Exception:
   rm -f /tmp/release.json
 fi
 
+# ---------------------------------------------------------------- Lokaler Modellkern und isolierte Textoberfläche
+# Debug-Hook lädt eine absichtlich ungültige eigene GGUF-Datei über die echte JNI-Bindung.
+# Keine Modellgewichte, kein Konto und kein Cloud-Aufruf nötig.
+adb shell am start -n "$ACT" --ez testlocal true >/dev/null 2>&1
+local_ok=0
+for _ in 1 2 3 4 5 6; do
+  sleep 2
+  adb shell uiautomator dump /sdcard/local_ui.xml >/dev/null 2>&1
+  adb shell cat /sdcard/local_ui.xml > shots/local_ui.txt
+  if grep -qF 'Nativer Modellkern bereit; ungültiges Modell sicher abgewiesen.' shots/local_ui.txt; then
+    local_ok=1; break
+  fi
+done
+adb exec-out screencap -p > shots/05_lokaler_assistent.png
+if [ "$local_ok" = 1 ] && vorne | grep -q LocalAssistantActivity; then
+  say "BESTANDEN: Native Offline-Engine lädt; ungültige GGUF wird ohne Absturz abgewiesen."
+else
+  say "FEHLER: Lokaler JNI-Modellkern oder lokale Oberfläche nicht erfolgreich geprüft."; uifail=1
+fi
+if ! grep -qF 'Internet für Webseiten erlauben' shots/local_ui.txt; then
+  say "FEHLER: Getrennter Internet-Schalter im lokalen Modus fehlt."; uifail=1
+fi
+# Der frische Emulator hat keine lokale Internetfreigabe. Der Schalter muss aus sein.
+if ! python3 - <<'PY'
+import xml.etree.ElementTree as ET
+root = ET.parse('shots/local_ui.txt')
+switch = next(n for n in root.iter('node') if n.get('content-desc') == 'Internet für Webseiten erlauben')
+assert switch.get('checked') == 'false'
+PY
+then
+  say "FEHLER: Internetwerkzeug ist im lokalen Modus nicht standardmäßig aus."; uifail=1
+else
+  say "BESTANDEN: Internetwerkzeug ist im lokalen Modus standardmäßig aus."
+fi
+adb shell input keyevent KEYCODE_BACK
+
 # ---------------------------------------------------------------- Bereitschaft nach echtem Paket-Update
 # Kein künstlich gesendeter Boot-Broadcast: erneutes Installieren löst MY_PACKAGE_REPLACED aus.
 # Aktivierung wie am Handy über die Oberfläche, ohne Test-Hintertür in der Release-App.

@@ -64,6 +64,26 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".LocalAssistantActivity"
+            android:exported="false"
+            android:label="Jarvis Lokal"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity-alias
+            android:name=".LocalLauncher"
+            android:targetActivity=".LocalAssistantActivity"
+            android:exported="true"
+            android:label="Jarvis Lokal"
+            android:icon="@drawable/ic_jarvis">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Zweites Symbol: startet sofort das Zuhören (z. B. für die Seitentaste). -->
         <activity
             android:name=".ListenActivity"

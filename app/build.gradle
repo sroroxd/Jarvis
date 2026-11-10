@@ -39,6 +39,7 @@ if (!sherpaAar.isFile() || sha256(sherpaAar) != sherpaSha) {
 android {
     namespace 'de.art.jarvis'
     compileSdk 35
+    ndkVersion '28.2.13676358'
 
     defaultConfig {
         applicationId testApp ? 'de.art.jarvis.test' : 'de.art.jarvis'
@@ -50,6 +51,19 @@ android {
         resValue 'string', 'listen_name', testApp ? 'Jarvis Test sprechen' : 'Jarvis sprechen'
         buildConfigField 'boolean', 'TEST_APP', testApp ? 'true' : 'false'
         buildConfigField 'String', 'BRANCH', "\"${branchName}\""
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static'
+                targets 'jarvis_llm'
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
+        }
     }
 
     // Fester Schlüssel, damit jede neue APK sich über die alte installieren lässt.

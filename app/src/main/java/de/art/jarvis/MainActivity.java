@@ -57,6 +57,11 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                 + BuildConfig.VERSION_CODE);
 
         b.settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        b.localAssistantButton.setOnClickListener(v -> {
+            // Lokaler Textbetrieb startet weder Mikrofon noch Cloud- oder Bildschirmdienst.
+            stopService(new Intent(this, JarvisService.class));
+            startActivity(new Intent(this, LocalAssistantActivity.class));
+        });
 
         b.reactor.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
@@ -137,6 +142,11 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private void readTestHooks(Intent intent) {
         boolean debuggable = BuildConfig.DEBUG;
         if (!debuggable || intent == null) return;
+        if (intent.getBooleanExtra("testlocal", false)) {
+            stopService(new Intent(this, JarvisService.class));
+            startActivity(new Intent(this, LocalAssistantActivity.class).putExtra("test_local_invalid", true));
+            return;
+        }
         String key = intent.getStringExtra("testkey");
         if (key != null && !key.trim().isEmpty()) {
             prefs.setApiKey(key.trim());
