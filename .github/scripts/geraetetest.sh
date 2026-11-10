@@ -394,6 +394,37 @@ else
 fi
 adb shell input keyevent KEYCODE_BACK
 
+# Tastatur muss die Eingabeaktionen nach oben verschieben (Edge-to-edge/IME).
+input_tap=$(python3 - <<'PY'
+import re, xml.etree.ElementTree as ET
+root = ET.parse('shots/local_ui.txt')
+n = next(n for n in root.iter('node') if n.get('content-desc') == 'Nachricht an Jarvis')
+x1,y1,x2,y2 = map(int, re.findall(r'\d+', n.get('bounds')))
+print((x1+x2)//2, (y1+y2)//2)
+PY
+)
+adb shell input tap $input_tap
+sleep 2
+adb shell uiautomator dump /sdcard/local_keyboard.xml >/dev/null 2>&1
+adb shell cat /sdcard/local_keyboard.xml > shots/local_keyboard.txt
+adb shell dumpsys input_method > shots/local_keyboard_state.txt
+adb exec-out screencap -p > shots/05b_lokale_tastatur.png
+if ! python3 - <<'PY'
+import re, xml.etree.ElementTree as ET
+def bottom(path):
+    root = ET.parse(path)
+    n = next(n for n in root.iter('node') if n.get('content-desc') == 'Lokale Nachricht senden')
+    return int(re.findall(r'\d+', n.get('bounds'))[3])
+assert 'mInputShown=true' in open('shots/local_keyboard_state.txt').read()
+assert bottom('shots/local_keyboard.txt') < bottom('shots/local_ui.txt') - 100
+PY
+then
+  say "FEHLER: Lokale Senden-Aktion wird nicht über die Tastatur verschoben."; uifail=1
+else
+  say "BESTANDEN: Lokale Senden-Aktion bleibt über der geöffneten Tastatur."
+fi
+adb shell input keyevent KEYCODE_BACK
+
 # ---------------------------------------------------------------- Bereitschaft nach echtem Paket-Update
 # Kein künstlich gesendeter Boot-Broadcast: erneutes Installieren löst MY_PACKAGE_REPLACED aus.
 # Aktivierung wie am Handy über die Oberfläche, ohne Test-Hintertür in der Release-App.

@@ -79,6 +79,7 @@ public class LocalAssistantActivity extends Activity {
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         setTitle("Jarvis Lokal");
+        getWindow().setDecorFitsSystemWindows(false);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         preferences = getSharedPreferences("local_assistant", MODE_PRIVATE);
         internetAllowed.set(preferences.getBoolean("internet_allowed", false));
@@ -111,7 +112,10 @@ public class LocalAssistantActivity extends Activity {
         int pad = (int) (16 * getResources().getDisplayMetrics().density);
         root.setPadding(pad, pad, pad, pad);
         root.setOnApplyWindowInsetsListener((view, insets) -> {
-            android.graphics.Insets bars = insets.getInsets(android.view.WindowInsets.Type.systemBars());
+            // The IME overlays an edge-to-edge window on Android 15+; resize alone
+            // does not keep the actions above the keyboard.
+            android.graphics.Insets bars = insets.getInsets(android.view.WindowInsets.Type.systemBars()
+                    | android.view.WindowInsets.Type.displayCutout() | android.view.WindowInsets.Type.ime());
             view.setPadding(pad + bars.left, pad + bars.top, pad + bars.right, pad + bars.bottom);
             return insets;
         });
@@ -290,6 +294,9 @@ public class LocalAssistantActivity extends Activity {
             user = LocalChatPrompt.validateInput(input.getText().toString());
             prompt = LocalChatPrompt.build(history, user);
         } catch (IllegalArgumentException e) { status.setText(e.getMessage()); return; }
+        input.clearFocus();
+        android.view.WindowInsetsController controller = getWindow().getInsetsController();
+        if (controller != null) controller.hide(android.view.WindowInsets.Type.ime());
         input.setText("");
         text(messages, "Du: " + user, 16);
         partial = text(messages, "Jarvis: Modell wird geladen …", 16);
