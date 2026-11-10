@@ -598,13 +598,19 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    /** Fragt den Agenten, ob er läuft. Antwort steht direkt unter dem Knopf. */
+    /** Echte, kleine Antwortprüfung statt bloßer Erreichbarkeit; benötigt kein Mikrofon. */
     private void testAgent() {
         prefs.setAgentToken(text(b.agentTokenField));
         updateAgentInfo();
-        showResult(b.agentInfo, "Prüfe …");
-        new AgentClient().pruefen(prefs.agentPort(), prefs.agentToken(),
-                reply -> showResult(b.agentInfo, reply.ok() ? "✓ " + reply.antwort : "✗ " + reply.fehler));
+        b.agentTest.setEnabled(false);
+        showResult(b.agentInfo, "Fordere eine echte KI-Antwort an … (verbraucht Anbieter-Kontingent)");
+        new AgentClient().auftrag(prefs.agentPort(), prefs.agentToken(),
+                "Antworte nur: Jarvis ist bereit. Zwei plus zwei ist vier. "
+                        + "Benutze keine Werkzeuge, lies keine Dateien und führe keine Befehle aus.", true,
+                reply -> {
+                    b.agentTest.setEnabled(true);
+                    showResult(b.agentInfo, reply.ok() ? "✓ Echte Antwort: " + reply.antwort : "✗ " + reply.fehler);
+                });
     }
 
     // ---------------------------------------------------------------- Gedächtnis und Sicherung
