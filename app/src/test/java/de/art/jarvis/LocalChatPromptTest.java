@@ -27,11 +27,12 @@ public class LocalChatPromptTest {
 
     @Test public void hugeUnicodeInputKeepsPromptWithinContextBudget() {
         String input = "😀".repeat(1500);
+        String oldHistoryMarker = "ALTE_NACHRICHT_XYZ_";
         String prompt = LocalChatPrompt.build(Collections.singletonList(
-                new LocalChatPrompt.Turn("alt".repeat(1000), "alt".repeat(1000))), input);
+                new LocalChatPrompt.Turn(oldHistoryMarker.repeat(200), oldHistoryMarker.repeat(200))), input);
         assertTrue(prompt.getBytes(StandardCharsets.UTF_8).length <= LocalChatPrompt.MAX_PROMPT_BYTES);
         assertFalse(prompt.contains("�"));
-        assertFalse(prompt.contains("alt"));
+        assertFalse(prompt.contains(oldHistoryMarker));
     }
 
     @Test public void truncationPreservesCodePoints() {
