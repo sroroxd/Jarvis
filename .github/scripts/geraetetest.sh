@@ -341,6 +341,14 @@ fi
 # ---------------------------------------------------------------- Lokaler Modellkern und isolierte Textoberfläche
 # Debug-Hook lädt eine absichtlich ungültige eigene GGUF-Datei über die echte JNI-Bindung.
 # Keine Modellgewichte, kein Konto und kein Cloud-Aufruf nötig.
+adb shell am start -n "$PKG/de.art.jarvis.LocalLauncher" >/dev/null 2>&1
+sleep 2
+if adb shell dumpsys activity services "$PKG" | grep -q 'JarvisService'; then
+  say "FEHLER: Lokaler Launcher lässt den alten Sprach-/Cloud-Dienst weiterlaufen."; uifail=1
+else
+  say "BESTANDEN: Lokaler Launcher beendet den bisherigen Sprach-/Cloud-Dienst."
+fi
+adb shell input keyevent KEYCODE_BACK
 adb shell am start -n "$ACT" --ez testlocal true >/dev/null 2>&1
 local_ok=0
 for _ in 1 2 3 4 5 6; do

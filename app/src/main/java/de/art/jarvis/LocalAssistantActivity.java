@@ -60,6 +60,13 @@ public class LocalAssistantActivity extends Activity {
     private boolean engineAvailable;
     private boolean initialized;
 
+    @Override protected void onResume() {
+        super.onResume();
+        // Also applies to the independent launcher and repeated foreground entry.
+        // A previously started legacy speech/cloud service must not keep listening here.
+        stopService(new Intent(this, JarvisService.class));
+    }
+
     private static final class Operation {
         final AtomicBoolean cancelled = new AtomicBoolean();
         final CancellationSignal signal = new CancellationSignal();
