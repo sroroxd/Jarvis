@@ -343,6 +343,7 @@ fi
 # Keine Modellgewichte, kein Konto und kein Cloud-Aufruf nötig.
 adb shell am start -n "$PKG/de.art.jarvis.LocalLauncher" >/dev/null 2>&1
 sleep 2
+dialoge_weg
 if adb shell dumpsys activity services "$PKG" | grep -q 'JarvisService'; then
   say "FEHLER: Lokaler Launcher lässt den alten Sprach-/Cloud-Dienst weiterlaufen."; uifail=1
 else
@@ -353,12 +354,14 @@ adb shell am start -n "$ACT" --ez testlocal true >/dev/null 2>&1
 local_ok=0
 for _ in 1 2 3 4 5 6; do
   sleep 2
+  dialoge_weg
   adb shell uiautomator dump /sdcard/local_ui.xml >/dev/null 2>&1
   adb shell cat /sdcard/local_ui.xml > shots/local_ui.txt
   if grep -qF 'Nativer Modellkern bereit; ungültiges Modell sicher abgewiesen.' shots/local_ui.txt; then
     local_ok=1; break
   fi
 done
+dialoge_weg
 adb exec-out screencap -p > shots/05_lokaler_assistent.png
 if [ "$local_ok" = 1 ] && vorne | grep -q LocalAssistantActivity; then
   say "BESTANDEN: Native Offline-Engine lädt; ungültige GGUF wird ohne Absturz abgewiesen."
@@ -387,8 +390,10 @@ adb shell input keyevent KEYCODE_BACK
 # Aktivierung wie am Handy über die Oberfläche, ohne Test-Hintertür in der Release-App.
 adb shell am start -n "$ACT" >/dev/null 2>&1
 sleep 2
+dialoge_weg
 adb shell input tap 989 228
 sleep 2
+dialoge_weg
 adb shell uiautomator dump /sdcard/ready_ui.xml >/dev/null 2>&1
 adb shell cat /sdcard/ready_ui.xml > /tmp/ready_ui.xml
 ready_tap=$(python3 - "$PKG" <<'PY'
