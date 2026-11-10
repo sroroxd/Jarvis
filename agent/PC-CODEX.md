@@ -26,5 +26,10 @@ Je Auftrag 120 Sekunden Zeitlimit; unvollständige Antworten zählen nicht als E
 Der Knopf „Agent prüfen“ in Jarvis fordert eine echte kleine Antwort an und benötigt kein Mikrofon.
 Die Freigabe des Dauerbetriebs ist damit noch nicht nachgewiesen.
 
+Ohne separaten API-Schlüssel kann Jarvis mit aktiviertem, gekoppeltem Agenten im Alltagsmodus
+starten. Normale Fragen gehen dann ebenfalls an den Agenten. Der Spielmodus benötigt weiterhin
+die schnelle API mit Bildern und wird ohne deren Schlüssel nicht gestartet. Lokale Sprachbefehle
+und Gedächtnisfunktionen bleiben vor der Agentenweiterleitung aktiv.
+
 Prüfung: `node --test agent/pc-codex-agent.test.mjs`. Dokumentation zum unterstützten
 [nichtinteraktiven Codex-Aufruf](https://learn.chatgpt.com/docs/non-interactive-mode).

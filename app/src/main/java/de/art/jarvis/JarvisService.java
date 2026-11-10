@@ -1309,15 +1309,13 @@ public class JarvisService extends Service {
             noteWish(Wishes.titleFrom(wish), wish, true);
             return;
         }
-        // Lange Aufgaben gibt Art ausdrücklich ab („Übernimm das: …“). Die macht der
-        // Agent in Termux über Claude Code – das zählt gegen das Abo, nicht gegen das
-        // API-Guthaben. Im Spielmodus nie: der Agent braucht Sekunden bis Minuten.
-        if (prefs.agentReady() && !prefs.tftMode()) {
-            String auftrag = Commands.agentTask(text);
-            if (auftrag != null) {
-                beauftrageAgenten(auftrag);
-                return;
-            }
+        // Ausdrückliche Aufträge gehen an den Agenten. Fehlt ein separater API-Schlüssel,
+        // übernimmt der eingerichtete Agent auch normale Fragen. Im Spielmodus nie:
+        // der Agent braucht Sekunden bis Minuten und verarbeitet keine Spielbilder.
+        String auftrag = AgentRouting.task(text, !prefs.brainKey().isEmpty(), prefs.agentReady(), prefs.tftMode());
+        if (auftrag != null) {
+            beauftrageAgenten(auftrag);
+            return;
         }
         String key = prefs.brainKey();
         if (key.isEmpty()) {

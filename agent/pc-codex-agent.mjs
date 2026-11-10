@@ -90,16 +90,17 @@ export function agentServer({ nonce, execute = codexAntwort, cwd } = {}) {
     if (req.method !== 'POST' || !['/token', '/auftrag', '/neu'].includes(req.url)) {
       send(404, { fehler: 'Unbekannter Aufruf.' }); return;
     }
-    let raw = '', bytes = 0;
+    const chunks = [];
+    let bytes = 0;
     try {
       for await (const part of req) {
         bytes += part.length;
         if (bytes > 65536) { send(413, { fehler: 'Auftrag zu groß.' }); return; }
-        raw += part;
+        chunks.push(part);
       }
-      const body = JSON.parse(raw);
+      const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
       if (req.url === '/token') {
-        if (!bootstrap || typeof body.token !== 'string' || body.token.length < 24 || body.token.length > 512) {
+        if (!bootstrap || token || typeof body.token !== 'string' || body.token.length < 24 || body.token.length > 512) {
           send(400, { fehler: 'Ungültige Kopplung.' }); return;
         }
         token = body.token;

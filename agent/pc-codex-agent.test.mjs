@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
+import { request as httpRequest } from 'node:http';
 import { agentServer, codexAntwort } from './pc-codex-agent.mjs';
 
 const nonce = 'n'.repeat(40), token = 't'.repeat(40);
@@ -15,7 +16,19 @@ async function fixture(t, execute = async text => ({ antwort: text })) {
     headers: { authorization: 'Bearer ' + key, ...extra }, body: body === undefined ? undefined : JSON.stringify(body),
   });
   const pair = () => request('/token', { token }, nonce);
-  return { request, pair };
+  const slowPost = (path, key) => {
+    let req;
+    const result = new Promise((done, reject) => {
+      req = httpRequest(base + path, { method: 'POST', headers: { authorization: 'Bearer ' + key } }, res => {
+        const chunks = [];
+        res.on('data', part => chunks.push(part));
+        res.on('end', () => done({ status: res.statusCode, body: JSON.parse(Buffer.concat(chunks)) }));
+      });
+      req.on('error', reject);
+    });
+    return { req, result };
+  };
+  return { request, pair, slowPost };
 }
 test('Kopplung bleibt geheim, einmalig und erforderlich', async t => {
   const { request, pair } = await fixture(t);
@@ -27,6 +40,26 @@ test('Kopplung bleibt geheim, einmalig und erforderlich', async t => {
   const result = await request('/auftrag', { text: 'Hallo' });
   assert.deepEqual(await result.json(), { antwort: 'Hallo' });
   assert.equal((await request('/status', undefined, token, { origin: 'https://example.com' })).status, 403);
+});
+test('Ein verzögerter zweiter Kopplungsrequest überschreibt kein bestätigtes Token', async t => {
+  const { request, pair, slowPost } = await fixture(t);
+  const late = slowPost('/token', nonce);
+  late.req.write('{"token":"');
+  await new Promise(done => setTimeout(done, 20));
+  assert.equal((await pair()).status, 200);
+  late.req.end('z'.repeat(40) + '"}');
+  assert.equal((await late.result).status, 400);
+  assert.equal((await request('/auftrag', { text: 'Hallo' })).status, 200);
+});
+test('Byteweise empfangene Aufträge behalten ihre Umlaute und Emoji', async t => {
+  const { pair, slowPost } = await fixture(t); await pair();
+  const { req, result } = slowPost('/auftrag', token);
+  for (const byte of Buffer.from(JSON.stringify({ text: 'Grüße 👋' }))) {
+    req.write(Buffer.from([byte]));
+    await new Promise(done => setTimeout(done, 1));
+  }
+  req.end();
+  assert.equal((await result).body.antwort, 'Grüße 👋');
 });
 test('Leere und übergroße Aufträge werden abgewiesen', async t => {
   const { request, pair } = await fixture(t); await pair();
