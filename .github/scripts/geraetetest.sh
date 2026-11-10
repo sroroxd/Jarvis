@@ -23,6 +23,15 @@ dialoge_weg() {
     adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1 || return 0
     xml=$(adb shell cat /sdcard/ui.xml 2>/dev/null)
     echo "$xml" | grep -qE "isn[^ ]{1,6}t responding|reagiert nicht" || return 0
+    # „Warten“ behebt den festhängenden Pixel-Launcher nicht immer. Ausschließlich im
+    # wegwerfbaren Emulator dessen Prozess zurücksetzen, niemals Jarvis oder ein echtes Handy.
+    if echo "$xml" | grep -qF 'Pixel Launcher' \
+        && [ "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" = 1 ]; then
+      adb shell am force-stop com.google.android.apps.nexuslauncher >/dev/null 2>&1
+      say "Hinweis: Festhängenden Pixel-Launcher nur im CI-Emulator zurückgesetzt"
+      sleep 2
+      continue
+    fi
     b=$(echo "$xml" | grep -oE 'text="(Wait|Warten)"[^>]*bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' \
           | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1)
     [ -z "$b" ] && return 0
@@ -116,7 +125,7 @@ dialoge_weg
 adb exec-out screencap -p > shots/04_nach_30s.png
 
 # ---------------------------------------------------------------- Gesprächstest mit Claude
-# Nur wenn der API-Schlüssel als GitHub-Secret ANTHROPIC_API_KEY hinterlegt ist. Die Fragen laufen
+# Nur wenn der Workflow ausdrücklich einen Testschlüssel übergibt. Die Fragen laufen
 # genau den Weg einer gesprochenen Frage (ohne Mikrofon) bis zu Claude und zurück.
 gfail=0
 answers() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "antwort \[|fehler:" || true; }
@@ -240,7 +249,7 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
     say "  Hinweis: Arts TFT-Testbilder ließen sich nicht in die App kopieren"
   fi
 else
-  say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
+  say "Gesprächstest übersprungen: diesem Lauf wurde kein Cloud-Testschlüssel übergeben."
 fi
 
 # ---------------------------------------------------------------- Offline-Stimme (Pocket TTS, Machbarkeit)
@@ -338,13 +347,98 @@ except Exception:
   rm -f /tmp/release.json
 fi
 
+# ---------------------------------------------------------------- Lokaler Modellkern und isolierte Textoberfläche
+# Debug-Hook lädt eine absichtlich ungültige eigene GGUF-Datei über die echte JNI-Bindung.
+# Keine Modellgewichte, kein Konto und kein Cloud-Aufruf nötig.
+adb shell am start -n "$PKG/de.art.jarvis.LocalLauncher" >/dev/null 2>&1
+sleep 2
+dialoge_weg
+if adb shell dumpsys activity services "$PKG" | grep -q 'JarvisService'; then
+  say "FEHLER: Lokaler Launcher lässt den alten Sprach-/Cloud-Dienst weiterlaufen."; uifail=1
+else
+  say "BESTANDEN: Lokaler Launcher beendet den bisherigen Sprach-/Cloud-Dienst."
+fi
+adb shell input keyevent KEYCODE_BACK
+adb shell am start -n "$ACT" --ez testlocal true >/dev/null 2>&1
+local_ok=0
+for _ in 1 2 3 4 5 6; do
+  sleep 2
+  dialoge_weg
+  adb shell uiautomator dump /sdcard/local_ui.xml >/dev/null 2>&1
+  adb shell cat /sdcard/local_ui.xml > shots/local_ui.txt
+  if grep -qF 'Nativer Modellkern bereit; ungültiges Modell sicher abgewiesen.' shots/local_ui.txt; then
+    local_ok=1; break
+  fi
+done
+dialoge_weg
+adb exec-out screencap -p > shots/05_lokaler_assistent.png
+if [ "$local_ok" = 1 ] && vorne | grep -q LocalAssistantActivity; then
+  say "BESTANDEN: Native Offline-Engine lädt; ungültige GGUF wird ohne Absturz abgewiesen."
+else
+  say "FEHLER: Lokaler JNI-Modellkern oder lokale Oberfläche nicht erfolgreich geprüft."; uifail=1
+fi
+if ! grep -qF 'Internet für Webseiten erlauben' shots/local_ui.txt; then
+  say "FEHLER: Getrennter Internet-Schalter im lokalen Modus fehlt."; uifail=1
+fi
+# Der frische Emulator hat keine lokale Internetfreigabe. Der Schalter muss aus sein.
+if ! python3 - <<'PY'
+import xml.etree.ElementTree as ET
+root = ET.parse('shots/local_ui.txt')
+switch = next(n for n in root.iter('node') if n.get('content-desc') == 'Internet für Webseiten erlauben')
+assert switch.get('checked') == 'false'
+PY
+then
+  say "FEHLER: Internetwerkzeug ist im lokalen Modus nicht standardmäßig aus."; uifail=1
+else
+  say "BESTANDEN: Internetwerkzeug ist im lokalen Modus standardmäßig aus."
+fi
+# Tastatur muss die Eingabeaktionen nach oben verschieben (Edge-to-edge/IME).
+# Back nur bei wirklich offener Tastatur: sonst würde es die Activity verlassen.
+if adb shell dumpsys input_method | grep -q 'mInputShown=true'; then
+  adb shell input keyevent KEYCODE_BACK
+  sleep 1
+fi
+adb shell uiautomator dump /sdcard/local_baseline.xml >/dev/null 2>&1
+adb shell cat /sdcard/local_baseline.xml > shots/local_baseline.txt
+input_tap=$(python3 - <<'PY'
+import re, xml.etree.ElementTree as ET
+root = ET.parse('shots/local_baseline.txt')
+n = next(n for n in root.iter('node') if n.get('content-desc') == 'Nachricht an Jarvis')
+x1,y1,x2,y2 = map(int, re.findall(r'\d+', n.get('bounds')))
+print((x1+x2)//2, (y1+y2)//2)
+PY
+)
+adb shell input tap $input_tap
+sleep 2
+adb shell uiautomator dump /sdcard/local_keyboard.xml >/dev/null 2>&1
+adb shell cat /sdcard/local_keyboard.xml > shots/local_keyboard.txt
+adb shell dumpsys input_method > shots/local_keyboard_state.txt
+adb exec-out screencap -p > shots/05b_lokale_tastatur.png
+if ! python3 - <<'PY'
+import re, xml.etree.ElementTree as ET
+def bottom(path):
+    root = ET.parse(path)
+    n = next(n for n in root.iter('node') if n.get('content-desc') == 'Lokale Nachricht senden')
+    return int(re.findall(r'\d+', n.get('bounds'))[3])
+assert 'mInputShown=true' in open('shots/local_keyboard_state.txt').read()
+assert bottom('shots/local_keyboard.txt') < bottom('shots/local_baseline.txt') - 100
+PY
+then
+  say "FEHLER: Lokale Senden-Aktion wird nicht über die Tastatur verschoben."; uifail=1
+else
+  say "BESTANDEN: Lokale Senden-Aktion bleibt über der geöffneten Tastatur."
+fi
+adb shell input keyevent KEYCODE_BACK
+
 # ---------------------------------------------------------------- Bereitschaft nach echtem Paket-Update
 # Kein künstlich gesendeter Boot-Broadcast: erneutes Installieren löst MY_PACKAGE_REPLACED aus.
 # Aktivierung wie am Handy über die Oberfläche, ohne Test-Hintertür in der Release-App.
 adb shell am start -n "$ACT" >/dev/null 2>&1
 sleep 2
+dialoge_weg
 adb shell input tap 989 228
 sleep 2
+dialoge_weg
 adb shell uiautomator dump /sdcard/ready_ui.xml >/dev/null 2>&1
 adb shell cat /sdcard/ready_ui.xml > /tmp/ready_ui.xml
 ready_tap=$(python3 - "$PKG" <<'PY'

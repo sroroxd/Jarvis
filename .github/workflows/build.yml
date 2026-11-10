@@ -10,6 +10,11 @@ on:
       - '.github/bench/**'
       - '.github/workflows/latenz.yml'
   workflow_dispatch:
+    inputs:
+      cloud_tests:
+        description: 'Kostenpflichtige Anthropic-Live-Tests ausdrücklich ausführen'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -89,9 +94,10 @@ jobs:
       - name: Im Emulator testen
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          # Arts API-Schlüssel als GitHub-Secret: Damit stellt der Test echte Fragen an Claude.
-          # Fehlt er, wird nur der Gesprächstest übersprungen. GitHub schwärzt ihn in allen Protokollen.
-          JARVIS_TESTKEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Pushes prüfen lokal, ohne laufend kostenpflichtige Anbieteranfragen auszulösen.
+          # Echte Cloud-Tests nur über ausdrücklich aktivierten workflow_dispatch.
+          # Ohne Schlüssel werden diese Prüfungen ausdrücklich als übersprungen gemeldet.
+          JARVIS_TESTKEY: ${{ github.event_name == 'workflow_dispatch' && inputs.cloud_tests && secrets.ANTHROPIC_API_KEY || '' }}
         with:
           api-level: 34
           target: google_apis
