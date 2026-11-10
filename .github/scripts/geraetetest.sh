@@ -125,7 +125,7 @@ dialoge_weg
 adb exec-out screencap -p > shots/04_nach_30s.png
 
 # ---------------------------------------------------------------- Gesprächstest mit Claude
-# Nur wenn der API-Schlüssel als GitHub-Secret ANTHROPIC_API_KEY hinterlegt ist. Die Fragen laufen
+# Nur wenn der Workflow ausdrücklich einen Testschlüssel übergibt. Die Fragen laufen
 # genau den Weg einer gesprochenen Frage (ohne Mikrofon) bis zu Claude und zurück.
 gfail=0
 answers() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -E "antwort \[|fehler:" || true; }
@@ -249,7 +249,7 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
     say "  Hinweis: Arts TFT-Testbilder ließen sich nicht in die App kopieren"
   fi
 else
-  say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
+  say "Gesprächstest übersprungen: diesem Lauf wurde kein Cloud-Testschlüssel übergeben."
 fi
 
 # ---------------------------------------------------------------- Offline-Stimme (Pocket TTS, Machbarkeit)
