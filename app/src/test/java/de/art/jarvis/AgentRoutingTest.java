@@ -19,4 +19,13 @@ public class AgentRoutingTest {
     @Test public void ausdruecklicherAuftragGehtAuchMitApiAnDenAgenten() {
         assertEquals("Plane morgen", AgentRouting.task("Übernimm das: Plane morgen", true, true, false));
     }
+    @Test public void kaltesOffenesMikrofonStartetKeineBeilaeufigenAgentauftraege() {
+        assertFalse(AgentRouting.addressed("Was läuft im Fernsehen?", false, true, 120000, 0));
+        assertTrue(AgentRouting.addressed("Jarvis, wie geht es dir?", false, true, 120000, 0));
+        assertTrue(AgentRouting.addressed("Übernimm das: Plane morgen", false, true, 120000, 0));
+    }
+    @Test public void antippenUndWarmeFolgefrageBrauchenKeinenNamen() {
+        assertTrue(AgentRouting.addressed("Wie geht es dir?", false, false, 120000, 0));
+        assertTrue(AgentRouting.addressed("Und morgen?", false, true, 120000, 119000));
+    }
 }

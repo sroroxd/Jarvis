@@ -1314,6 +1314,13 @@ public class JarvisService extends Service {
         // der Agent braucht Sekunden bis Minuten und verarbeitet keine Spielbilder.
         String auftrag = AgentRouting.task(text, !prefs.brainKey().isEmpty(), prefs.agentReady(), prefs.tftMode());
         if (auftrag != null) {
+            if (!AgentRouting.addressed(text, !prefs.brainKey().isEmpty(), continuous || testOpen,
+                    SystemClock.elapsedRealtime(), lastExchangeAt)) {
+                setState(State.IDLE);
+                status("Agentbetrieb: Nach einer Pause bitte Jarvis beim Namen nennen oder antippen.");
+                scheduleRelisten(RELISTEN_DELAY_MS);
+                return;
+            }
             beauftrageAgenten(auftrag);
             return;
         }
