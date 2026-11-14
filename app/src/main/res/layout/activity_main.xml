@@ -133,6 +133,16 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <Button
+        android:id="@+id/localAssistantButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="8dp"
+        android:text="Lokaler Assistent · ohne Cloud"
+        android:contentDescription="Lokalen Textassistenten öffnen" />
+
     <!-- Der große Knopf -->
     <FrameLayout
         android:layout_width="match_parent"
