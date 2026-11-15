@@ -27,9 +27,14 @@ final class SecretStore {
         synchronized (LOCK) {
             try {
                 if (encrypted.contains(name)) {
-                    String value = SecretCipher.decrypt(key(false), name, encrypted.getString(name, ""));
+                    String sealed = encrypted.getString(name, "");
+                    String value = SecretCipher.decrypt(key(false), name, sealed);
                     // Auch einen nach einem Prozessabbruch verbliebenen Klartext erst nach erfolgreichem Lesen entfernen.
-                    if (legacy.contains(name) && !legacy.edit().remove(name).commit()) throw new IllegalStateException();
+                    if (legacy.contains(name)) {
+                        // commit(false) kann trotzdem den RAM-Zustand ändern. Erst erneut auf Datenträger sichern.
+                        if (!encrypted.edit().putString(name, sealed).commit()) throw new IllegalStateException();
+                        if (!legacy.edit().remove(name).commit()) throw new IllegalStateException();
+                    }
                     return value;
                 }
                 String value = legacy.getString(name, "");

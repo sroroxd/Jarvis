@@ -14,7 +14,12 @@ import java.util.function.Consumer;
 /** Ein einziges Voll-Duplex-Mikrofon, PCM16/24kHz; begrenzte Puffer und sofortiges lokales Stoppen. */
 final class RealtimeAudio implements AutoCloseable {
     private final Object lock = new Object();
-    private final ArrayBlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(128);
+    private static final class Chunk {
+        final byte[] data;
+        final int epoch;
+        Chunk(byte[] data, int epoch) { this.data = data; this.epoch = epoch; }
+    }
+    private final ArrayBlockingQueue<Chunk> queue = new ArrayBlockingQueue<>(128);
     private volatile boolean closed;
     private AudioRecord record;
     private AudioTrack track;
@@ -64,21 +69,23 @@ final class RealtimeAudio implements AutoCloseable {
     void add(String base64) {
         if (closed) return;
         byte[] data = Base64.decode(base64, Base64.DEFAULT);
-        if ((data.length & 1) != 0 || !queue.offer(data)) throw new IllegalStateException("Audiopuffer voll");
+        synchronized (lock) {
+            if (closed) return;
+            if ((data.length & 1) != 0 || !queue.offer(new Chunk(data, epoch))) throw new IllegalStateException("Audiopuffer voll");
+        }
     }
 
     private void playback(Consumer<String> error) {
         Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
         try {
             while (!closed) {
-                int currentEpoch;
-                synchronized (lock) { currentEpoch = epoch; }
-                byte[] data = queue.poll(20, TimeUnit.MILLISECONDS);
+                Chunk chunk = queue.poll(20, TimeUnit.MILLISECONDS);
+                byte[] data = chunk == null ? null : chunk.data;
                 int offset = 0;
                 while (data != null && offset < data.length && !closed) {
                     int n;
                     synchronized (lock) {
-                        if (currentEpoch != epoch) break;
+                        if (chunk.epoch != epoch) break;
                         n = track.write(data, offset, data.length - offset, AudioTrack.WRITE_NON_BLOCKING);
                         if (n < 0) throw new IllegalStateException();
                         writtenSamples += n / 2;

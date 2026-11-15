@@ -83,9 +83,19 @@ final class OpenAiSession implements AutoCloseable {
         if (turns >= RealtimeProtocol.MAX_TURNS) { stop("OpenAI-Testlimit erreicht."); return; }
         if (manual) client.interrupt(audio.interrupt());
         int requestEpoch = ++epoch;
-        long requestedAt = SystemClock.elapsedRealtime();
         transcript.setLength(0);
         ui.state(JarvisService.State.THINKING, info("Prüfe ein frisches, freigegebenes Bild …"));
+        captureWhenReady(requestEpoch, 0);
+    }
+
+    private void captureWhenReady(int requestEpoch, int retries) {
+        if (closed || requestEpoch != epoch) return;
+        if (!client.canRespond()) {
+            if (retries >= 25) { stop("OpenAI hat die vorherige Antwort nicht rechtzeitig beendet."); return; }
+            main.postDelayed(() -> captureWhenReady(requestEpoch, retries + 1), 100);
+            return;
+        }
+        long requestedAt = SystemClock.elapsedRealtime();
         captures.execute(() -> {
             ScreenGrabber.FreshFrame candidate;
             try { candidate = frames.capture(requestedAt); } catch (Exception e) { candidate = null; }
@@ -93,8 +103,11 @@ final class OpenAiSession implements AutoCloseable {
             main.post(() -> {
                 if (closed || requestEpoch != epoch) return;
                 boolean fresh = frames.allowed() && frame != null && RealtimeProtocol.fresh(frame.at, requestedAt, SystemClock.elapsedRealtime());
+                if (!client.respond(fresh ? frame.jpeg : null, fresh)) {
+                    main.postDelayed(() -> captureWhenReady(requestEpoch, retries + 1), 100);
+                    return;
+                }
                 turns++;
-                client.respond(fresh ? frame.jpeg : null, fresh);
                 main.removeCallbacks(answerTimeout); main.postDelayed(answerTimeout, 45000);
                 ui.state(JarvisService.State.THINKING, info(fresh ? "Aktuelles Bild an OpenAI gesendet." : "Kein frisches Bild: Nicht sicher erkennbar."));
             });

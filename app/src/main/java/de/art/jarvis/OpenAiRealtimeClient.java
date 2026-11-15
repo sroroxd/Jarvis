@@ -105,8 +105,10 @@ final class OpenAiRealtimeClient implements AutoCloseable {
         catch (Exception e) { fail("Mikrofonton konnte nicht gesendet werden."); }
     }
 
-    synchronized void respond(String jpeg, boolean fresh) {
-        if (!ready || closed || responsePending || !responseId.isEmpty()) return;
+    synchronized boolean canRespond() { return ready && !closed && !responsePending && responseId.isEmpty(); }
+
+    synchronized boolean respond(String jpeg, boolean fresh) {
+        if (!canRespond()) return false;
         try {
             if (!imageItem.isEmpty()) send(new JSONObject().put("type", "conversation.item.delete").put("item_id", imageItem));
             imageItem = "item_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
@@ -114,7 +116,9 @@ final class OpenAiRealtimeClient implements AutoCloseable {
             responsePending = true;
             cancelPending = false;
             send(new JSONObject().put("type", "response.create"));
+            return !closed;
         } catch (Exception e) { fail("Die Bildanfrage konnte nicht gesendet werden."); }
+        return false;
     }
 
     synchronized void forgetImage() {
@@ -167,7 +171,7 @@ final class OpenAiRealtimeClient implements AutoCloseable {
                     JSONObject response = event.getJSONObject("response");
                     String doneId = response.optString("id");
                     boolean obsolete = cancelled.remove(doneId);
-                    if (obsolete) { responsePending = false; break; }
+                    if (obsolete) break;
                     if (!doneId.equals(responseId)) break;
                     responseId = "";
                     if ("failed".equals(response.optString("status"))) {

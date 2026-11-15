@@ -95,6 +95,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void setupOpenAi() {
         if (!BuildConfig.OPENAI_TEST) return;
+        b.keyLayout.setHint("Claude-API-Schlüssel (optional bei OpenAI)");
+        b.testKey.setText("Claude-Schlüssel testen");
         android.widget.LinearLayout parent = (android.widget.LinearLayout) b.keyLayout.getParent();
         com.google.android.material.materialswitch.MaterialSwitch provider =
                 new com.google.android.material.materialswitch.MaterialSwitch(this);

@@ -499,7 +499,7 @@ public class JarvisService extends Service {
      * filtert das Handy sein Echo heraus, und Art kommt mit normaler Stimme darüber. Sonst wie bisher.
      */
     private void updateTalkAudio() {
-        boolean want = running && micGranted() && (prefs.openAiSelected()
+        boolean want = running && micGranted() && ((prefs.openAiSelected() && openAi != null && !openAi.isClosed())
                 || (continuous && prefs.bargeIn() && prefs.echoCallMode()));
         boolean on;
         if (want) {
