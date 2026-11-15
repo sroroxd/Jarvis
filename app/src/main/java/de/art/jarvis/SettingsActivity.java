@@ -94,6 +94,9 @@ public class SettingsActivity extends AppCompatActivity {
                             saveBrain();
                             prefs.setProvider(which == 1 ? "openai" : "claude");
                             showBrain();
+                            b.switchListen.setChecked(prefs.alwaysListen());
+                            b.switchProactive.setChecked(prefs.proactiveCoach());
+                            updateCostControl();
                             refreshService();
                             dialog.dismiss();
                         })
@@ -131,6 +134,10 @@ public class SettingsActivity extends AppCompatActivity {
         saveTextFields();
         if (prefs.apiKey().isEmpty()) {
             showResult(b.keyResult, "Bitte zuerst einen Schlüssel einfügen.");
+            return;
+        }
+        if (prefs.isOpenAi() && !prefs.claimOpenAiRequest(JarvisService.today())) {
+            showResult(b.keyResult, "OpenAI-Tageskontingent erreicht. Kein Testaufruf gesendet.");
             return;
         }
         showResult(b.keyResult, "Teste Schlüssel …");
@@ -202,12 +209,19 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         setSlider(b.sliderCostLimit, prefs.costLimitCents() / 100f);
-        b.costLimitValue.setText(dollars(prefs.costLimitCents() / 100f));
+        updateCostControl();
         b.sliderCostLimit.setLabelFormatter(this::dollars);
         b.sliderCostLimit.addOnChangeListener((s, value, fromUser) -> {
-            b.costLimitValue.setText(dollars(value));
             if (fromUser) prefs.setCostLimitCents(Math.round(value * 100));
+            updateCostControl();
         });
+    }
+
+    private void updateCostControl() {
+        boolean openAi = prefs.isOpenAi();
+        b.sliderCostLimit.setEnabled(!openAi);
+        b.costLimitValue.setText(openAi ? "OpenAI: max. " + OpenAiBudget.DAILY_LIMIT + " Aufrufe/Tag"
+                : dollars(prefs.costLimitCents() / 100f));
     }
 
     /** „5 $“ oder „aus“ für die Tagesgrenze. */

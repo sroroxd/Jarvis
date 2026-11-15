@@ -532,8 +532,9 @@ public class JarvisService extends Service {
     private boolean proactiveBusy;
 
     private boolean proactiveWanted() {
-        return running && !prefs.isOpenAi() && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
-                && !prefs.apiKey().isEmpty() && !prefs.overCostLimit(today());
+        return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
+                && !prefs.apiKey().isEmpty()
+                && (prefs.isOpenAi() ? prefs.canOpenAiRequest(today()) : !prefs.overCostLimit(today()));
     }
 
     /** Wächter an, wenn Spielmodus, Bildschirmfreigabe und Einstellung passen; sonst aus. */
@@ -541,12 +542,17 @@ public class JarvisService extends Service {
         if (proactiveWanted()) {
             if (!proactiveScheduled) {
                 proactiveScheduled = true;
-                main.postDelayed(proactiveTick, ProactiveCoach.CHECK_EVERY_MS);
+                main.postDelayed(proactiveTick, proactiveInterval());
             }
         } else {
             proactiveScheduled = false;
             main.removeCallbacks(proactiveTick);
         }
+    }
+
+    /** OpenAI checks no more often than every 30 seconds; Claude keeps the existing interval. */
+    private long proactiveInterval() {
+        return prefs.isOpenAi() ? 30_000L : ProactiveCoach.CHECK_EVERY_MS;
     }
 
     /** Ruhig genug für eine Ansage? Leerlauf oder Dauergespräch, in dem Art gerade nichts sagt. */
@@ -559,7 +565,7 @@ public class JarvisService extends Service {
             proactiveScheduled = false;
             return;
         }
-        main.postDelayed(proactiveTick, ProactiveCoach.CHECK_EVERY_MS);
+        main.postDelayed(proactiveTick, proactiveInterval());
         if (proactiveBusy || !quietForCoach()) return;
         // Mit Spielerkennung: nur, wenn TFT wirklich vorne ist.
         if (prefs.gameAuto() && GameWatch.permitted(this) && !gameWatch.inGame()) return;
@@ -591,7 +597,12 @@ public class JarvisService extends Service {
             return false;
         }
         // Günstiges Modell: Der Wächter sagt nur „PLANUNG 3-2“, „KAMPF“ oder „ANDERES“.
-        claude.sendQuick(key, Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, callback);
+        if (prefs.isOpenAi()) {
+            if (!prefs.claimOpenAiRequest(today())) return false;
+            new OpenAiClient().send(key, prefs.model(), ProactiveCoach.WATCH_SYSTEM, messages, callback);
+        } else {
+            claude.sendQuick(key, Prefs.BUDGET_MODEL, ProactiveCoach.WATCH_SYSTEM, messages, callback);
+        }
         return true;
     }
 
@@ -1404,9 +1415,9 @@ public class JarvisService extends Service {
         }
         final long t0 = SystemClock.elapsedRealtime();
         if (prefs.isOpenAi()) {
-            // Avoid billable background gate calls: only explicitly addressed first turns
-            // are sent; in-conversation followups remain unaffected by ListenRules.needsGate.
-            pending.gateReady(text.toLowerCase(java.util.Locale.ROOT).contains("jarvis"));
+            // Never charge a background gate call. Recognise clear spoken questions and
+            // commands locally, including those without a wake word.
+            pending.gateReady(ListenRules.openAiLocalAddressed(text));
             return;
         }
         claude.sendGate(key, Prefs.BUDGET_MODEL, ListenRules.GATE_SYSTEM, messages, new ClaudeClient.Callback() {
@@ -1558,8 +1569,13 @@ public class JarvisService extends Service {
         // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
         // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
         if (prefs.isOpenAi()) {
-            // The Responses API supports text/screenshots; Claude-specific tool schemas
-            // cannot be sent to OpenAI. No implicit provider fallback.
+            // The Responses API supports text/screenshots; no implicit provider fallback.
+            // Reserve before every network request; explicit questions are NOT exempt.
+            if (!prefs.claimOpenAiRequest(today())) {
+                setState(State.IDLE);
+                say("OpenAI-Tageskontingent erreicht. Keine weiteren API-Anfragen bis morgen.");
+                return;
+            }
             new OpenAiClient().send(key, prefs.model(), system, messages, callback);
         } else {
             claude.send(key, prefs.model(), system, messages, effortFor(text),

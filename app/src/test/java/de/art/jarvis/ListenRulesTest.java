@@ -39,6 +39,18 @@ public class ListenRulesTest {
     }
 
     @Test
+    public void openAiErkenntFreieFragenOhneKostenpflichtigenFilter() {
+        assertTrue(ListenRules.openAiLocalAddressed("Was siehst du auf meinem Bildschirm"));
+        assertTrue(ListenRules.openAiLocalAddressed("Analysiere meine TFT-Aufstellung"));
+        assertTrue(ListenRules.openAiLocalAddressed("Ich brauche deine Hilfe"));
+        assertTrue(ListenRules.openAiLocalAddressed("Kauf die beste Einheit"));
+        assertTrue(ListenRules.openAiLocalAddressed("Jarvis, hörst du mich?"));
+        assertFalse(ListenRules.openAiLocalAddressed("Jo"));
+        assertFalse(ListenRules.openAiLocalAddressed("Da läuft der Fernseher"));
+        assertFalse(ListenRules.openAiLocalAddressed(""));
+    }
+
+    @Test
     public void antwortDesFilters() {
         assertFalse(ListenRules.addressed("NEIN"));
         assertFalse(ListenRules.addressed("nein."));

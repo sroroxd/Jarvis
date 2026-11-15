@@ -101,7 +101,8 @@ jobs:
 
       # Bildschirmfotos und Bericht für Claude und Art – auch wenn der Test fehlschlägt (dann erst recht).
       - name: Bilder und Bericht hochladen
-        if: always()
+        # No releases from isolated feature branches.
+        if: github.ref == 'refs/heads/main' && always()
         # Die Bilder sind Beiwerk: Ein Upload-Problem darf die Veröffentlichung nicht blockieren.
         continue-on-error: true
         uses: softprops/action-gh-release@v3
@@ -119,6 +120,8 @@ jobs:
             Bericht (geraetetest.txt) und Fehlerprotokoll. Keine App zum Installieren.
 
   veroeffentlichen:
+    # Feature branch: only temporary Actions artifacts, never a GitHub Release.
+    if: github.ref == 'refs/heads/main'
     # Nur wenn Tests UND Gerätetest bestanden sind.
     needs: [ build, geraetetest ]
     runs-on: ubuntu-24.04

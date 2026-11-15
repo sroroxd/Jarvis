@@ -61,6 +61,15 @@ final class ListenRules {
         return utterance == null || !JARVIS.matcher(utterance).find();
     }
 
+    /** Free local first-turn screening: questions and requests without a wake word. */
+    static boolean openAiLocalAddressed(String utterance) {
+        if (utterance == null) return false;
+        String t = utterance.trim().toLowerCase(Locale.GERMANY);
+        if (t.length() < 5) return false;
+        if (JARVIS.matcher(t).find() || t.contains("?")) return true;
+        return t.matches("^(was|wie|warum|wann|wo|wer|welche[rsmn]?|wieso|weshalb|wofür|wieviel|wie viel|kannst|könntest|würdest|soll|sollte|bitte|hilf|erklär|erzähl|analysier|analysiere|prüf|zeig|sag|mach|öffne|schalte|starte|kauf|nimm|rolle|level|stell|guck mal|schau mal|ich brauche|ich möchte|ich will|lass uns|jetzt bitte|frage)\\b.*");
+    }
+
     static final String GATE_SYSTEM = "Du entscheidest, ob ein gehörter Satz an den Sprachassistenten Jarvis gerichtet "
             + "ist. Antworte mit genau einem Wort: JA oder NEIN.";
 

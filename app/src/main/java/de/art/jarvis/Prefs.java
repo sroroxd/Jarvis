@@ -166,6 +166,28 @@ public final class Prefs {
 
     // ------------------------------------------------------------ Kosten (Tagessumme aller Claude-Anfragen)
 
+    /** A strict REQUEST quota, not a monetary guarantee: every attempted OpenAI call counts. */
+    public boolean canOpenAiRequest(String day) {
+        return OpenAiBudget.allowed(openAiRequestsToday(day));
+    }
+
+    public int openAiRequestsToday(String day) {
+        return day.equals(sp.getString("openai_request_day", ""))
+                ? sp.getInt("openai_request_count", 0) : 0;
+    }
+
+    /** Reserve before sending so background + spoken requests cannot race past the daily quota. */
+    public boolean claimOpenAiRequest(String day) {
+        synchronized (COST_LOCK) {
+            int used = openAiRequestsToday(day);
+            if (!OpenAiBudget.allowed(used)) return false;
+            sp.edit().putString("openai_request_day", day)
+                    .putInt("openai_request_count", used + 1).apply();
+            return true;
+        }
+    }
+
+
     private static final Object COST_LOCK = new Object();
 
     /** Zählt eine Anfrage zur Tagessumme; ein neuer Tag beginnt bei null. Aus jedem Thread aufrufbar. */
@@ -254,11 +276,12 @@ public final class Prefs {
      * Antippen. Standard an (Arts Wunsch #47, „Wachwort entfernen“).
      */
     public boolean alwaysListen() {
-        return sp.getBoolean("always_listen", true);
+        // OpenAI never inherits Claude's default-on microphone: explicit opt-in first.
+        return sp.getBoolean(isOpenAi() ? "openai_always_listen" : "always_listen", !isOpenAi());
     }
 
     public void setAlwaysListen(boolean value) {
-        sp.edit().putBoolean("always_listen", value).apply();
+        sp.edit().putBoolean(isOpenAi() ? "openai_always_listen" : "always_listen", value).apply();
     }
 
     /** 1 = reagiert nur auf sehr deutliches „Jarvis“, 10 = reagiert auf fast alles (gilt fürs Unterbrechen). */
@@ -390,11 +413,12 @@ public final class Prefs {
 
     /** Spielmodus: zu Beginn jeder Planungsphase von selbst ansagen (Wunsch #41/#42). Standard an. */
     public boolean proactiveCoach() {
-        return sp.getBoolean("proactive_coach", true);
+        // Paid OpenAI screenshot monitoring requires a separate, explicit opt-in.
+        return sp.getBoolean(isOpenAi() ? "openai_proactive_coach" : "proactive_coach", !isOpenAi());
     }
 
     public void setProactiveCoach(boolean value) {
-        sp.edit().putBoolean("proactive_coach", value).apply();
+        sp.edit().putBoolean(isOpenAi() ? "openai_proactive_coach" : "proactive_coach", value).apply();
     }
 
     /** Spielmodus: gründlicher nachdenken (langsamer). Standard aus – Tempo zuerst (Wunsch #23). */
