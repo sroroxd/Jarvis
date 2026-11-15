@@ -66,6 +66,12 @@ keine neue Produktiv-APK. Die vorhandene Produktivsignatur wird hier nicht rotie
   unerwünschte API-Abrechnung, Zeitüberschreitung und Prozessfehler.
 - CI: Android-Build, Unit-Tests, Instrumentierung, Emulator-Gerätetest, APK-Signaturprüfung.
 
+Die OpenAI-Testvariante verwendet in der CI keine echten API-Schlüssel. Der bisher hinterlegte
+Claude-Testschlüssel wurde bei der Prüfung mit `invalid x-api-key` abgelehnt; Claude-Live-Aufrufe
+und die separate Pocket-TTS-Machbarkeitsprobe sind deshalb kein Bestandteil dieses OpenAI-Prüflaufs.
+Die normalen Buildvarianten behalten ihre bisherigen Prüfungen. Diese Trennung ist kein Nachweis
+für einen erfolgreichen Live-Aufruf bei OpenAI oder Claude.
+
 Diese Prüfungen ersetzen **keinen** echten OpenAI-Aufruf und **keinen** S24-Ultra-Test. Ohne einen gültigen
 lokal eingetragenen Schlüssel sind Modellzugriff, Audioqualität/Echo, Hintergrundverhalten bei TFT und
 die Qualität der Spielbildanalyse nicht als bestanden nachgewiesen. Automatische periodische Bildschirm-
