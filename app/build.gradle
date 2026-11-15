@@ -10,6 +10,9 @@ def branchName = (System.getenv('GITHUB_REF_NAME') ?: '').replaceAll('[^A-Za-z0-
 // Paket-ID, installiert sich NEBEN die normale Jarvis-App und hat eigene Einstellungen und eigenes
 // Gedächtnis – die normale App wird dabei weder überschrieben noch verändert.
 def testApp = project.hasProperty('testApp')
+// Ausschliesslich fuer die kontrollierte Signaturschluessel-Migration: unsignierte Release-APK.
+// Standard-Builds behalten unveraendert ihre bisherige Signatur.
+def migrationUnsigned = project.hasProperty('migrationUnsigned')
 
 // Offline-Stimme (Pocket TTS) über sherpa-onnx, Fassung mit FEST EINGEBAUTER ONNX Runtime. Die normale Fassung
 // teilt sich libonnxruntime.so mit onnxruntime-android (Wachwort) – die Symbole sind aber versioniert
@@ -73,7 +76,7 @@ android {
             }
         }
         release {
-            signingConfig signingConfigs.jarvis
+            signingConfig = migrationUnsigned ? null : signingConfigs.jarvis
             minifyEnabled false
             // Nur 64-Bit-ARM (Galaxy S24 Ultra) – hält die APK trotz Wachwort-Engine klein.
             // Die Debug-Variante hat zusätzlich x86_64, damit sie im Emulator für die Vorschaubilder läuft.
