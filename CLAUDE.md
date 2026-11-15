@@ -12,6 +12,43 @@ Fragen nur bei wirklich wichtigen Dingen: Geld und Konten (Guthaben, Schlüssel 
 etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Löschen, Zusammenführen nach
 `main`, und Sicherheitsrisiken für Arts Konten oder Handy. Dann mit klarer Empfehlung, nicht als Auswahl.
 
+## Projektsteuerung (Arts Vorgabe vom 15. Nov. 2026)
+
+Prioritäten – bei Zielkonflikten gewinnt die kleinere Nummer:
+
+1. **Natürliches, unterbrechbares Live-Freisprechen** (ohne Wakeword, Dazwischenreden, geringe Latenz).
+2. **Stabile Android-App und installierbare APK.**
+3. **Möglichst vollständig kostenlose KI** (lokal oder kostenlose Anbieter vor bezahlten).
+4. **Zuverlässiges TFT-Live-Coaching mit aktuellem Patch.**
+
+Feste Grenzen:
+
+- **Keine kostenpflichtigen API-Aufrufe ohne Arts ausdrückliche Zustimmung** – auch nicht in
+  Tests oder der CI (`cloud_tests` nur von Hand und nur mit Zustimmung).
+- **Keine Änderungen direkt an `main`.**
+- **Keine automatischen Merges oder Releases** – zusammenführen und veröffentlichen entscheidet Art.
+- **Keine Veröffentlichung von Zugangsdaten** (Repo, Issues, PRs, Logs, externe Dienste).
+
+### Agenten und Skills (`.claude/`)
+
+| Typ | Name | Wofür |
+|---|---|---|
+| Agent | `android-voice-engineer` | Sprachkette, Barge-in, Latenz, lokale/kostenlose KI, TFT-Coaching |
+| Agent | `security-auditor` | unabhängige Sicherheitsprüfung (nur Bericht, ändert nichts) |
+| Agent | `build-test-engineer` | Gradle, GitHub Actions, Tests, Debug-APK, CI-Fehler, S24-Vorbereitung |
+| Skill | `/jarvis-audit` | Projektzustand, Issues, PRs, CI, Fehler |
+| Skill | `/jarvis-build` | Debug-APK über die CI bauen und prüfen |
+| Skill | `/jarvis-voice-test` | Freisprechen und Unterbrechungen diagnostizieren |
+| Skill | `/jarvis-security` | Sicherheitsprobleme erkennen und prüfen |
+
+Effiziente Zusammenarbeit:
+
+- Einfache Aufgaben direkt erledigen; Skills und vorhandene Konfiguration wiederverwenden.
+- Subagents nur für tatsächlich unabhängige Aufgaben, **höchstens zwei gleichzeitig**, keine
+  Agentenketten (ein Subagent startet keinen weiteren).
+- Subagents geben Ergebnisse kompakt zurück (Dateien, Befund, Belege, Ungeprüftes).
+- Keine Experimente mit kostenpflichtigen Agent Teams.
+
 ## Umgebung
 
 - **Windows-Rechner.** Standard-Shell ist **Git Bash** für Git, Dateien und Skripte;
