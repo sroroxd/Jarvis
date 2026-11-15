@@ -27,9 +27,13 @@ werden aus den API-Antworten angezeigt. `429` wegen Guthaben und wegen Abfragera
 `JarvisService` behält den vorhandenen Foreground-Service mit Mikrofon-/MediaProjection-Typen und den
 vorhandenen `ScreenGrabber`. Ein manueller Bildauftrag oder das Ende einer gesprochenen Frage ruft diesen
 Mitschnitt ab. Ein Bild darf höchstens 1,5 Sekunden alt sein und muss frühestens 250 ms vor der Anfrage
-eingetroffen sein. Nach Verarbeitung erneut veraltete Bilder werden ebenfalls verworfen. Bei fehlendem,
+eingetroffen sein. Ist beim Abruf noch kein passender Frame vorhanden, wartet ausschließlich diese Anfrage
+bis zu einer Sekunde auf einen neuen Frame. Empfangszeiten alter Bilder werden dabei nicht erneuert.
+Nach Verarbeitung erneut veraltete Bilder werden ebenfalls verworfen. Bei fehlendem,
 widerrufenem oder altem Bild wird kein `input_image` gesendet; der Spielstand heißt **Nicht sicher erkennbar**.
 Vor dem nächsten Auftrag wird das vorige Bild aus der Realtime-Unterhaltung gelöscht.
+JPEG-Kompression findet außerhalb der Capture-Sperre statt; neue Frames und ein Stop können weiterlaufen.
+Ein Reader-Wechsel durch Drehen oder Stop entwertet einen gerade verarbeiteten Frame ebenfalls.
 
 `OpenAiRealtimeClient` erzeugt über HTTPS ein 60 Sekunden gültiges Client-Token und verwendet nur dieses
 für den WebSocket-Handshake. Der dauerhafte Schlüssel ist kein Teil des WebSocket-Protokolls, kein
@@ -45,6 +49,12 @@ Die Hilfe erklärt den tatsächlichen Sprach-/Bildablauf und die Testpause nach 
 Nach sechs Antworten läuft die Sitzung weiter; der gespeicherte Schlüssel bleibt gültig. Verbindungsfehler
 zeigen einen bereinigten technischen Code statt fremder API-Fehlermeldungen oder Zugangsdaten.
 Beim Unterbrechen wartet der Client auf die Abbruchbestätigung, bevor er eine neue Antwort anfordert.
+
+Im kleinen Fenster bleibt der Sprechkern mindestens 96 dp groß, Status und Stop bleiben sichtbar.
+Einstellungen, Modusschalter, Bildknopf und Verlauf sind dann über den Scrollbereich erreichbar.
+„Kostenpflichtig · Status öffnen“ zeigt per Antippen den vollständigen Bericht. In großen Fenstern
+stehen die Zusatzknöpfe wieder an ihren bisherigen Positionen. Der Startstatus unterscheidet zwischen
+einem fehlenden Schlüssel, einem noch nicht gewählten Anbieter und einer startbereiten OpenAI-Konfiguration.
 
 ## Zugangsdaten und Signierung
 
@@ -71,6 +81,11 @@ keine neue Produktiv-APK. Die vorhandene Produktivsignatur wird hier nicht rotie
 - Android-Instrumentierung: echter Keystore, verlustfreie Migration, alte Backup-Importe,
   schlüsselfreie Exporte, Anbieter-Wiederherstellung, Schutz vor leerem Überschreiben beschädigter Werte
   und tatsächlicher Einstellungswechsel mit erhaltenem Schlüssel und Oberflächenfotos.
+- Echte Android-Bildpuffer: nach Anfrage eintreffender Frame, Austausch eines alten Frames,
+  statischer Timeout ohne neue Datierung, Stop beim Warten, veralteter Reader-Callback und mehrere JPEGs.
+- Activity-Oberfläche: Bereitschaft nach Anbieter/Schlüssel, vollständiger Statusdialog, kleine Fenster
+  mit 400/320 dp Höhe und mehrfacher Wechsel ins große Fenster. Die Fensterbilder sind Renderings des
+  echten Viewbaums unter Testmaßen; sie ersetzen keinen echten Samsung-Split-Screen-Test.
 - Node: echte lokale Agent-HTTP-Anfragen gegen fehlende/falsche Token, fehlenden Login,
   unerwünschte API-Abrechnung, Zeitüberschreitung und Prozessfehler.
 - CI: Android-Build, Unit-Tests, Instrumentierung, Emulator-Gerätetest, APK-Signaturprüfung.
@@ -81,10 +96,21 @@ und die separate Pocket-TTS-Machbarkeitsprobe sind deshalb kein Bestandteil dies
 Die normalen Buildvarianten behalten ihre bisherigen Prüfungen. Diese Trennung ist kein Nachweis
 für einen erfolgreichen Live-Aufruf bei OpenAI oder Claude.
 
-Diese Prüfungen ersetzen **keinen** echten OpenAI-Aufruf und **keinen** S24-Ultra-Test. Ohne einen gültigen
-lokal eingetragenen Schlüssel sind Modellzugriff, Audioqualität/Echo, Hintergrundverhalten bei TFT und
-die Qualität der Spielbildanalyse nicht als bestanden nachgewiesen. Automatische periodische Bildschirm-
-übertragung wird erst nach dieser Geräteabnahme ergänzt. Issue #93 bleibt bis zur vollständigen Abnahme offen.
+Diese Prüfungen ersetzen **keinen** echten OpenAI-Aufruf und **keinen** S24-Ultra-Test.
+Am 15.11.2026 wurden Build 173 und anschließend Build 174 direkt auf einem Samsung SM-S928B mit
+Android 17 geprüft: installierte APK-Prüfsumme und Paketversion, maskierter Schlüssel, echte Realtime-
+Antworten und weiterlaufender Foreground-Service beim TFT-Wechsel. Die frühere Pause nach sechs
+Antworten wurde in Build 173 beobachtet; Build 174 hebt sie auf und erreichte auf dem Gerät die echte
+Realtime-Verbindung mit Antwortzähler ohne „/6“. Ein separater Live-Durchlauf über die siebte Antwort
+hinaus ist noch nicht dokumentiert. Ein Start meldete HTTP 401, spätere Starts funktionierten; die genaue
+Ursache wurde nicht festgestellt und der gespeicherte Schlüssel nicht vom Tester ausgelesen.
+
+Korrekte Empfehlungen aus nachweislich aktuellen TFT-Bildern, Mikrofon/Echo und Unterbrechen sind
+noch nicht vollständig abgenommen. Mehrere Antworten meldeten fehlende frische Bilder. Der direkte
+Gerätetest läuft über Desktop Commander in Termux und vom Nutzer freigegebenes WLAN-ADB, ohne PC.
+Fehlt die WLAN-Verbindung oder ändert sich der Debugging-Port, ist damit keine laufende Bildschirm-
+beobachtung möglich; der Terminalzugriff allein genügt nicht. Automatische periodische Bildschirm-
+übertragung wird erst nach vollständiger Geräteabnahme ergänzt. Issue #93 bleibt bis dahin offen.
 
 Referenzen:
 - https://developers.openai.com/api/docs/guides/realtime-conversations

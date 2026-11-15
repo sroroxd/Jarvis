@@ -10,6 +10,7 @@
 
     <!-- Kopfzeile -->
     <LinearLayout
+        android:id="@+id/mainHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -57,6 +58,7 @@
 
     <!-- Status -->
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/mainStatusCard"
         style="@style/Jarvis.Card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -103,6 +105,7 @@
                 tools:text="Sag „Jarvis“ – oder tippe auf den Kern." />
 
             <com.google.android.material.chip.ChipGroup
+                android:id="@+id/mainStatusChips"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -133,8 +136,17 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/mainOpenAiImage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:text="TFT-Bild jetzt prüfen"
+        android:visibility="gone" />
+
     <!-- Der große Knopf -->
     <FrameLayout
+        android:id="@+id/mainReactorContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -171,10 +183,17 @@
         android:paddingTop="6dp">
 
         <LinearLayout
-            android:id="@+id/logList"
+            android:id="@+id/mainTranscriptContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/logList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
     </ScrollView>
 
     <Button

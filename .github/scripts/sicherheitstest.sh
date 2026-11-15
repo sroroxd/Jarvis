@@ -14,4 +14,6 @@ fi
 if [ "$pkg" = de.art.jarvis.openaitest ]; then
   adb exec-out run-as "$pkg" cat files/openai-einstellungen.png > shots/openai-einstellungen.png
   adb exec-out run-as "$pkg" cat files/openai-hilfe.png > shots/openai-hilfe.png
+  adb exec-out run-as "$pkg" cat files/openai-fenster-400.png > shots/openai-fenster-400.png
+  adb exec-out run-as "$pkg" cat files/openai-fenster-320.png > shots/openai-fenster-320.png
 fi

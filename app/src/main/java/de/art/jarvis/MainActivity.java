@@ -9,13 +9,17 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -33,8 +37,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private boolean askedCalendar;
     private boolean askedOverlay;
     private boolean rendering;
-    private android.widget.TextView openAiInfo;
-    private android.widget.Button openAiImage;
+    private boolean compactWindow;
+    private int compactReactorHeight;
+    private ViewGroup normalChipParent;
+    private String openAiDetail = "";
     /** Nur in der Debug-Variante: fester Zustand für die automatischen Vorschaubilder. */
     private JarvisService.State demo;
 
@@ -60,14 +66,18 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
         b.settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
         if (BuildConfig.OPENAI_TEST) {
-            android.widget.LinearLayout root = (android.widget.LinearLayout) b.getRoot();
-            openAiInfo = new android.widget.TextView(this);
-            openAiInfo.setPadding(24, 8, 24, 8);
-            root.addView(openAiInfo, 2);
-            openAiImage = new com.google.android.material.button.MaterialButton(this);
-            openAiImage.setText("TFT-Bild jetzt prüfen");
-            openAiImage.setOnClickListener(v -> sendToService(JarvisService.ACTION_OPENAI_IMAGE));
-            root.addView(openAiImage, 3);
+            b.mainOpenAiImage.setVisibility(View.VISIBLE);
+            b.mainOpenAiImage.setOnClickListener(v -> sendToService(JarvisService.ACTION_OPENAI_IMAGE));
+            normalChipParent = (ViewGroup) b.mainStatusChips.getParent();
+            b.statusDetail.setOnClickListener(v -> {
+                if (compactWindow) new AlertDialog.Builder(this)
+                        .setTitle(b.statusText.getText()).setMessage(openAiDetail)
+                        .setPositiveButton("Schließen", null).show();
+            });
+            b.statusDetail.setClickable(false);
+            // Die tatsächlich verfügbare Höhe zählt, auch nach dem Verschieben des Split-Screen-Trenners.
+            b.getRoot().addOnLayoutChangeListener((v, l, t, r, bottom, ol, ot, or, ob) ->
+                    adaptOpenAiWindow(bottom - t));
         }
 
         b.reactor.setOnClickListener(v -> {
@@ -264,6 +274,70 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
     // ---------------------------------------------------------------- Anzeige
 
+    /** Kleine Fenster: Kern und Stop bleiben fest, Zusatzbedienung und Verlauf sind scrollbar. */
+    private void adaptOpenAiWindow(int height) {
+        height -= b.getRoot().getPaddingTop() + b.getRoot().getPaddingBottom();
+        if (height <= 0) return;
+        boolean compact = height < dp(600);
+        int reactorHeight = Math.max(dp(96), Math.min(dp(160), height / 3));
+        if (compact == compactWindow && (!compact || reactorHeight == compactReactorHeight)) return;
+        boolean changedMode = compact != compactWindow;
+        compactWindow = compact;
+        compactReactorHeight = reactorHeight;
+        LinearLayout root = (LinearLayout) b.getRoot();
+        if (changedMode) {
+            ((ViewGroup) b.mainHeader.getParent()).removeView(b.mainHeader);
+            ((ViewGroup) b.mainStatusChips.getParent()).removeView(b.mainStatusChips);
+            ((ViewGroup) b.mainOpenAiImage.getParent()).removeView(b.mainOpenAiImage);
+            ((ViewGroup) b.hint.getParent()).removeView(b.hint);
+            if (compact) {
+                b.mainTranscriptContent.addView(b.mainHeader, 0);
+                b.mainTranscriptContent.addView(b.mainStatusChips, 1);
+                b.mainTranscriptContent.addView(b.mainOpenAiImage, 2);
+                b.mainTranscriptContent.addView(b.hint, 3);
+            } else {
+                root.addView(b.mainHeader, 0);
+                normalChipParent.addView(b.mainStatusChips);
+                root.addView(b.mainOpenAiImage, root.indexOfChild(b.mainReactorContainer));
+                root.addView(b.hint, root.indexOfChild(b.logScroll));
+            }
+            b.subtitle.setVisibility(compact ? View.GONE : View.VISIBLE);
+            b.mainHeader.setPaddingRelative(compact ? 0 : dp(24), compact ? 0 : dp(12), compact ? 0 : dp(8), 0);
+            b.mainStatusCard.setContentPadding(dp(compact ? 12 : 18), compact ? 0 : dp(18),
+                    dp(compact ? 12 : 18), compact ? 0 : dp(18));
+            LinearLayout.LayoutParams card = (LinearLayout.LayoutParams) b.mainStatusCard.getLayoutParams();
+            card.topMargin = compact ? 0 : dp(16);
+            b.mainStatusCard.setLayoutParams(card);
+            b.statusDetail.setMaxLines(compact ? 1 : Integer.MAX_VALUE);
+            b.statusDetail.setEllipsize(compact ? TextUtils.TruncateAt.END : null);
+            b.statusDetail.setClickable(compact);
+            b.statusDetail.setFocusable(compact);
+            LinearLayout.LayoutParams stop = (LinearLayout.LayoutParams) b.stopButton.getLayoutParams();
+            stop.topMargin = compact ? 0 : dp(8);
+            stop.bottomMargin = compact ? 0 : dp(12);
+            b.stopButton.setLayoutParams(stop);
+            b.mainReactorContainer.setPadding(dp(24), compact ? 0 : dp(8), dp(24), compact ? 0 : dp(8));
+            b.logScroll.setPadding(dp(32), compact ? 0 : dp(6), dp(32), 0);
+            showOpenAiDetail();
+        }
+        LinearLayout.LayoutParams reactor = (LinearLayout.LayoutParams) b.mainReactorContainer.getLayoutParams();
+        reactor.height = compact ? reactorHeight : 0;
+        reactor.weight = compact ? 0 : 1;
+        b.mainReactorContainer.setLayoutParams(reactor);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private void showOpenAiDetail() {
+        b.statusDetail.setText(compactWindow
+                ? prefs.openAiSelected() ? "Kostenpflichtig · Status öffnen" : "Status öffnen"
+                : openAiDetail);
+        b.statusDetail.setContentDescription(openAiDetail
+                + (compactWindow ? " Vollständigen Status durch Antippen öffnen." : ""));
+    }
+
     private void render() {
         rendering = true;
         boolean running = JarvisService.isRunning() || demo != null;
@@ -319,16 +393,25 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.reactor.setMode(mode, label);
         b.statusText.setText(status);
         b.statusDetail.setText(detail);
-        if (openAiInfo != null) {
-            openAiInfo.setText(prefs.openAiSelected() ? JarvisService.openAiStatus()
-                    : "OpenAI-Test verfügbar: In den Einstellungen OpenAI Realtime auswählen. Kein automatischer Providerwechsel.");
-            openAiImage.setEnabled(prefs.openAiSelected() && running);
+        if (BuildConfig.OPENAI_TEST) {
+            // Ein Status statt zweier konkurrierender Infoblöcke. Vor dem Start zählt die aktuelle
+            // Konfiguration, nicht der statische Bericht einer noch nicht geöffneten Sitzung.
+            if (prefs.openAiSelected()) {
+                b.statusDetail.setText(running ? JarvisService.openAiStatus()
+                        : prefs.selectedProviderReady()
+                                ? "OpenAI Realtime bereit. Kostenpflichtig. Tippe auf den Kern, um die Sitzung zu starten."
+                                : "OpenAI-Schlüssel fehlt. Bitte in den Einstellungen eintragen.");
+            } else if (!running) {
+                b.statusDetail.setText("OpenAI-Test verfügbar: In den Einstellungen OpenAI Realtime auswählen. Kein automatischer Providerwechsel.");
+            }
+            b.mainOpenAiImage.setEnabled(prefs.openAiSelected() && running);
             b.chipListen.setEnabled(!prefs.openAiSelected());
-            if (prefs.openAiSelected()) b.statusDetail.setText("OpenAI Realtime · Antippen pausiert oder startet. „Beenden“ schließt Mikrofon und Sitzung.");
             if (prefs.openAiSelected() && running && s == JarvisService.State.IDLE) {
                 b.statusText.setText("OpenAI-Sitzung beendet");
                 b.reactor.setMode(ReactorView.Mode.IDLE, "NEUSTART");
             }
+            openAiDetail = b.statusDetail.getText().toString();
+            showOpenAiDetail();
         }
         b.statusDot.setBackgroundTintList(ColorStateList.valueOf(
                 running ? Palette.color(this, s) : Palette.off(this)));
