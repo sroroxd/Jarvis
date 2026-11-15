@@ -146,8 +146,10 @@ public class CredentialsTest {
         long stoppedAt = android.os.SystemClock.elapsedRealtime() + 5000;
         while (JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < stoppedAt) Thread.sleep(50);
         assertFalse(JarvisService.isRunning());
-        context.startActivity(new android.content.Intent(context, MainActivity.class)
-                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+        // Der vorige Diensttest hat HOME gedrückt. Ein Context-Start aus diesem Hintergrund
+        // ist keine verlässliche Geräte-Navigation (singleTask/BAL). Über Androids Shell
+        // wirklich in die App wechseln; für den ersten Schritt einen frischen Task anlegen.
+        String initialLaunch = navigateToMain(true);
         java.util.concurrent.atomic.AtomicReference<android.app.Activity> resumedActivity = new java.util.concurrent.atomic.AtomicReference<>();
         long visibleAt = android.os.SystemClock.elapsedRealtime() + 10000;
         while (resumedActivity.get() == null && android.os.SystemClock.elapsedRealtime() < visibleAt) {
@@ -160,7 +162,7 @@ public class CredentialsTest {
             if (resumedActivity.get() == null) Thread.sleep(25);
         }
         android.app.Activity activity = resumedActivity.get();
-        assertNotNull("MainActivity sichtbar, auch bei wiederverwendetem singleTask", activity);
+        assertNotNull("MainActivity tatsächlich RESUMED: " + initialLaunch, activity);
         java.util.concurrent.CountDownLatch paused = new java.util.concurrent.CountDownLatch(1);
         androidx.test.runner.lifecycle.ActivityLifecycleCallback lifecycle = (candidate, stage) -> {
             if (candidate == activity && stage == androidx.test.runner.lifecycle.Stage.PAUSED) paused.countDown();
@@ -198,12 +200,11 @@ public class CredentialsTest {
                     assertFalse("Kein Mikrofon-FGS-Start im Hintergrund", JarvisService.isRunning());
                 } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
             });
-            context.startActivity(new android.content.Intent(context, MainActivity.class)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            // Hier denselben Task behalten: Nur die echte Rückkehr darf pendingStart verbrauchen.
+            String returnLaunch = navigateToMain(false);
             long end = android.os.SystemClock.elapsedRealtime() + 10000;
             while (!JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < end) Thread.sleep(50);
-            assertTrue("Start erst nach sichtbarer Rückkehr", JarvisService.isRunning());
+            assertTrue("Start erst nach sichtbarer Rückkehr: " + returnLaunch, JarvisService.isRunning());
             InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
                 try {
                     assertTrue(resumed.getBoolean(activity));
@@ -218,6 +219,21 @@ public class CredentialsTest {
             long end = android.os.SystemClock.elapsedRealtime() + 5000;
             while (JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < end) Thread.sleep(50);
         }
+    }
+
+    private String navigateToMain(boolean freshTask) throws java.io.IOException {
+        String command = "am start -W " + (freshTask ? "-f 0x10008000 " : "")
+                + "-n " + context.getPackageName() + "/" + MainActivity.class.getName();
+        java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+        try (android.os.ParcelFileDescriptor fd = InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation().executeShellCommand(command);
+             java.io.InputStream in = new android.os.ParcelFileDescriptor.AutoCloseInputStream(fd)) {
+            byte[] buffer = new byte[1024];
+            int count;
+            while ((count = in.read(buffer)) != -1) output.write(buffer, 0, count);
+        }
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        return output.toString(java.nio.charset.StandardCharsets.UTF_8.name());
     }
 
     @Test public void openAiEinstellungenVerbergenNichtAngebundeneFunktionenUndBehaltenSchluessel() throws Exception {
