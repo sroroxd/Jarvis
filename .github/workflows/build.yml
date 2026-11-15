@@ -10,9 +10,14 @@ on:
       - '.github/bench/**'
       - '.github/workflows/latenz.yml'
   workflow_dispatch:
+    inputs:
+      cloud_tests:
+        description: 'Kostenpflichtige Anthropic-Live-Tests ausdrücklich ausführen'
+        type: boolean
+        default: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -59,6 +64,8 @@ jobs:
             app/build/outputs/apk/debug/app-debug.apk
 
   geraetetest:
+    permissions:
+      contents: write
     # Die App im Android-Emulator installieren, starten, bedienen und auf Abstürze und Hänger prüfen.
     needs: build
     runs-on: ubuntu-24.04
@@ -84,7 +91,7 @@ jobs:
         env:
           # Arts API-Schlüssel als GitHub-Secret: Damit stellt der Test echte Fragen an Claude.
           # Fehlt er, wird nur der Gesprächstest übersprungen. GitHub schwärzt ihn in allen Protokollen.
-          JARVIS_TESTKEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          JARVIS_TESTKEY: ${{ github.event_name == 'workflow_dispatch' && inputs.cloud_tests && secrets.ANTHROPIC_API_KEY || '' }}
         with:
           api-level: 34
           target: google_apis
@@ -119,6 +126,8 @@ jobs:
             Bericht (geraetetest.txt) und Fehlerprotokoll. Keine App zum Installieren.
 
   veroeffentlichen:
+    permissions:
+      contents: write
     # Nur wenn Tests UND Gerätetest bestanden sind.
     needs: [ build, geraetetest ]
     runs-on: ubuntu-24.04
