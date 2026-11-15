@@ -93,6 +93,15 @@ if vorne | grep -q SettingsActivity; then
         say "  FEHLER Einstellung fehlt in der Oberfläche: $label"; uifail=1
       fi
     done
+    if [ "${GITHUB_REF:-}" = "refs/heads/test/openai-realtime" ]; then
+      for label in "OpenAI Realtime" "OpenAI-Zugang prüfen"; do
+        if grep -qF "$label" shots/einstellungen_ui.txt; then
+          say "  OpenAI-Testbedienung sichtbar: $label"
+        else
+          say "  FEHLER OpenAI-Testbedienung fehlt: $label"; uifail=1
+        fi
+      done
+    fi
   else
     say "  Hinweis: Einstellungen ließen sich nicht auslesen (uiautomator) – neue Bedienelemente nicht geprüft"
   fi

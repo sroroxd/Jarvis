@@ -93,7 +93,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            if [ "$GITHUB_REF" = "refs/heads/main" ]; then pkg=de.art.jarvis; else pkg=de.art.jarvis.test; fi; bash .github/scripts/geraetetest.sh "$pkg" "$(find apks -name app-debug.apk | head -1)"
+            if [ "$GITHUB_REF" = "refs/heads/main" ]; then pkg=de.art.jarvis; else pkg=de.art.jarvis.test; fi
+            # Dieser Zweig prüft die neue OpenAI-Eingabe ohne kostenpflichtige Anfrage.
+            # Der vorhandene Claude-Secret-Key ist ungültig; seine unabhängigen Live-Tests
+            # dürfen die Android-Oberflächen- und Stabilitätsprüfung hier nicht verdecken.
+            if [ "$GITHUB_REF" = "refs/heads/test/openai-realtime" ]; then unset JARVIS_TESTKEY; fi
+            bash .github/scripts/geraetetest.sh "$pkg" "$(find apks -name app-debug.apk | head -1)"
 
       - name: Ergebnis im Protokoll zeigen
         if: always()
