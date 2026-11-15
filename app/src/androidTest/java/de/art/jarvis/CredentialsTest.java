@@ -153,6 +153,10 @@ public class CredentialsTest {
                             android.view.View.GONE, activity.findViewById(id).getVisibility());
                 }
                 assertEquals(android.view.View.VISIBLE, activity.findViewById(R.id.openAiKeyInput).getVisibility());
+                android.widget.EditText key = activity.findViewById(R.id.openAiKeyInput);
+                assertTrue("API-Schlüssel standardmäßig maskiert", key.getTransformationMethod()
+                        instanceof android.text.method.PasswordTransformationMethod);
+                assertFalse(key.getTransformationMethod().getTransformation(key.getText(), key).toString().contains("local-ui-test-key"));
                 assertTrue(((android.widget.TextView) activity.findViewById(R.id.helpText)).getText().toString().contains("OpenAI-Modus"));
                 com.google.android.material.materialswitch.MaterialSwitch provider = activity.findViewById(R.id.openAiProvider);
                 provider.setChecked(false);
