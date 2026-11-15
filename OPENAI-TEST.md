@@ -49,6 +49,10 @@ Die Hilfe erklärt den tatsächlichen Sprach-/Bildablauf und die Testpause nach 
 Nach sechs Antworten läuft die Sitzung weiter; der gespeicherte Schlüssel bleibt gültig. Verbindungsfehler
 zeigen einen bereinigten technischen Code statt fremder API-Fehlermeldungen oder Zugangsdaten.
 Beim Unterbrechen wartet der Client auf die Abbruchbestätigung, bevor er eine neue Antwort anfordert.
+Nach einem Android-Freigabedialog startet der Mikrofon-Dienst erst, wenn die Activity wieder aktiv ist.
+Eine erteilte Mikrofonberechtigung garantiert allein keinen erlaubten Hintergrundstart. Lehnt Android
+den Start ab, zeigt die App eine verständliche Meldung, statt abzustürzen; es gibt keinen automatischen
+Neuversuch und keine Umgehung der Systemfreigaben.
 
 Im kleinen Fenster bleibt der Sprechkern mindestens 96 dp groß, Status und Stop bleiben sichtbar.
 Einstellungen, Modusschalter, Bildknopf und Verlauf sind dann über den Scrollbereich erreichbar.

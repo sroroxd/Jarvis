@@ -88,6 +88,7 @@ public class JarvisService extends Service {
     // ---------------------------------------------------------------- Zustand für die Oberfläche
 
     private static volatile boolean running;
+    private static String startFailure = "";
     private static State uiState = State.IDLE;
     private static UiListener ui;
     private static String lastYou = "";
@@ -107,6 +108,15 @@ public class JarvisService extends Service {
 
     public static boolean isRunning() {
         return running;
+    }
+
+    static String startFailure() { return startFailure; }
+
+    static void clearStartFailure() { startFailure = ""; }
+
+    static void reportStartFailure(String message) {
+        startFailure = message;
+        if (ui != null) ui.onStatusChanged();
     }
 
     static State currentState() {
@@ -297,13 +307,19 @@ public class JarvisService extends Service {
             int types = 0;
             if (withScreen) types |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
             // Mikrofon-Typ ist nötig, damit Jarvis auch über anderen Apps zuhören darf.
-            if (micGranted()) types |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
-            if (types == 0) {
+            boolean microphoneGranted = micGranted();
+            if (microphoneGranted) types |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            boolean wasRunning = running;
+            final int foregroundTypes = types;
+            String failure = ForegroundStart.attempt(microphoneGranted,
+                    () -> startForeground(NOTIFICATION_ID, buildNotification(), foregroundTypes));
+            if (failure != null) {
+                running = false;
+                reportStartFailure(failure);
                 stopSelf();
                 return START_NOT_STICKY;
             }
-            boolean wasRunning = running;
-            startForeground(NOTIFICATION_ID, buildNotification(), types);
+            clearStartFailure();
             running = true;
             if (!wasRunning) {
                 main.removeCallbacks(listenWatchdog);

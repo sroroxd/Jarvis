@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private ViewGroup normalChipParent;
     private String openAiDetail = "";
     private AlertDialog openAiStatusDialog;
+    private boolean resumed;
+    private Intent pendingStart;
     /** Nur in der Debug-Variante: fester Zustand für die automatischen Vorschaubilder. */
     private JarvisService.State demo;
 
@@ -199,6 +201,19 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         JarvisService.setUiListener(this);
         render();
         checkForUpdate();
+    }
+
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        resumed = true;
+        startPendingJarvis();
+    }
+
+    @Override
+    protected void onPause() {
+        resumed = false;
+        super.onPause();
     }
 
     /** Höchstens alle 30 Minuten bei GitHub nachfragen (ohne Anmeldung: 60 Abfragen pro Stunde). */
@@ -363,8 +378,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (!running) {
             mode = ReactorView.Mode.OFF;
             label = "STARTEN";
-            status = "Inaktiv";
-            detail = !prefs.selectedProviderReady()
+            status = JarvisService.startFailure().isEmpty() ? "Inaktiv" : "Start nicht möglich";
+            detail = !JarvisService.startFailure().isEmpty() ? JarvisService.startFailure()
+                    : !prefs.selectedProviderReady()
                     ? "Trag zuerst in den Einstellungen deinen API-Schlüssel ein."
                     : "Tippe auf den Kern, um Jarvis zu starten.";
         } else {
@@ -409,7 +425,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (BuildConfig.OPENAI_TEST) {
             // Ein Status statt zweier konkurrierender Infoblöcke. Vor dem Start zählt die aktuelle
             // Konfiguration, nicht der statische Bericht einer noch nicht geöffneten Sitzung.
-            if (prefs.openAiSelected()) {
+            if (!running && !JarvisService.startFailure().isEmpty()) {
+                b.statusDetail.setText(JarvisService.startFailure());
+            } else if (prefs.openAiSelected()) {
                 b.statusDetail.setText(running ? JarvisService.openAiStatus()
                         : prefs.selectedProviderReady()
                                 ? "OpenAI Realtime bereit. Kostenpflichtig. Tippe auf den Kern, um die Sitzung zu starten."
@@ -601,8 +619,27 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (withScreen) {
             svc.putExtra(JarvisService.EXTRA_CODE, resultCode).putExtra(JarvisService.EXTRA_DATA, data);
         }
-        startForegroundService(svc);
-        if (!withScreen) {
+        // ActivityResult kann vor Resume eintreffen. While-in-use-Mikrofon erst aus der
+        // wieder sichtbaren Activity starten; Android entscheidet weiterhin endgültig.
+        pendingStart = svc;
+        startPendingJarvis();
+    }
+
+    private void startPendingJarvis() {
+        if (!resumed || pendingStart == null || isFinishing() || isDestroyed()) return;
+        Intent svc = pendingStart;
+        pendingStart = null;
+        JarvisService.clearStartFailure();
+        String failure = ForegroundStart.attempt(
+                checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED,
+                () -> startForegroundService(svc));
+        if (failure != null) {
+            JarvisService.reportStartFailure(failure);
+            Snackbar.make(b.getRoot(), failure, Snackbar.LENGTH_LONG).show();
+            render();
+            return;
+        }
+        if (!svc.hasExtra(JarvisService.EXTRA_DATA)) {
             Snackbar.make(b.getRoot(), "Ohne Freigabe sieht Jarvis nichts. Tippe oben auf „Bildschirm“, um sie nachzuholen.",
                     Snackbar.LENGTH_LONG).show();
         }

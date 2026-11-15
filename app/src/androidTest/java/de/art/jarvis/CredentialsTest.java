@@ -137,6 +137,89 @@ public class CredentialsTest {
         assertTrue("Abbruch vor jedem Netzwerkzugriff", result.get().contains("Providerwechsel"));
     }
 
+    @Test public void verspaeteterStartCallbackWartetBisDieActivityWiederSichtbarIst() throws Exception {
+        if (!BuildConfig.OPENAI_TEST) return;
+        Prefs p = new Prefs(context);
+        p.setOpenAiSelected(true);
+        p.setOpenAiKey(""); // Ausschließlich lokaler Diensttest, niemals ein API-Aufruf.
+        context.stopService(new android.content.Intent(context, JarvisService.class));
+        long stoppedAt = android.os.SystemClock.elapsedRealtime() + 5000;
+        while (JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < stoppedAt) Thread.sleep(50);
+        assertFalse(JarvisService.isRunning());
+        context.startActivity(new android.content.Intent(context, MainActivity.class)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+        java.util.concurrent.atomic.AtomicReference<android.app.Activity> resumedActivity = new java.util.concurrent.atomic.AtomicReference<>();
+        long visibleAt = android.os.SystemClock.elapsedRealtime() + 10000;
+        while (resumedActivity.get() == null && android.os.SystemClock.elapsedRealtime() < visibleAt) {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                for (android.app.Activity candidate : androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance()
+                        .getActivitiesInStage(androidx.test.runner.lifecycle.Stage.RESUMED)) {
+                    if (candidate instanceof MainActivity) resumedActivity.set(candidate);
+                }
+            });
+            if (resumedActivity.get() == null) Thread.sleep(25);
+        }
+        android.app.Activity activity = resumedActivity.get();
+        assertNotNull("MainActivity sichtbar, auch bei wiederverwendetem singleTask", activity);
+        java.util.concurrent.CountDownLatch paused = new java.util.concurrent.CountDownLatch(1);
+        androidx.test.runner.lifecycle.ActivityLifecycleCallback lifecycle = (candidate, stage) -> {
+            if (candidate == activity && stage == androidx.test.runner.lifecycle.Stage.PAUSED) paused.countDown();
+        };
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
+                androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance().addLifecycleCallback(lifecycle));
+        try {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                JarvisService.reportStartFailure(ForegroundStart.attempt(true, () -> {
+                    throw new SecurityException("Interne Android-Details");
+                }));
+                assertEquals("Start nicht möglich", ((android.widget.TextView) activity.findViewById(R.id.statusText)).getText().toString());
+                String message = ((android.widget.TextView) activity.findViewById(R.id.statusDetail)).getText().toString();
+                assertTrue("Startfehler bleibt auch im OpenAI-Modus sichtbar", message.contains("Mikrofon-Dienststart"));
+                assertFalse(message.contains("Interne Android-Details"));
+            });
+            try (android.os.ParcelFileDescriptor fd = InstrumentationRegistry.getInstrumentation()
+                    .getUiAutomation().executeShellCommand("input keyevent KEYCODE_HOME");
+                 java.io.InputStream in = new android.os.ParcelFileDescriptor.AutoCloseInputStream(fd)) {
+                byte[] buffer = new byte[512]; while (in.read(buffer) != -1) { /* HOME vollständig abwarten. */ }
+            }
+            assertTrue("Activity wurde tatsächlich pausiert", paused.await(5, java.util.concurrent.TimeUnit.SECONDS));
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            java.lang.reflect.Field resumed = MainActivity.class.getDeclaredField("resumed");
+            resumed.setAccessible(true);
+            java.lang.reflect.Field pending = MainActivity.class.getDeclaredField("pendingStart");
+            pending.setAccessible(true);
+            java.lang.reflect.Method start = MainActivity.class.getDeclaredMethod("startJarvis", int.class, android.content.Intent.class);
+            start.setAccessible(true);
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                try {
+                    assertFalse("Activity nach HOME pausiert", resumed.getBoolean(activity));
+                    start.invoke(activity, android.app.Activity.RESULT_CANCELED, null);
+                    assertNotNull("Verspätetes Ergebnis nur vormerken", pending.get(activity));
+                    assertFalse("Kein Mikrofon-FGS-Start im Hintergrund", JarvisService.isRunning());
+                } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
+            });
+            context.startActivity(new android.content.Intent(context, MainActivity.class)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            long end = android.os.SystemClock.elapsedRealtime() + 10000;
+            while (!JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < end) Thread.sleep(50);
+            assertTrue("Start erst nach sichtbarer Rückkehr", JarvisService.isRunning());
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                try {
+                    assertTrue(resumed.getBoolean(activity));
+                    assertNull("Startauftrag genau einmal verbraucht", pending.get(activity));
+                } catch (IllegalAccessException e) { throw new AssertionError(e); }
+            });
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
+                    androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance().removeLifecycleCallback(lifecycle));
+            context.stopService(new android.content.Intent(context, JarvisService.class));
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(activity::finish);
+            long end = android.os.SystemClock.elapsedRealtime() + 5000;
+            while (JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < end) Thread.sleep(50);
+        }
+    }
+
     @Test public void openAiEinstellungenVerbergenNichtAngebundeneFunktionenUndBehaltenSchluessel() throws Exception {
         if (!BuildConfig.OPENAI_TEST) return;
         Prefs p = new Prefs(context);
