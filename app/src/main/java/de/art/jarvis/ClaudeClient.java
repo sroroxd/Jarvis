@@ -77,6 +77,9 @@ final class ClaudeClient {
     /** Lehnt das Konto die Websuche ab (in der Claude Console nicht freigeschaltet), lassen wir sie danach weg. */
     private static volatile boolean webSearchUnavailable;
     private final Handler main = new Handler(Looper.getMainLooper());
+    private volatile java.util.function.BooleanSupplier requestsAllowed = () -> true;
+
+    void allowRequests(java.util.function.BooleanSupplier allowed) { requestsAllowed = allowed; }
 
     /** Knappste Antwort (z. B. Schlüsseltest). */
     void send(String apiKey, String model, String system, JSONArray messages, Callback callback) {
@@ -220,6 +223,7 @@ final class ClaudeClient {
             return failed("Interner Fehler beim Vorbereiten der Anfrage.");
         }
         for (int round = 0; round < MAX_ROUNDS; round++) {
+            if (!requestsAllowed.getAsBoolean()) return failed("Claude-Anfrage wegen Providerwechsel abgebrochen.");
             JSONArray defs;
             try {
                 defs = toolDefinitions(tools);
@@ -238,7 +242,10 @@ final class ClaudeClient {
                 if ("tool_use".equals(r.stopReason)) {
                     convo.put(new JSONObject().put("role", "assistant").put("content", r.content));
                     JSONArray results = new JSONArray();
-                    for (JSONObject call : clientToolCalls(r.content)) results.put(tools.run(call));
+                    for (JSONObject call : clientToolCalls(r.content)) {
+                        if (!requestsAllowed.getAsBoolean()) return failed("Claude-Werkzeug wegen Providerwechsel abgebrochen.");
+                        results.put(tools.run(call));
+                    }
                     if (results.length() == 0) return r; // nichts auszuführen – Antwort so nehmen
                     convo.put(new JSONObject().put("role", "user").put("content", results));
                     continue;
@@ -504,6 +511,7 @@ final class ClaudeClient {
      */
     private Result request(String apiKey, String model, String system, JSONArray messages,
                            String thinking, String effort, int maxTokens, JSONArray tools, TextListener listener) {
+        if (!requestsAllowed.getAsBoolean()) return failed("Claude-Anfrage wegen Providerwechsel abgebrochen.");
         Result result = new Result();
         HttpURLConnection conn;
         try {

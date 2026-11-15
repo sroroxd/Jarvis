@@ -247,6 +247,7 @@ public class JarvisService extends Service {
         prefs = new Prefs(this);
         appliedGameMode = prefs.tftMode();
         claude = new ClaudeClient();
+        claude.allowRequests(() -> !prefs.openAiSelected());
         // Tagessumme der Kosten: jede Anfrage zählt, auch Phasen-Wächter und Meta-Recherche (Arts Plan vom 30. Okt.).
         ClaudeClient.costListener = (kind, usd) -> {
             prefs.addCost(today(), kind, usd);
@@ -622,6 +623,7 @@ public class JarvisService extends Service {
     }
 
     private boolean sendWatch(String key, String image, ClaudeClient.Callback callback) {
+        if (prefs.openAiSelected() || !running) return false;
         JSONArray messages = new JSONArray();
         try {
             JSONArray content = new JSONArray()
@@ -770,7 +772,7 @@ public class JarvisService extends Service {
 
     /** Neue Planungsphase: Sonnet schaut aufs scharfe Bild und sagt von selbst den wichtigsten Befehl an. */
     private boolean coachNow(ProactiveCoach.Phase phase) {
-        if (!running || grabber == null || !quietForCoach()) return false;
+        if (prefs.openAiSelected() || !running || grabber == null || !quietForCoach()) return false;
         if (state == State.LISTENING) {
             // Dauergespräch hört gerade (noch ohne Worte) zu – kurz unterbrechen, danach geht es weiter.
             main.removeCallbacks(pauseElapsed);
@@ -1295,6 +1297,7 @@ public class JarvisService extends Service {
     }
 
     private void handleUtterance(String text) {
+        if (prefs.openAiSelected()) return; // Verspätete Ergebnisse des alten Android-Spracherkenners verwerfen.
         final boolean testOpen = testOpenMic;
         testOpenMic = false;
         maybeUpdateMeta();
@@ -1506,6 +1509,7 @@ public class JarvisService extends Service {
     }
 
     private void ask(int id, String key, String text, String image) {
+        if (prefs.openAiSelected() || id != requestId || !running) return;
         JSONArray messages = new JSONArray();
         try {
             for (JSONObject m : history) messages.put(m);

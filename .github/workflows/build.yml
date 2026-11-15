@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: jarvis-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     # Feste Version statt „latest“, damit ein Wechsel des Betriebssystems den Build nicht überraschend bricht.

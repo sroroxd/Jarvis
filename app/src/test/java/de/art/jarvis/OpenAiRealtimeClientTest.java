@@ -86,6 +86,23 @@ public class OpenAiRealtimeClientTest {
                 ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"r2\"}}");
                 ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r2\",\"status\":\"completed\",\"usage\":{\"input_tokens\":10,\"output_tokens\":5}}}");
                 assertEquals("done:15", listener.next());
+                assertTrue(client.respond(null, false));
+                sent.poll(5, TimeUnit.SECONDS); sent.poll(5, TimeUnit.SECONDS); sent.poll(5, TimeUnit.SECONDS);
+                client.interrupt(0); // Unterbrechen, bevor response.created angekommen ist.
+                assertEquals("response.cancel", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                assertFalse(client.canRespond());
+                ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"r3\"}}");
+                ws.send("{\"type\":\"input_audio_buffer.committed\"}");
+                assertEquals("turn", listener.next());
+                assertTrue(client.respond(null, false));
+                sent.poll(5, TimeUnit.SECONDS); sent.poll(5, TimeUnit.SECONDS); sent.poll(5, TimeUnit.SECONDS);
+                ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r3\",\"status\":\"cancelled\"}}");
+                ws.send("{\"type\":\"input_audio_buffer.committed\"}");
+                assertEquals("turn", listener.next());
+                assertFalse("Altes response.done gibt keine neue ausstehende Antwort frei", client.canRespond());
+                ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"r4\"}}");
+                ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r4\",\"status\":\"completed\"}}");
+                assertEquals("done:0", listener.next());
             } finally { client.close(); }
         } finally { http.dispatcher().executorService().shutdownNow(); http.connectionPool().evictAll(); }
     }

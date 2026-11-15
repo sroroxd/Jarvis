@@ -113,6 +113,7 @@ final class OpenAiRealtimeClient implements AutoCloseable {
             if (!imageItem.isEmpty()) send(new JSONObject().put("type", "conversation.item.delete").put("item_id", imageItem));
             imageItem = "item_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
             send(RealtimeProtocol.question(imageItem, jpeg, fresh));
+            assistantItem = "";
             responsePending = true;
             cancelPending = false;
             send(new JSONObject().put("type", "response.create"));

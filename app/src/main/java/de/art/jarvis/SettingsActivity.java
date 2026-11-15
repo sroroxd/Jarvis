@@ -762,6 +762,10 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Recherche sofort starten (z. B. nach einem neuen Patch). */
     private void updateMetaNow() {
+        if (prefs.openAiSelected()) {
+            b.metaInfo.setText("Der OpenAI-Test startet keine Claude-Meta-Recherche.");
+            return;
+        }
         saveTextFields();
         if (prefs.apiKey().isEmpty()) {
             b.metaInfo.setText("Die Meta-Recherche braucht einen Claude-Schlüssel (sk-ant-…).");

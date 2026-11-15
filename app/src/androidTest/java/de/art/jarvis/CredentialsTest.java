@@ -116,4 +116,17 @@ public class CredentialsTest {
             while (JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < end) Thread.sleep(50);
         }
     }
+
+    @Test public void providerwechselBlockiertAuchBereitsEingereihteClaudeAnfragen() throws Exception {
+        ClaudeClient client = new ClaudeClient();
+        client.allowRequests(() -> false);
+        java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<String> result = new java.util.concurrent.atomic.AtomicReference<>("");
+        client.send("local-test-only", Prefs.DEFAULT_MODEL, "Test", new org.json.JSONArray(), new ClaudeClient.Callback() {
+            @Override public void onResult(String text) { result.set("Unerwartete Antwort"); done.countDown(); }
+            @Override public void onError(String message) { result.set(message); done.countDown(); }
+        });
+        assertTrue(done.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        assertTrue("Abbruch vor jedem Netzwerkzugriff", result.get().contains("Providerwechsel"));
+    }
 }
