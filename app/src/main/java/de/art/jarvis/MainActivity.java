@@ -592,14 +592,17 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     /**
-     * Ab Android 14 bietet der Freigabe-Dialog „Eine App teilen“ als Vorauswahl an – dann sieht
-     * Jarvis nur diese eine App. Mit dieser Einstellung fragt Android nur nach dem ganzen Bildschirm.
+     * Die OpenAI-Testvariante muss beim Wechsel von Jarvis zu TFT dasselbe Display sehen.
+     * Ab Android 14 deshalb den ganzen Standardbildschirm anfragen; Android verlangt weiterhin
+     * die Zustimmung. Die übrigen Varianten behalten die bisherige Auswahl einer einzelnen App.
      */
     private Intent screenCaptureIntent() {
         MediaProjectionManager mpm = getSystemService(MediaProjectionManager.class);
         if (Build.VERSION.SDK_INT >= 34) {
-            return mpm.createScreenCaptureIntent(
-                    android.media.projection.MediaProjectionConfig.createConfigForUserChoice());
+            android.media.projection.MediaProjectionConfig config = BuildConfig.OPENAI_TEST
+                    ? android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay()
+                    : android.media.projection.MediaProjectionConfig.createConfigForUserChoice();
+            return mpm.createScreenCaptureIntent(config);
         }
         return mpm.createScreenCaptureIntent();
     }

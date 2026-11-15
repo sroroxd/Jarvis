@@ -23,6 +23,7 @@ final class OpenAiRealtimeClient implements AutoCloseable {
         void turnCommitted();
         void audio(String base64);
         void transcript(String text);
+        void usage(long inputTokens, long outputTokens);
         void responseDone(long inputTokens, long outputTokens);
         void error(String safeMessage);
     }
@@ -174,16 +175,23 @@ final class OpenAiRealtimeClient implements AutoCloseable {
                 case "response.done":
                     JSONObject response = event.getJSONObject("response");
                     String doneId = response.optString("id");
+                    if (doneId.isEmpty()) break;
                     boolean obsolete = cancelled.remove(doneId);
+                    if (!obsolete && !doneId.equals(responseId)) break;
+                    // Auch eine unterbrochene Antwort kann berechnete Tokens enthalten.
+                    // Nur bekannte, noch nicht abgeschlossene Antworten zählen; ein altes
+                    // response.done darf weder erneut zählen noch eine neue Antwort beenden.
+                    JSONObject usage = response.optJSONObject("usage");
+                    long inputTokens = usage == null ? 0 : usage.optLong("input_tokens");
+                    long outputTokens = usage == null ? 0 : usage.optLong("output_tokens");
+                    listener.usage(inputTokens, outputTokens);
                     if (obsolete) break;
-                    if (!doneId.equals(responseId)) break;
                     responseId = "";
                     if ("failed".equals(response.optString("status"))) {
                         JSONObject details = response.optJSONObject("status_details");
                         fail(RealtimeProtocol.error(0, details == null ? "" : errorCode(details))); return;
                     }
-                    JSONObject usage = response.optJSONObject("usage");
-                    listener.responseDone(usage == null ? 0 : usage.optLong("input_tokens"), usage == null ? 0 : usage.optLong("output_tokens"));
+                    listener.responseDone(inputTokens, outputTokens);
                     break;
                 case "error":
                     String code = errorCode(event);

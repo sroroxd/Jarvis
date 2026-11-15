@@ -54,9 +54,12 @@ final class OpenAiSession implements AutoCloseable {
                 catch (Exception e) { stop("OpenAI-Audiopuffer überlastet. Sitzung beendet."); }
             }); }
             @Override public void transcript(String text) { main.post(() -> { if (!closed) transcript.append(text); }); }
+            @Override public void usage(long input, long output) { main.post(() -> {
+                if (!closed) tokens += input + output;
+            }); }
             @Override public void responseDone(long input, long output) { main.post(() -> {
                 if (closed) return;
-                main.removeCallbacks(answerTimeout); tokens += input + output;
+                main.removeCallbacks(answerTimeout);
                 if (transcript.length() > 0) ui.answer(transcript.toString());
                 transcript.setLength(0);
                 audio.whenDrained(() -> main.post(() -> {

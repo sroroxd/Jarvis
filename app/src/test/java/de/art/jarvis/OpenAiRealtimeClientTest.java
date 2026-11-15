@@ -17,11 +17,13 @@ import static org.junit.Assert.*;
 public class OpenAiRealtimeClientTest {
     static class Events implements OpenAiRealtimeClient.Listener {
         final BlockingQueue<String> received = new LinkedBlockingQueue<>();
+        final BlockingQueue<Long> reportedUsage = new LinkedBlockingQueue<>();
         public void ready() { received.add("ready"); }
         public void speechStarted() { received.add("speech"); }
         public void turnCommitted() { received.add("turn"); }
         public void audio(String b) { received.add("audio:" + b); }
         public void transcript(String t) { received.add("text:" + t); }
+        public void usage(long in, long out) { reportedUsage.add(in + out); }
         public void responseDone(long in, long out) { received.add("done:" + (in + out)); }
         public void error(String e) { received.add("error:" + e); }
         String next() throws Exception { return received.poll(5, TimeUnit.SECONDS); }
@@ -124,6 +126,85 @@ public class OpenAiRealtimeClientTest {
                 String diagnostic = listener.next();
                 assertTrue(diagnostic.contains("invalid_request_error"));
                 assertFalse(diagnostic.contains("PRIVATE-DETAILS"));
+            } finally { client.close(); }
+        } finally { http.dispatcher().executorService().shutdownNow(); http.connectionPool().evictAll(); }
+    }
+
+    @Test public void abgebrocheneAntwortZaehltTokensEinmalOhneDieFolgeantwortZuBeenden() throws Exception {
+        OkHttpClient http = new OkHttpClient.Builder().retryOnConnectionFailure(false).build();
+        Events listener = new Events();
+        BlockingQueue<String> sent = new LinkedBlockingQueue<>();
+        BlockingQueue<WebSocket> sockets = new LinkedBlockingQueue<>();
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse().setBody("{\"value\":\"ek_local-test\"}"));
+            server.enqueue(new MockResponse().withWebSocketUpgrade(new WebSocketListener() {
+                @Override public void onOpen(WebSocket ws, Response r) { sockets.add(ws); }
+                @Override public void onMessage(WebSocket ws, String text) {
+                    sent.add(text);
+                    try {
+                        if (new JSONObject(text).getString("type").equals("session.update")) {
+                            ws.send("{\"type\":\"session.updated\"}");
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }));
+            OpenAiRealtimeClient client = new OpenAiRealtimeClient(http, server.url("/client_secrets").toString(),
+                    server.url("/realtime").toString().replace("http://", "ws://"), listener);
+            try {
+                client.start("local-test-only");
+                assertEquals("ready", listener.next());
+                assertEquals("session.update", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                WebSocket ws = sockets.poll(5, TimeUnit.SECONDS);
+                assertNotNull(ws);
+                assertTrue(client.respond("jpeg-test", true));
+                assertEquals("conversation.item.create", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                assertEquals("response.create", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"old\"}}");
+                ws.send("{\"type\":\"response.output_audio.delta\",\"response_id\":\"old\",\"item_id\":\"a1\",\"delta\":\"AAAA\"}");
+                assertEquals("audio:AAAA", listener.next());
+                client.interrupt(120);
+                assertEquals("response.cancel", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                assertEquals("conversation.item.truncate", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                assertFalse(client.canRespond());
+
+                ws.send("{\"type\":\"response.output_audio.delta\",\"response_id\":\"old\",\"delta\":\"obsolete\"}");
+                ws.send("{\"type\":\"response.output_audio_transcript.delta\",\"response_id\":\"old\",\"delta\":\"obsolete\"}");
+                String cancelled = "{\"type\":\"response.done\",\"response\":{\"id\":\"old\",\"status\":\"cancelled\",\"usage\":{\"input_tokens\":7,\"output_tokens\":3}}}";
+                ws.send(cancelled);
+                ws.send(cancelled); // Eine doppelte Bestätigung darf die Nutzung nicht verdoppeln.
+                ws.send("{\"type\":\"input_audio_buffer.committed\"}");
+                assertEquals("turn", listener.next()); // Kein Audio, Transkript oder responseDone der alten Antwort.
+                assertEquals(Long.valueOf(10), listener.reportedUsage.poll(5, TimeUnit.SECONDS));
+                assertTrue(listener.reportedUsage.isEmpty());
+                assertTrue(client.canRespond());
+
+                assertTrue(client.respond(null, false));
+                assertEquals("conversation.item.delete", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                assertEquals("conversation.item.create", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                assertEquals("response.create", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                ws.send(cancelled); // Alte Bestätigung während die Folgeantwort noch aussteht.
+                ws.send("{\"type\":\"input_audio_buffer.committed\"}");
+                assertEquals("turn", listener.next());
+                assertFalse(client.canRespond());
+                assertTrue(listener.reportedUsage.isEmpty());
+
+                ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"next\"}}");
+                ws.send(cancelled); // Auch eine bereits aktive Folgeantwort darf nicht beendet werden.
+                ws.send("{\"type\":\"response.output_audio.delta\",\"response_id\":\"next\",\"item_id\":\"a2\",\"delta\":\"BBBB\"}");
+                ws.send("{\"type\":\"response.output_audio_transcript.delta\",\"response_id\":\"next\",\"delta\":\"Aktuelle Antwort\"}");
+                assertEquals("audio:BBBB", listener.next());
+                assertEquals("text:Aktuelle Antwort", listener.next());
+                assertFalse(client.canRespond());
+                String completed = "{\"type\":\"response.done\",\"response\":{\"id\":\"next\",\"status\":\"completed\",\"usage\":{\"input_tokens\":20,\"output_tokens\":5}}}";
+                ws.send(completed);
+                ws.send(completed);
+                ws.send("{\"type\":\"input_audio_buffer.committed\"}");
+                assertEquals("done:25", listener.next());
+                assertEquals("turn", listener.next());
+                assertEquals(Long.valueOf(25), listener.reportedUsage.poll(5, TimeUnit.SECONDS));
+                assertTrue(listener.reportedUsage.isEmpty());
+                assertTrue(listener.received.isEmpty());
+                assertTrue(client.canRespond());
             } finally { client.close(); }
         } finally { http.dispatcher().executorService().shutdownNow(); http.connectionPool().evictAll(); }
     }

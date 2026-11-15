@@ -10,17 +10,25 @@ Die automatische Update-Suche über andere Testzweige ist für diese Variante au
 1. Die Test-APK dieses Zweigs installieren, neben der bisherigen App. Für den Test nur einen Assistenten starten.
 2. Einstellungen öffnen, **OpenAI-API-Schlüssel (nur auf diesem Handy)** ausfüllen und
    **OpenAI Realtime verwenden (Test)** einschalten. Schlüssel nie in Chat, GitHub oder Fehlerberichte schreiben.
-3. Zum Startbildschirm zurück, Kern antippen und Mikrofon erlauben. Der Android-Systemdialog bietet
-   die Bildschirmfreigabe an. Ohne Zustimmung gibt es keine Spielbilder; eine verweigerte Freigabe wird respektiert.
-4. Für den ersten Bildtest **TFT-Bild jetzt prüfen** antippen oder eine Frage sprechen. Nach einer gesprochenen
-   Frage wird genau ein frisches freigegebenes Bild versucht. Es gibt keinen unbeaufsichtigten Bild-Timer.
+3. Zum Startbildschirm zurück, Kern antippen und Mikrofon erlauben. Die OpenAI-Testvariante fragt ab
+   Android 14 über den normalen Systemdialog den **gesamten Bildschirm** an, damit der Wechsel von Jarvis
+   zu TFT mit erfasst wird. Ohne Zustimmung gibt es keine Spielbilder; eine verweigerte Freigabe wird respektiert.
+   Falls das Gerät trotzdem eine App-Auswahl anbietet: **Gesamten Bildschirm teilen** wählen, nicht Chrome.
+4. Für den ersten Bildtest **TFT sichtbar lassen und eine Frage sprechen**. Nach einer gesprochenen
+   Frage wird genau ein frisches freigegebenes Bild versucht. Alternativ TFT und Jarvis nebeneinander
+   im geteilten Bildschirm anzeigen und **TFT-Bild jetzt prüfen** antippen. Der Knopf erfasst sofort:
+   Zeigt das Display nur Jarvis, ist auch nur Jarvis im Bild; ein früherer TFT-Frame wird nicht wiederverwendet.
+   Es gibt keinen unbeaufsichtigten Bild-Timer.
 5. Während einer Antwort losreden: lokale Audioausgabe wird geleert, die Antwort abgebrochen und die
    gehörte Länge an die Sitzung gemeldet. Kern antippen pausiert, **Beenden** schließt Sitzung und Mikrofon.
 
 Modell ist ausschließlich `gpt-realtime-2.1-mini`. Kein Ausweichmodell, keine automatische Wiederverbindung,
 kein zusätzliches Transkriptionsmodell. Der Start ist kostenpflichtig. Eine Sitzung endet spätestens nach
 zehn Minuten. Eine feste Begrenzung der Antwortzahl gibt es nicht mehr. Das ist **kein verbindliches Geldlimit**. Verbrauchte Ein-/Ausgabetokens
-werden aus den API-Antworten angezeigt. `429` wegen Guthaben und wegen Abfragerate werden unterschieden.
+werden aus den API-Antworten angezeigt, auch wenn die betreffende Antwort unterbrochen wurde.
+Doppelte Abschlussereignisse werden nicht mehrfach gezählt. Die Anzeige umfasst die von der API
+gemeldete Nutzung und ist kein verbindlicher Abrechnungsnachweis. `429` wegen Guthaben und wegen
+Abfragerate werden unterschieden.
 
 ## Bild- und Sprachfluss
 
@@ -34,6 +42,12 @@ widerrufenem oder altem Bild wird kein `input_image` gesendet; der Spielstand he
 Vor dem nächsten Auftrag wird das vorige Bild aus der Realtime-Unterhaltung gelöscht.
 JPEG-Kompression findet außerhalb der Capture-Sperre statt; neue Frames und ein Stop können weiterlaufen.
 Ein Reader-Wechsel durch Drehen oder Stop entwertet einen gerade verarbeiteten Frame ebenfalls.
+
+Ab Android 14 verwendet ausschließlich die OpenAI-Testvariante `createConfigForDefaultDisplay()`;
+die normalen Varianten behalten `createConfigForUserChoice()`. Die Android-Zustimmung bleibt erforderlich.
+Laut Android können Hersteller die Display-Vorgabe bei missbräuchlicher Nutzung überschreiben; der
+Intent allein belegt deshalb noch keinen erfolgreichen Samsung-Capture. Bei der Geräteabnahme muss
+die tatsächliche Freigabe das Display statt einer fremden App wie Chrome erfassen.
 
 `OpenAiRealtimeClient` erzeugt über HTTPS ein 60 Sekunden gültiges Client-Token und verwendet nur dieses
 für den WebSocket-Handshake. Der dauerhafte Schlüssel ist kein Teil des WebSocket-Protokolls, kein
@@ -90,6 +104,8 @@ keine neue Produktiv-APK. Die vorhandene Produktivsignatur wird hier nicht rotie
 - Activity-Oberfläche: Bereitschaft nach Anbieter/Schlüssel, vollständiger Statusdialog, kleine Fenster
   mit 400/320 dp Höhe und mehrfacher Wechsel ins große Fenster. Die Fensterbilder sind Renderings des
   echten Viewbaums unter Testmaßen; sie ersetzen keinen echten Samsung-Split-Screen-Test.
+- Echter Android-Freigabe-Intent: Display-Konfiguration nur in der OpenAI-Testvariante,
+  bisherige App-Auswahl in normalen Varianten; kein erteilter Capture und kein API-Aufruf im Test.
 - Node: echte lokale Agent-HTTP-Anfragen gegen fehlende/falsche Token, fehlenden Login,
   unerwünschte API-Abrechnung, Zeitüberschreitung und Prozessfehler.
 - CI: Android-Build, Unit-Tests, Instrumentierung, Emulator-Gerätetest, APK-Signaturprüfung.
@@ -122,3 +138,5 @@ Referenzen:
 - https://developers.openai.com/api/reference/resources/realtime/client-events
 - https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec
 - https://developer.android.com/identity/data/autobackup
+- https://developer.android.com/reference/android/media/projection/MediaProjectionConfig
+- https://developer.android.com/media/grow/media-projection#opt-out
