@@ -15,3 +15,15 @@ __pycache__/
 *.jks
 *.p12
 keystore.properties
+
+# Private APK-Signierschlüssel gehören ausschließlich in einen geschützten Schlüsselspeicher.
+*.keystore
+*.jks
+*.p12
+*.pk8
+signing-private/
+
+# Lokale API-Zugangsdaten
+.env
+.env.local
+.env.*.local

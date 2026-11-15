@@ -25,8 +25,9 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { verarbeite } from './stream.mjs';
+import { pruefeAnmeldung } from './auth.mjs';
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.JARVIS_AGENT_PORT || 8777);
 
@@ -231,13 +232,10 @@ const server = createServer(async (req, res) => {
   const pfad = (req.url || '').split('?')[0];
 
   if (req.method === 'GET' && pfad === '/status') {
-    // Ohne Token: verrät nur, dass der Dienst läuft. Die App prüft damit die Verbindung.
+    // Öffentliche Erreichbarkeit, keine Details zu Aufträgen, Sitzungen oder Arbeitsordnern.
     senden(res, 200, {
       bereit: true,
       version: VERSION,
-      beschaeftigt: laufend !== null,
-      sitzung: sitzung !== null,
-      arbeitsordner: ARBEIT,
     });
     return;
   }
@@ -246,6 +244,13 @@ const server = createServer(async (req, res) => {
   const mitgebracht = kopf.startsWith('Bearer ') ? kopf.slice(7).trim() : '';
   if (!tokenStimmt(mitgebracht)) {
     senden(res, 401, { fehler: 'Falsches oder fehlendes Token. Trag das Token aus ~/.jarvis-agent/token in die Jarvis-Einstellungen ein.' });
+    return;
+  }
+
+  if (req.method === 'GET' && pfad === '/pruefen') {
+    const anmeldung = await pruefeAnmeldung();
+    senden(res, anmeldung.fehler ? 503 : 200, anmeldung.fehler ? anmeldung
+      : { bereit: true, angemeldet: true, beschaeftigt: laufend !== null });
     return;
   }
 
@@ -278,6 +283,16 @@ const server = createServer(async (req, res) => {
       senden(res, 400, { fehler: 'Kein Auftragstext.' });
       return;
     }
+    const anmeldung = await pruefeAnmeldung();
+    if (anmeldung.fehler) {
+      senden(res, 503, anmeldung);
+      return;
+    }
+    // Während der asynchronen Anmeldeprüfung kann ein anderer Auftrag begonnen haben.
+    if (laufend) {
+      senden(res, 409, { fehler: 'Ich arbeite noch am letzten Auftrag.' });
+      return;
+    }
     const ergebnis = await auftragAusfuehren(text, daten.neu === true);
     senden(res, ergebnis.fehler ? 502 : 200, ergebnis);
     return;
@@ -289,7 +304,7 @@ const server = createServer(async (req, res) => {
 if (!existsSync(ARBEIT)) mkdirSync(ARBEIT, { recursive: true });
 
 server.listen(PORT, HOST, () => {
-  console.log('Jarvis-Agent ' + VERSION + ' läuft auf http://' + HOST + ':' + PORT);
+  console.log('Jarvis-Agent ' + VERSION + ' läuft auf http://' + HOST + ':' + server.address().port);
   console.log('Arbeitsordner: ' + ARBEIT);
   console.log('Token steht in: ' + TOKEN_DATEI);
   console.log('Dieses Token in die Jarvis-Einstellungen eintragen (Abschnitt „Agent-Rückgrat“).');

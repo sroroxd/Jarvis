@@ -79,8 +79,8 @@ if [ ! -f "$BASIS/token" ]; then
 fi
 
 sag "Anmeldung prüfen"
-if claude -p "Antworte nur mit OK." --output-format json 2>/dev/null | grep -q '"is_error":false'; then
-  echo "Claude Code ist angemeldet und antwortet."
+if node --input-type=module -e "import {pruefeAnmeldung} from '/root/jarvis-agent/auth.mjs'; process.exit((await pruefeAnmeldung()).angemeldet ? 0 : 1)"; then
+  echo "Claude Code ist mit dem Abo angemeldet (keine kostenpflichtige Testanfrage)."
 else
   warn "Claude Code antwortet noch nicht. Einmal 'claude' aufrufen und mit dem Abo anmelden."
 fi

@@ -9,6 +9,7 @@ import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.util.Base64;
 
 import java.io.ByteArrayOutputStream;
@@ -23,6 +24,9 @@ import java.nio.ByteBuffer;
  */
 final class ScreenGrabber {
 
+    // Nur eine ausdrückliche Anfrage wartet auf den nächsten Frame; keine zusätzliche Bildübertragung.
+    private static final long FRESH_WAIT_MS = 1000;
+
     private final MediaProjection projection;
     private final Object lock = new Object();
     private HandlerThread thread;
@@ -30,6 +34,7 @@ final class ScreenGrabber {
     private VirtualDisplay display;
     private ImageReader reader;
     private Image latest;
+    private long latestAt;
     private int width;
     private int height;
     /**
@@ -61,23 +66,25 @@ final class ScreenGrabber {
         final int[] s = CaptureSize.fit(w, h, CaptureSize.MIRROR_EDGE);
         final int scaledDpi = CaptureSize.scaledDpi(dpi, w, s[0]);
         handler.post(() -> {
-            if (display == null || (s[0] == width && s[1] == height)) return;
-            ImageReader old = reader;
             synchronized (lock) {
+                if (display == null || (s[0] == width && s[1] == height)) return;
+                ImageReader old = reader;
                 if (latest != null) {
                     latest.close();
                     latest = null;
                 }
+                latestAt = 0;
                 // Andere Größe: die große Arbeitsfläche freigeben, toBitmap baut sie beim nächsten Bild neu.
                 if (paddedScratch != null) {
                     paddedScratch.recycle();
                     paddedScratch = null;
                 }
+                reader = newReader(s[0], s[1]);
+                display.resize(s[0], s[1], scaledDpi);
+                display.setSurface(reader.getSurface());
+                old.close();
+                lock.notifyAll();
             }
-            reader = newReader(s[0], s[1]);
-            display.resize(s[0], s[1], scaledDpi);
-            display.setSurface(reader.getSurface());
-            old.close();
         });
     }
 
@@ -94,8 +101,13 @@ final class ScreenGrabber {
             }
             if (img == null) return;
             synchronized (lock) {
+                // Ein bereits eingereihter Callback des alten Readers darf nach Drehung/Stop
+                // weder ein freigegebenes Bild ersetzen noch dessen Empfangszeit erneuern.
+                if (rd != reader) { img.close(); return; }
                 if (latest != null) latest.close();
                 latest = img;
+                latestAt = SystemClock.elapsedRealtime();
+                lock.notifyAll();
             }
         }, handler);
         return r;
@@ -110,6 +122,43 @@ final class ScreenGrabber {
         return jpeg == null ? null : Base64.encodeToString(jpeg, Base64.NO_WRAP);
     }
 
+    static final class FreshFrame {
+        final String jpeg;
+        final long at;
+        FreshFrame(String jpeg, long at) { this.jpeg = jpeg; this.at = at; }
+    }
+
+    /**
+     * Wartet bei Bedarf kurz auf einen wirklich neu eingetroffenen Frame. Ein Bild, das schon vor
+     * der Anfrage zu alt war, wird auch bei einem statischen Bildschirm niemals neu datiert.
+     * Nur im Capture-Executor aufrufen: wait gibt den Lock für Frames, Drehung und Stop frei.
+     */
+    FreshFrame captureFresh(long requestedAt) {
+        Bitmap bitmap;
+        long at;
+        ImageReader source;
+        synchronized (lock) {
+            long deadline = Math.min(SystemClock.elapsedRealtime() + FRESH_WAIT_MS,
+                    requestedAt + RealtimeProtocol.MAX_FRAME_AGE_MS);
+            while (latest == null || !RealtimeProtocol.fresh(latestAt, requestedAt, SystemClock.elapsedRealtime())) {
+                long remaining = deadline - SystemClock.elapsedRealtime();
+                if (reader == null || remaining <= 0) return null;
+                try { lock.wait(remaining); }
+                catch (InterruptedException e) { Thread.currentThread().interrupt(); return null; }
+            }
+            at = latestAt;
+            source = reader;
+            try { bitmap = toBitmap(latest); }
+            catch (Exception e) { return null; }
+        }
+        // JPEG-Kompression hält weder neue Frames noch einen Freigabe-Widerruf auf.
+        byte[] jpeg = encode(bitmap, true);
+        synchronized (lock) {
+            if (source != reader || !RealtimeProtocol.fresh(at, requestedAt, SystemClock.elapsedRealtime())) return null;
+        }
+        return jpeg == null ? null : new FreshFrame(Base64.encodeToString(jpeg, Base64.NO_WRAP), at);
+    }
+
     /** Wie {@link #captureJpegBase64}, aber als rohe JPEG-Bytes. */
     byte[] captureJpeg(boolean game) {
         Bitmap bitmap;
@@ -121,12 +170,19 @@ final class ScreenGrabber {
                 return null;
             }
         }
-        Bitmap scaled = scale(bitmap, CaptureSize.edge(game));
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        scaled.compress(Bitmap.CompressFormat.JPEG, CaptureSize.quality(game), out);
-        if (scaled != bitmap) scaled.recycle();
-        bitmap.recycle();
-        return out.toByteArray();
+        return encode(bitmap, game);
+    }
+
+    private static byte[] encode(Bitmap bitmap, boolean game) {
+        Bitmap scaled = null;
+        try {
+            scaled = scale(bitmap, CaptureSize.edge(game));
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            return scaled.compress(Bitmap.CompressFormat.JPEG, CaptureSize.quality(game), out) ? out.toByteArray() : null;
+        } finally {
+            if (scaled != null && scaled != bitmap) scaled.recycle();
+            bitmap.recycle();
+        }
     }
 
     /** Nur unter {@link #lock} aufrufen – nutzt die wiederverwendeten Arbeitsflächen. Gibt ein eigenes Bitmap zurück,
@@ -183,19 +239,21 @@ final class ScreenGrabber {
                 latest.close();
                 latest = null;
             }
+            latestAt = 0;
             if (paddedScratch != null) {
                 paddedScratch.recycle();
                 paddedScratch = null;
             }
             copyScratch = null;
-        }
-        if (display != null) {
-            display.release();
-            display = null;
-        }
-        if (reader != null) {
-            reader.close();
-            reader = null;
+            if (display != null) {
+                display.release();
+                display = null;
+            }
+            if (reader != null) {
+                reader.close();
+                reader = null;
+            }
+            lock.notifyAll();
         }
         if (thread != null) {
             thread.quitSafely();

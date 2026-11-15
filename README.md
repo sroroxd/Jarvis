@@ -14,6 +14,9 @@ Jede Änderung auf `main` wird automatisch getestet und als neue APK veröffentl
 
 ## Einrichten
 
+**Separater OpenAI-TFT-Test:** Einrichtung, Sicherheitsgrenzen und Geräteabnahme stehen in
+[`OPENAI-TEST.md`](OPENAI-TEST.md). Die Test-App besitzt eine eigene Paket-ID und ersetzt die Produktiv-App nicht.
+
 1. APK installieren („Aus dieser Quelle erlauben“ bestätigen).
 2. Jarvis öffnen → **Zahnrad** (Einstellungen) → Claude-API-Schlüssel einfügen (platform.claude.com → API Keys, beginnt mit `sk-ant-`) → **Schlüssel testen**.
 3. Das Feld **Modell** leer lassen: Claude Sonnet 5.5. Sparvariante: `claude-haiku-5-5`.

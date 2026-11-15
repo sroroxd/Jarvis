@@ -72,15 +72,15 @@ final class AgentClient {
         executor.execute(() -> anfrage(port, token, "/neu", "{}", STATUS_TIMEOUT_MS));
     }
 
-    /** Prüft, ob der Agent läuft. Antwort: {@code null} = läuft, sonst die Meldung. */
+    /** Prüft Token und Claude-Code-Anmeldung; /status allein beweist keine Einsatzbereitschaft. */
     void pruefen(int port, String token, Callback callback) {
         executor.execute(() -> {
-            Antwort a = anfrage(port, token, "/status", null, STATUS_TIMEOUT_MS);
+            Antwort a = anfrage(port, token, "/pruefen", null, 12000);
             AgentReply r;
-            if (a.code == 200 && a.body.contains("\"bereit\"")) {
+            if (a.code == 200 && a.body.contains("\"bereit\":true") && a.body.contains("\"angemeldet\":true")) {
                 boolean beschaeftigt = a.body.contains("\"beschaeftigt\":true");
                 r = AgentReply.parse(200, "{\"antwort\":\""
-                        + (beschaeftigt ? "Der Agent läuft und arbeitet gerade." : "Der Agent läuft und ist bereit.")
+                        + (beschaeftigt ? "Token und Claude-Anmeldung stimmen. Der Agent arbeitet gerade." : "Token und Claude-Anmeldung stimmen. Der Agent ist bereit.")
                         + "\"}");
             } else if (a.code == 0) {
                 r = AgentReply.fehler("Der Agent antwortet nicht. Starten Sie ihn in Termux mit „jarvis-agent“.");

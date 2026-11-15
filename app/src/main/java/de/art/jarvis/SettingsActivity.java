@@ -41,6 +41,10 @@ public class SettingsActivity extends AppCompatActivity {
     private ElevenTts elevenPreview;
     private TextToSpeech previewTts;
     private boolean previewReady;
+    private android.widget.EditText openAiKeyField;
+    private com.google.android.material.materialswitch.MaterialSwitch openAiProviderSwitch;
+    private android.widget.TextView openAiModeNote;
+    private final java.util.Map<android.widget.TextView, CharSequence> providerTexts = new java.util.HashMap<>();
     private String previewEngine;
     private List<Voices.Engine> engines = new ArrayList<>();
     private List<Voice> voices = new ArrayList<>();
@@ -71,6 +75,8 @@ public class SettingsActivity extends AppCompatActivity {
         setupWishes();
         setupAgent();
         setupBackup();
+        setupOpenAi();
+        showCredentialsError();
         b.versionText.setText("Jarvis " + versionName());
         hideTicks(b.sliderSensitivity, b.sliderBargeIn, b.sliderPause, b.sliderCostLimit, b.sliderRate, b.sliderPitch);
     }
@@ -109,6 +115,79 @@ public class SettingsActivity extends AppCompatActivity {
     private void showBrain() {
         b.brainInfo.setText("Jetzt antwortet: " + prefs.brain().label()
                 + ". Kostenlos ist Standard; Claude nur mit Schalter UND Schlüssel.");
+    }
+
+    private void setupOpenAi() {
+        if (!BuildConfig.OPENAI_TEST) return;
+        b.keyLayout.setHint("Claude-API-Schlüssel (optional bei OpenAI)");
+        b.testKey.setText("Claude-Schlüssel testen");
+        android.widget.LinearLayout parent = (android.widget.LinearLayout) b.keyLayout.getParent();
+        com.google.android.material.materialswitch.MaterialSwitch provider =
+                new com.google.android.material.materialswitch.MaterialSwitch(this);
+        openAiProviderSwitch = provider;
+        provider.setId(R.id.openAiProvider);
+        provider.setText("OpenAI Realtime verwenden (Test)");
+        provider.setChecked(prefs.openAiSelected());
+        parent.addView(provider, 1);
+        com.google.android.material.textfield.TextInputLayout layout =
+                new com.google.android.material.textfield.TextInputLayout(this);
+        layout.setHint("OpenAI-API-Schlüssel (nur auf diesem Handy)");
+        layout.setEndIconMode(com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+        openAiKeyField = new com.google.android.material.textfield.TextInputEditText(this);
+        openAiKeyField.setId(R.id.openAiKeyInput);
+        openAiKeyField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        openAiKeyField.setSingleLine(true);
+        openAiKeyField.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO);
+        openAiKeyField.setText(prefs.openAiKey());
+        layout.addView(openAiKeyField);
+        // Der dynamisch angehängte Material-Endknopf maskiert nicht auf allen Versionen von selbst.
+        openAiKeyField.setTransformationMethod(android.text.method.PasswordTransformationMethod.getInstance());
+        parent.addView(layout, 2);
+        android.widget.TextView note = new android.widget.TextView(this);
+        openAiModeNote = note;
+        parent.addView(note, 3);
+        provider.setOnCheckedChangeListener((button, on) -> {
+            saveTextFields(); prefs.setOpenAiSelected(on); applyProviderUi(); refreshService();
+            if (!on) { loadPreviewEngine(Voices.resolveEngine(this, prefs)); showWishes(); }
+        });
+        applyProviderUi();
+    }
+
+    /** Nur tatsächlich angebundene Funktionen anbieten; gespeicherte Einstellungen bleiben erhalten. */
+    private void applyProviderUi() {
+        if (!BuildConfig.OPENAI_TEST || openAiModeNote == null) return;
+        boolean openAi = prefs.openAiSelected();
+        int legacy = openAi ? View.GONE : View.VISIBLE;
+        for (View view : new View[]{b.keyLayout, b.modelLayout, b.testKey, b.speechControlCard,
+                b.voiceCard, b.wishesCard, b.agentCard, b.memoryCard, b.switchProactive, b.proactiveHint,
+                b.switchGameThink, b.deepThinkingHint, b.metaHint, b.metaInfo, b.metaUpdate,
+                b.switchFloatingJ, b.floatingHint}) view.setVisibility(legacy);
+        if (openAi && prefs.credentialsError().isEmpty()) b.keyResult.setVisibility(View.GONE);
+        openAiModeNote.setText(openAi
+                ? "OpenAI Realtime: Sprache und aktuelle Bildschirmbilder. Kostenpflichtig · " + RealtimeProtocol.MODEL
+                    + ". Keine feste Antwortzahl. Nach 10 Minuten pausiert der Test. Zum Fortsetzen den Kern antippen; der Schlüssel bleibt gespeichert. "
+                    + "Kein festes Geldlimit. Der Schlüssel bleibt verschlüsselt auf diesem Handy und wird nicht mitgesichert. "
+                    + "Webrecherche, GitHub-Aufgaben, Agent und dauerhaftes Gedächtnis sind in diesem Modus noch nicht angebunden."
+                : "OpenAI ist ausgeschaltet. Darunter gelten die Einstellungen für Claude. Zum OpenAI-Test den Schalter einschalten; "
+                    + "es gibt keinen automatischen Wechsel zwischen den Anbietern.");
+        providerText(b.gameModeHint, openAi, "TFT-Fragen per Stimme oder „TFT-Bild jetzt prüfen“. Bilder werden nur mit deiner Bildschirmfreigabe und auf Anfrage gesendet. Keine ungefragten Ansagen pro Planungsphase.");
+        providerText(b.gameAutoHint, openAi, "Erkennt TFT im Vordergrund und schaltet die Spielmodus-Anzeige um. Die Sprachsitzung startest du am Kern. Braucht Nutzungsdatenzugriff; startet keine automatische Bildübertragung.");
+        providerText(b.helpText, openAi, "• OpenAI-Schlüssel oben eintragen, OpenAI einschalten und den Kern auf dem Startbildschirm antippen.\n"
+                + "• Mikrofon und Bildschirm freigeben, dann TFT öffnen und eine klare deutsche Frage stellen.\n"
+                + "• Bei unklar verstandenen Fragen soll Jarvis kurz nachfragen. Für den Test nur eine Sprach-App gleichzeitig laufen lassen.\n"
+                + "• Losreden unterbricht die Antwort. Antippen pausiert oder startet; lange drücken beendet die Sitzung.\n"
+                + "• Keine feste Antwortzahl. Nach zehn Minuten pausiert der Test. Der Schlüssel bleibt gespeichert.\n"
+                + "• Ohne frisches freigegebenes Bild gilt der Spielstand als „Nicht sicher erkennbar“.\n"
+                + "• Die Schaltfläche „Jarvis beenden“ schließt Mikrofon und Verbindung. Der OpenAI-Modus braucht keinen GitHub- oder Claude-Schlüssel.");
+        if (openAi) {
+            if (previewTts != null) { previewTts.shutdown(); previewTts = null; previewReady = false; }
+            if (elevenPreview != null) elevenPreview.stop();
+        }
+    }
+
+    private void providerText(android.widget.TextView view, boolean openAi, String text) {
+        if (!providerTexts.containsKey(view)) providerTexts.put(view, view.getText());
+        view.setText(openAi ? text : providerTexts.get(view));
     }
 
     /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
@@ -331,6 +410,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Startet die Probe-Sprachausgabe mit der Engine und füllt die Stimmenliste. */
     private void loadPreviewEngine(String engine) {
+        if (prefs.openAiSelected()) return;
         if (previewTts != null) previewTts.shutdown();
         previewReady = false;
         previewEngine = engine;
@@ -492,8 +572,9 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Wunschliste anzeigen; den echten Stand auf GitHub einmal pro Öffnen der Einstellungen nachladen. */
     private void showWishes() {
+        if (prefs.openAiSelected()) return;
         b.wishList.setText(Wishes.display(prefs.wishes(), wishStates));
-        if (wishStates != null || wishStatesLoading) return;
+        if (Wishes.load(prefs.wishes()).isEmpty() || wishStates != null || wishStatesLoading) return;
         wishStatesLoading = true;
         new WishSender().fetchStates(prefs.githubToken(), states -> {
             wishStatesLoading = false;
@@ -574,7 +655,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    /** Fragt den Agenten, ob er läuft. Antwort steht direkt unter dem Knopf. */
+    /** Prüft Erreichbarkeit, Token und Claude-Code-Anmeldung ohne Modellanfrage. */
     private void testAgent() {
         prefs.setAgentToken(text(b.agentTokenField));
         updateAgentInfo();
@@ -587,11 +668,6 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void setupBackup() {
         showMemory();
-        b.switchBackupKeys.setChecked(prefs.backupKeys());
-        b.switchBackupKeys.setOnCheckedChangeListener((v, on) -> {
-            prefs.setBackupKeys(on);
-            Backup.autoSave(this, prefs);
-        });
         updateBackupInfo();
         b.backupCreate.setOnClickListener(v -> {
             saveTextFields();
@@ -645,7 +721,6 @@ public class SettingsActivity extends AppCompatActivity {
     private void refreshFromPrefs() {
         updateAgentInfo();
         showWishes();
-        b.switchBackupKeys.setChecked(prefs.backupKeys());
         showMemory();
         // Auch die Schlüssel neu anzeigen: Sonst schrieb das Verlassen der Einstellungen (saveTextFields) die
         // alten, meist leeren Felder zurück – und die eben wiederhergestellten Schlüssel waren wieder weg.
@@ -659,6 +734,7 @@ public class SettingsActivity extends AppCompatActivity {
         b.agentTokenField.setText(prefs.agentToken());
         b.githubTokenField.setText(prefs.githubToken());
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
+        if (openAiKeyField != null) openAiKeyField.setText(prefs.openAiKey());
         b.modelField.setText(prefs.rawModel());
         b.elevenVoiceField.setText(prefs.rawElevenVoice());
         b.switchListen.setChecked(prefs.alwaysListen());
@@ -684,6 +760,8 @@ public class SettingsActivity extends AppCompatActivity {
             if (engines.get(i).pkg.equals(active)) b.engineDropdown.setText(engines.get(i).label, false);
         }
         loadPreviewEngine(active);
+        if (openAiProviderSwitch != null) openAiProviderSwitch.setChecked(prefs.openAiSelected());
+        applyProviderUi();
     }
 
     // ---------------------------------------------------------------- Speichern
@@ -696,6 +774,7 @@ public class SettingsActivity extends AppCompatActivity {
         updateOverlayWarning();
         updateUsageAccess(); // zurück von der Systemseite: Freigabe erteilt?
         updateBattery();
+        applyProviderUi();
         refreshService();
     }
 
@@ -738,7 +817,13 @@ public class SettingsActivity extends AppCompatActivity {
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
+        if (openAiKeyField != null) prefs.setOpenAiKey(openAiKeyField.getText().toString());
+        showCredentialsError();
         Backup.autoSave(this, prefs);
+    }
+
+    private void showCredentialsError() {
+        if (!prefs.credentialsError().isEmpty()) showResult(b.keyResult, prefs.credentialsError());
     }
 
     private void showMemory() {
@@ -773,6 +858,10 @@ public class SettingsActivity extends AppCompatActivity {
 
     /** Recherche sofort starten (z. B. nach einem neuen Patch). */
     private void updateMetaNow() {
+        if (prefs.openAiSelected()) {
+            b.metaInfo.setText("Der OpenAI-Test startet keine Claude-Meta-Recherche.");
+            return;
+        }
         saveTextFields();
         if (prefs.apiKey().isEmpty()) {
             b.metaInfo.setText("Die Meta-Recherche braucht einen Claude-Schlüssel (sk-ant-…).");

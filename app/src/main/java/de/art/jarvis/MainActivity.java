@@ -9,13 +9,17 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -33,6 +37,13 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private boolean askedCalendar;
     private boolean askedOverlay;
     private boolean rendering;
+    private boolean compactWindow;
+    private int compactReactorHeight;
+    private ViewGroup normalChipParent;
+    private String openAiDetail = "";
+    private AlertDialog openAiStatusDialog;
+    private boolean resumed;
+    private Intent pendingStart;
     /** Nur in der Debug-Variante: fester Zustand für die automatischen Vorschaubilder. */
     private JarvisService.State demo;
 
@@ -57,6 +68,23 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                 + BuildConfig.VERSION_CODE);
 
         b.settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        if (BuildConfig.OPENAI_TEST) {
+            b.mainOpenAiImage.setVisibility(View.VISIBLE);
+            b.mainOpenAiImage.setOnClickListener(v -> sendToService(JarvisService.ACTION_OPENAI_IMAGE));
+            normalChipParent = (ViewGroup) b.mainStatusChips.getParent();
+            b.statusDetail.setOnClickListener(v -> {
+                if (compactWindow) {
+                    if (openAiStatusDialog != null) openAiStatusDialog.dismiss();
+                    openAiStatusDialog = new AlertDialog.Builder(this)
+                            .setTitle(b.statusText.getText()).setMessage(openAiDetail)
+                            .setPositiveButton("Schließen", null).show();
+                }
+            });
+            b.statusDetail.setClickable(false);
+            // Die tatsächlich verfügbare Höhe zählt, auch nach dem Verschieben des Split-Screen-Trenners.
+            b.getRoot().addOnLayoutChangeListener((v, l, t, r, bottom, ol, ot, or, ob) ->
+                    adaptOpenAiWindow(bottom - t));
+        }
 
         b.reactor.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
@@ -188,6 +216,19 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         checkForUpdate();
     }
 
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        resumed = true;
+        startPendingJarvis();
+    }
+
+    @Override
+    protected void onPause() {
+        resumed = false;
+        super.onPause();
+    }
+
     /** Höchstens alle 30 Minuten bei GitHub nachfragen (ohne Anmeldung: 60 Abfragen pro Stunde). */
     private static long lastUpdateCheck;
 
@@ -256,12 +297,85 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         super.onStop();
     }
 
+    @Override
+    protected void onDestroy() {
+        if (openAiStatusDialog != null) {
+            openAiStatusDialog.dismiss();
+            openAiStatusDialog = null;
+        }
+        super.onDestroy();
+    }
+
     private void sendToService(String action) {
         if (!JarvisService.isRunning()) return;
         startService(new Intent(this, JarvisService.class).setAction(action));
     }
 
     // ---------------------------------------------------------------- Anzeige
+
+    /** Kleine Fenster: Kern und Stop bleiben fest, Zusatzbedienung und Verlauf sind scrollbar. */
+    private void adaptOpenAiWindow(int height) {
+        height -= b.getRoot().getPaddingTop() + b.getRoot().getPaddingBottom();
+        if (height <= 0) return;
+        boolean compact = height < dp(600);
+        int reactorHeight = Math.max(dp(96), Math.min(dp(160), height / 3));
+        if (compact == compactWindow && (!compact || reactorHeight == compactReactorHeight)) return;
+        boolean changedMode = compact != compactWindow;
+        compactWindow = compact;
+        compactReactorHeight = reactorHeight;
+        LinearLayout root = (LinearLayout) b.getRoot();
+        if (changedMode) {
+            ((ViewGroup) b.mainHeader.getParent()).removeView(b.mainHeader);
+            ((ViewGroup) b.mainStatusChips.getParent()).removeView(b.mainStatusChips);
+            ((ViewGroup) b.mainOpenAiImage.getParent()).removeView(b.mainOpenAiImage);
+            ((ViewGroup) b.hint.getParent()).removeView(b.hint);
+            if (compact) {
+                b.mainTranscriptContent.addView(b.mainHeader, 0);
+                b.mainTranscriptContent.addView(b.mainStatusChips, 1);
+                b.mainTranscriptContent.addView(b.mainOpenAiImage, 2);
+                b.mainTranscriptContent.addView(b.hint, 3);
+            } else {
+                root.addView(b.mainHeader, 0);
+                normalChipParent.addView(b.mainStatusChips);
+                root.addView(b.mainOpenAiImage, root.indexOfChild(b.mainReactorContainer));
+                root.addView(b.hint, root.indexOfChild(b.logScroll));
+            }
+            b.subtitle.setVisibility(compact ? View.GONE : View.VISIBLE);
+            b.mainHeader.setPaddingRelative(compact ? 0 : dp(24), compact ? 0 : dp(12), compact ? 0 : dp(8), 0);
+            b.mainStatusCard.setContentPadding(dp(compact ? 12 : 18), compact ? 0 : dp(18),
+                    dp(compact ? 12 : 18), compact ? 0 : dp(18));
+            LinearLayout.LayoutParams card = (LinearLayout.LayoutParams) b.mainStatusCard.getLayoutParams();
+            card.topMargin = compact ? 0 : dp(16);
+            b.mainStatusCard.setLayoutParams(card);
+            b.statusDetail.setMaxLines(compact ? 1 : Integer.MAX_VALUE);
+            b.statusDetail.setEllipsize(compact ? TextUtils.TruncateAt.END : null);
+            b.statusDetail.setClickable(compact);
+            b.statusDetail.setFocusable(compact);
+            LinearLayout.LayoutParams stop = (LinearLayout.LayoutParams) b.stopButton.getLayoutParams();
+            stop.topMargin = compact ? 0 : dp(8);
+            stop.bottomMargin = compact ? 0 : dp(12);
+            b.stopButton.setLayoutParams(stop);
+            b.mainReactorContainer.setPadding(dp(24), compact ? 0 : dp(8), dp(24), compact ? 0 : dp(8));
+            b.logScroll.setPadding(dp(32), compact ? 0 : dp(6), dp(32), 0);
+            showOpenAiDetail();
+        }
+        LinearLayout.LayoutParams reactor = (LinearLayout.LayoutParams) b.mainReactorContainer.getLayoutParams();
+        reactor.height = compact ? reactorHeight : 0;
+        reactor.weight = compact ? 0 : 1;
+        b.mainReactorContainer.setLayoutParams(reactor);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private void showOpenAiDetail() {
+        b.statusDetail.setText(compactWindow
+                ? prefs.openAiSelected() ? "Kostenpflichtig · Status öffnen" : "Status öffnen"
+                : openAiDetail);
+        b.statusDetail.setContentDescription(openAiDetail
+                + (compactWindow ? " Vollständigen Status durch Antippen öffnen." : ""));
+    }
 
     private void render() {
         rendering = true;
@@ -275,8 +389,12 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (!running) {
             mode = ReactorView.Mode.OFF;
             label = "STARTEN";
-            status = "Inaktiv";
-            detail = "Tippe auf den Kern, um Jarvis zu starten. KI: " + prefs.brain().label();
+            status = JarvisService.startFailure().isEmpty() ? "Inaktiv" : "Start nicht möglich";
+            detail = !JarvisService.startFailure().isEmpty() ? JarvisService.startFailure()
+                    : prefs.openAiSelected() && !prefs.selectedProviderReady()
+                    ? "Trag zuerst in den Einstellungen deinen OpenAI-Schlüssel ein."
+                    : "Tippe auf den Kern, um Jarvis zu starten. KI: "
+                    + (prefs.openAiSelected() ? "OpenAI Realtime" : prefs.brain().label());
         } else {
             switch (s) {
                 case LISTENING:
@@ -316,6 +434,27 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.reactor.setMode(mode, label);
         b.statusText.setText(status);
         b.statusDetail.setText(detail);
+        if (BuildConfig.OPENAI_TEST) {
+            // Ein Status statt zweier konkurrierender Infoblöcke. Vor dem Start zählt die aktuelle
+            // Konfiguration, nicht der statische Bericht einer noch nicht geöffneten Sitzung.
+            if (!running && !JarvisService.startFailure().isEmpty()) {
+                b.statusDetail.setText(JarvisService.startFailure());
+            } else if (prefs.openAiSelected()) {
+                b.statusDetail.setText(running ? JarvisService.openAiStatus()
+                        : prefs.selectedProviderReady()
+                                ? "OpenAI Realtime bereit. Kostenpflichtig. Tippe auf den Kern, um die Sitzung zu starten."
+                                : "OpenAI-Schlüssel fehlt. Bitte in den Einstellungen eintragen.");
+            }
+            b.mainOpenAiImage.setVisibility(prefs.openAiSelected() ? View.VISIBLE : View.GONE);
+            b.mainOpenAiImage.setEnabled(prefs.openAiSelected() && running);
+            b.chipListen.setEnabled(!prefs.openAiSelected());
+            if (prefs.openAiSelected() && running && s == JarvisService.State.IDLE) {
+                b.statusText.setText("OpenAI-Sitzung beendet");
+                b.reactor.setMode(ReactorView.Mode.IDLE, "NEUSTART");
+            }
+            openAiDetail = b.statusDetail.getText().toString();
+            showOpenAiDetail();
+        }
         b.statusDot.setBackgroundTintList(ColorStateList.valueOf(
                 running ? Palette.color(this, s) : Palette.off(this)));
 
@@ -326,12 +465,14 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         // Die Dazwischenreden-Diagnose zeigen, sobald es Werte gibt – auch im Dauergespräch und nach dem Beenden.
         // Die „Letzte Antwort“-Zeile mit den Sekundenangaben (Zuhören/KI/Stimme/…) ist entfernt (Wunsch #71):
         // Art kann damit nichts anfangen. Die Messung selbst bleibt – sie steht im Gerätetest-Protokoll der CI.
-        String report = JarvisService.bargeInReport();
+        String report = prefs.openAiSelected() ? "" : JarvisService.bargeInReport();
         StringBuilder hint = new StringBuilder();
-        if (running) hint.append(live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
+        if (running) hint.append(prefs.openAiSelected()
+                ? "Tippen: pausieren oder neu starten · Lang drücken: Sitzung beenden"
+                : live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
         if (!report.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Dazwischenreden: ").append(report);
         // Tagessumme aller Claude-Anfragen (auch Phasen-Wächter und Meta) – Anthropic rechnet in US-Dollar.
-        double today = prefs.costToday(JarvisService.today());
+        double today = prefs.openAiSelected() ? 0 : prefs.costToday(JarvisService.today());
         if (today > 0) {
             String day = JarvisService.today();
             hint.append(hint.length() > 0 ? "\n" : "").append("Heute bisher: ").append(Costs.cents(today))
@@ -439,6 +580,13 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private void proceed() {
         // Kein Schlüssel nötig: Ohne Schlüssel antwortet die Offline-Testantwort, mit Gemini-Schlüssel Gemini
         // (beides kostenlos). Claude nur nach ausdrücklicher Wahl in den Einstellungen.
+        // OpenAI ist die einzige Wahl, die zwingend einen Schlüssel braucht.
+        if (prefs.openAiSelected() && !prefs.selectedProviderReady()) {
+            Snackbar.make(b.getRoot(), "Bitte zuerst den OpenAI-Schlüssel eintragen.", Snackbar.LENGTH_LONG)
+                    .setAction("Einstellungen", v -> startActivity(new Intent(this, SettingsActivity.class)))
+                    .show();
+            return;
+        }
         List<String> missing = new ArrayList<>();
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             missing.add(Manifest.permission.RECORD_AUDIO);
@@ -471,14 +619,17 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     /**
-     * Ab Android 14 bietet der Freigabe-Dialog „Eine App teilen“ als Vorauswahl an – dann sieht
-     * Jarvis nur diese eine App. Mit dieser Einstellung fragt Android nur nach dem ganzen Bildschirm.
+     * Die OpenAI-Testvariante muss beim Wechsel von Jarvis zu TFT dasselbe Display sehen.
+     * Ab Android 14 deshalb den ganzen Standardbildschirm anfragen; Android verlangt weiterhin
+     * die Zustimmung. Die übrigen Varianten behalten die bisherige Auswahl einer einzelnen App.
      */
     private Intent screenCaptureIntent() {
         MediaProjectionManager mpm = getSystemService(MediaProjectionManager.class);
         if (Build.VERSION.SDK_INT >= 34) {
-            return mpm.createScreenCaptureIntent(
-                    android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay());
+            android.media.projection.MediaProjectionConfig config = BuildConfig.OPENAI_TEST
+                    ? android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay()
+                    : android.media.projection.MediaProjectionConfig.createConfigForUserChoice();
+            return mpm.createScreenCaptureIntent(config);
         }
         return mpm.createScreenCaptureIntent();
     }
@@ -498,8 +649,27 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         if (withScreen) {
             svc.putExtra(JarvisService.EXTRA_CODE, resultCode).putExtra(JarvisService.EXTRA_DATA, data);
         }
-        startForegroundService(svc);
-        if (!withScreen) {
+        // ActivityResult kann vor Resume eintreffen. While-in-use-Mikrofon erst aus der
+        // wieder sichtbaren Activity starten; Android entscheidet weiterhin endgültig.
+        pendingStart = svc;
+        startPendingJarvis();
+    }
+
+    private void startPendingJarvis() {
+        if (!resumed || pendingStart == null || isFinishing() || isDestroyed()) return;
+        Intent svc = pendingStart;
+        pendingStart = null;
+        JarvisService.clearStartFailure();
+        String failure = ForegroundStart.attempt(
+                checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED,
+                () -> startForegroundService(svc));
+        if (failure != null) {
+            JarvisService.reportStartFailure(failure);
+            Snackbar.make(b.getRoot(), failure, Snackbar.LENGTH_LONG).show();
+            render();
+            return;
+        }
+        if (!svc.hasExtra(JarvisService.EXTRA_DATA)) {
             Snackbar.make(b.getRoot(), "Ohne Freigabe sieht Jarvis nichts. Tippe oben auf „Bildschirm“, um sie nachzuholen.",
                     Snackbar.LENGTH_LONG).show();
         }

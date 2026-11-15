@@ -287,6 +287,9 @@ fi
 # Bibliothek auf Android lädt und wie schnell sie im Emulator ist (x86, kein S24 Ultra). Nur Hinweis, kein
 # Abbruch – ein Absturz fiele trotzdem unten in der Auswertung auf. Der erste Satz kommt als pocket_probe.wav
 # in die Vorab-Version, zum Anhören.
+if [ "${JARVIS_SKIP_POCKET:-0}" = 1 ]; then
+  say "Offline-Stimme nicht Teil dieser OpenAI-Testvariante; native Realtime-Audioprüfung auf dem S24 Ultra bleibt offen."
+else
 say "Offline-Stimme (Pocket TTS):"
 HF=https://huggingface.co/haex-space/pocket-tts-sherpa-onnx/resolve/d8f5915ed8bd94e1aa3dbd5a219360b3bb966190/de
 mkdir -p /tmp/pocket
@@ -341,6 +344,8 @@ if [ "$pok" = 1 ]; then
   fi
 else
   say "  Hinweis Offline-Stimme: Modell ließ sich nicht herunterladen"
+fi
+
 fi
 
 # ---------------------------------------------------------------- Selbst-Update: Download-Weg

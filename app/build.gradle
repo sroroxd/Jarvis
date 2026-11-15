@@ -13,6 +13,8 @@ def testApp = project.hasProperty('testApp')
 // Nur für die Rotationsprobe (.github/workflows/signatur-migrationsprobe.yml): Debug-APK ganz ohne Signatur und
 // ohne „.debug“-Anhang bauen, damit sie mit Wegwerf-Schlüsseln unter der echten Paket-ID signiert werden kann.
 def migrationUnsigned = project.hasProperty('migrationUnsigned')
+// OpenAI Realtime ist in jeder Test-App wählbar (Schalter in den Einstellungen), nie in der normalen App.
+def openAiTest = testApp
 
 // Offline-Stimme (Pocket TTS) über sherpa-onnx, Fassung mit FEST EINGEBAUTER ONNX Runtime. Die normale Fassung
 // teilt sich libonnxruntime.so mit onnxruntime-android (Wachwort) – die Symbole sind aber versioniert
@@ -52,7 +54,9 @@ android {
         resValue 'string', 'app_name', testApp ? 'Jarvis Test' : 'Jarvis'
         resValue 'string', 'listen_name', testApp ? 'Jarvis Test sprechen' : 'Jarvis sprechen'
         buildConfigField 'boolean', 'TEST_APP', testApp ? 'true' : 'false'
+        buildConfigField 'boolean', 'OPENAI_TEST', openAiTest ? 'true' : 'false'
         buildConfigField 'String', 'BRANCH', "\"${branchName}\""
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     // SIGNATUR (Sicherheit, 15. Nov. 2026): In dieser Datei steht KEIN Schlüssel und KEIN Passwort mehr.
@@ -128,7 +132,11 @@ dependencies {
     implementation files(sherpaAar)
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.13.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     testImplementation 'junit:junit:4.13.2'
     // Echte JSON-Klassen für die Tests – Android liefert dort sonst nur leere Platzhalter.
     testImplementation 'org.json:json:20240303'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 }
