@@ -69,6 +69,7 @@ public class OpenAiRealtimeClientTest {
                 assertEquals("audio:AAAA", listener.next());
                 assertEquals("text:Nicht sicher erkennbar.", listener.next());
                 client.interrupt(120);
+                assertFalse("Keine neue Antwort vor der Abbruchbestätigung", client.canRespond());
                 assertEquals("response.cancel", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
                 JSONObject truncate = new JSONObject(sent.poll(5, TimeUnit.SECONDS));
                 assertEquals("conversation.item.truncate", truncate.getString("type"));
@@ -94,6 +95,11 @@ public class OpenAiRealtimeClientTest {
                 ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"r3\"}}");
                 ws.send("{\"type\":\"input_audio_buffer.committed\"}");
                 assertEquals("turn", listener.next());
+                assertFalse("Auch nach response.created muss response.done abgewartet werden", client.canRespond());
+                assertFalse(client.respond(null, false));
+                ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r3\",\"status\":\"cancelled\"}}");
+                ws.send("{\"type\":\"input_audio_buffer.committed\"}");
+                assertEquals("turn", listener.next());
                 assertTrue(client.respond(null, false));
                 sent.poll(5, TimeUnit.SECONDS); sent.poll(5, TimeUnit.SECONDS); sent.poll(5, TimeUnit.SECONDS);
                 ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r3\",\"status\":\"cancelled\"}}");
@@ -103,6 +109,10 @@ public class OpenAiRealtimeClientTest {
                 ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"r4\"}}");
                 ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r4\",\"status\":\"completed\"}}");
                 assertEquals("done:0", listener.next());
+                ws.send("{\"type\":\"error\",\"error\":{\"code\":\"invalid_request_error\",\"message\":\"PRIVATE-DETAILS\"}}");
+                String diagnostic = listener.next();
+                assertTrue(diagnostic.contains("invalid_request_error"));
+                assertFalse(diagnostic.contains("PRIVATE-DETAILS"));
             } finally { client.close(); }
         } finally { http.dispatcher().executorService().shutdownNow(); http.connectionPool().evictAll(); }
     }

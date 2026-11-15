@@ -2061,6 +2061,7 @@ public class JarvisService extends Service {
         }, new OpenAiSession.Ui() {
             @Override public void state(State state, String message) {
                 if (!running || !prefs.openAiSelected()) return;
+                if (state == State.IDLE) subtitles.hide();
                 openAiReport = message; setState(state); notifyUi();
             }
             @Override public void answer(String text) {

@@ -61,7 +61,7 @@ final class OpenAiSession implements AutoCloseable {
                 transcript.setLength(0);
                 audio.whenDrained(() -> main.post(() -> {
                     if (closed) return;
-                    if (turns >= RealtimeProtocol.MAX_TURNS) stop("OpenAI-Test nach sechs Antworten beendet. " + tokens + " Tokens verbraucht.");
+                    if (turns >= RealtimeProtocol.MAX_TURNS) stop("Testpause nach sechs Antworten. Der gespeicherte OpenAI-Schlüssel bleibt erhalten. " + tokens + " Tokens verbraucht.");
                     else ui.state(JarvisService.State.LISTENING, info("OpenAI hört zu."));
                 }));
             }); }
@@ -80,7 +80,7 @@ final class OpenAiSession implements AutoCloseable {
     void ask(boolean manual) {
         if (closed) return;
         if (!ready) { ui.state(JarvisService.State.THINKING, "OpenAI wird noch verbunden."); return; }
-        if (turns >= RealtimeProtocol.MAX_TURNS) { stop("OpenAI-Testlimit erreicht."); return; }
+        if (turns >= RealtimeProtocol.MAX_TURNS) { stop("Testpause nach sechs Antworten. Der gespeicherte OpenAI-Schlüssel bleibt erhalten."); return; }
         if (manual) client.interrupt(audio.interrupt());
         int requestEpoch = ++epoch;
         transcript.setLength(0);
@@ -91,7 +91,7 @@ final class OpenAiSession implements AutoCloseable {
     private void captureWhenReady(int requestEpoch, int retries) {
         if (closed || requestEpoch != epoch) return;
         if (!client.canRespond()) {
-            if (retries >= 25) { stop("OpenAI hat die vorherige Antwort nicht rechtzeitig beendet."); return; }
+            if (retries >= 50) { stop("OpenAI hat den Abbruch der vorherigen Antwort nicht bestätigt."); return; }
             main.postDelayed(() -> captureWhenReady(requestEpoch, retries + 1), 100);
             return;
         }

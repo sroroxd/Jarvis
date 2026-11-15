@@ -13,6 +13,8 @@ final class RealtimeProtocol {
     static final long MAX_SESSION_MS = 10 * 60 * 1000L;
     static final String INSTRUCTIONS = "Du bist JARVIS, ein ruhiger deutschsprachiger Assistent und TFT-Coach. "
             + "Antworte immer auf Deutsch, mit höchstens zwei kurzen gesprochenen Sätzen. "
+            + "Der Nutzer spricht Deutsch. Wenn du seine Worte nicht sicher verstehst, frage kurz nach statt Wörter oder Absichten zu erraten. "
+            + "Du kannst keine API-Schlüssel oder App-Verbindungen prüfen. Fordere niemals zum Eintragen oder Erneuern eines GitHub- oder OpenAI-Schlüssels auf; für Verbindungsfehler gilt allein die Statusmeldung der App. "
             + "Für Spielinformationen gilt ausschließlich das aktuelle Bild dieser Anfrage. "
             + "Frühere Bilder und frühere Aussagen sind keine Belege für den aktuellen Spielstand. "
             + "Erfinde keine Champions, Gegenstände, Goldwerte, Stufen oder Phasen. "
@@ -65,6 +67,24 @@ final class RealtimeProtocol {
         if (code == 403) return "OpenAI verweigert den Zugriff auf dieses Projekt oder Modell.";
         if (code == 404 || "model_not_found".equals(errorCode)) return "Das gewählte Realtime-Modell ist nicht verfügbar. Kein Ausweichmodell wird verwendet.";
         if (code == 429 || "rate_limit_exceeded".equals(errorCode)) return "OpenAI-Abfragelimit erreicht. Sitzung beendet; später manuell erneut starten.";
-        return "OpenAI-Verbindung fehlgeschlagen" + (code > 0 ? " (HTTP " + code + ")" : "") + ". Kein automatischer Neuversuch.";
+        String detail = safeErrorCode(errorCode);
+        return "OpenAI-Verbindung fehlgeschlagen" + (code > 0 ? " (HTTP " + code + ")" : "")
+                + (detail.isEmpty() ? "" : " · API-Code: " + detail) + ". Kein automatischer Neuversuch.";
+    }
+
+    /** Nur technische Codes, niemals Rohmeldungen, Token, Header oder Anfrageinhalte anzeigen. */
+    static String safeErrorCode(String code) {
+        if (code == null || !code.matches("[a-z][a-z0-9_]{0,63}")) return "";
+        for (String prefix : new String[]{"ek_", "sk_", "ghp_", "github_pat_"}) if (code.startsWith(prefix)) return "";
+        return code;
+    }
+
+    static String connectionCode(Throwable error) {
+        if (error instanceof java.net.SocketTimeoutException) return "network_timeout";
+        if (error instanceof java.net.UnknownHostException) return "network_dns";
+        if (error instanceof javax.net.ssl.SSLException) return "network_tls";
+        if (error instanceof java.net.SocketException) return "network_connection_lost";
+        if (error instanceof java.io.EOFException) return "network_connection_closed";
+        return "network_transport_error";
     }
 }

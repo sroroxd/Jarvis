@@ -62,7 +62,7 @@ final class OpenAiRealtimeClient implements AutoCloseable {
                     .post(RequestBody.create(RealtimeProtocol.secretRequest().toString(), JSON)).build();
             tokenCall = http.newCall(request);
             tokenCall.enqueue(new Callback() {
-                @Override public void onFailure(Call call, IOException e) { fail(RealtimeProtocol.error(0, "")); }
+                @Override public void onFailure(Call call, IOException e) { fail(RealtimeProtocol.error(0, RealtimeProtocol.connectionCode(e))); }
                 @Override public void onResponse(Call call, Response response) {
                     try (Response r = response) {
                         String body = r.body() == null ? "{}" : r.body().string();
@@ -91,10 +91,10 @@ final class OpenAiRealtimeClient implements AutoCloseable {
             }
             @Override public void onMessage(WebSocket webSocket, String text) { receive(text); }
             @Override public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-                fail(RealtimeProtocol.error(response == null ? 0 : response.code(), ""));
+                fail(RealtimeProtocol.error(response == null ? 0 : response.code(), response == null ? RealtimeProtocol.connectionCode(t) : ""));
             }
             @Override public void onClosed(WebSocket webSocket, int code, String reason) {
-                fail("OpenAI-Verbindung wurde beendet. Erneuter Start nur per Antippen.");
+                fail("OpenAI-Verbindung wurde beendet (WebSocket-Code " + code + "). Erneuter Start nur per Antippen.");
             }
         });
     }
@@ -105,7 +105,10 @@ final class OpenAiRealtimeClient implements AutoCloseable {
         catch (Exception e) { fail("Mikrofonton konnte nicht gesendet werden."); }
     }
 
-    synchronized boolean canRespond() { return ready && !closed && !responsePending && responseId.isEmpty(); }
+    synchronized boolean canRespond() {
+        // response.cancel ist asynchron: erst response.done bestätigt, dass eine neue Antwort erlaubt ist.
+        return ready && !closed && !responsePending && responseId.isEmpty() && cancelled.isEmpty();
+    }
 
     synchronized boolean respond(String jpeg, boolean fresh) {
         if (!canRespond()) return false;

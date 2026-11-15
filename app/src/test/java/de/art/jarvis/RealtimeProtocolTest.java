@@ -45,4 +45,12 @@ public class RealtimeProtocolTest {
         assertTrue(RealtimeProtocol.error(404, "model_not_found").contains("Kein Ausweichmodell"));
         assertTrue(RealtimeProtocol.error(401, "").contains("abgelehnt"));
     }
+
+    @Test public void technischeFehlercodesSindSichtbarOhneSchluesselOderRohtext() {
+        assertTrue(RealtimeProtocol.error(0, "conversation_already_has_active_response").contains("conversation_already_has_active_response"));
+        for (String unsafe : new String[]{"ek_private_token", "sk_private_token", "ghp_private_token", "github_pat_private_token", "sk-proj-private", "raw error with spaces"}) {
+            assertEquals("", RealtimeProtocol.safeErrorCode(unsafe));
+            assertFalse(RealtimeProtocol.error(0, unsafe).contains(unsafe));
+        }
+    }
 }

@@ -325,6 +325,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             openAiImage.setEnabled(prefs.openAiSelected() && running);
             b.chipListen.setEnabled(!prefs.openAiSelected());
             if (prefs.openAiSelected()) b.statusDetail.setText("OpenAI Realtime · Antippen pausiert oder startet. „Beenden“ schließt Mikrofon und Sitzung.");
+            if (prefs.openAiSelected() && running && s == JarvisService.State.IDLE) {
+                b.statusText.setText("OpenAI-Sitzung beendet");
+                b.reactor.setMode(ReactorView.Mode.IDLE, "NEUSTART");
+            }
         }
         b.statusDot.setBackgroundTintList(ColorStateList.valueOf(
                 running ? Palette.color(this, s) : Palette.off(this)));
@@ -336,12 +340,14 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         // Die Dazwischenreden-Diagnose zeigen, sobald es Werte gibt – auch im Dauergespräch und nach dem Beenden.
         // Die „Letzte Antwort“-Zeile mit den Sekundenangaben (Zuhören/KI/Stimme/…) ist entfernt (Wunsch #71):
         // Art kann damit nichts anfangen. Die Messung selbst bleibt – sie steht im Gerätetest-Protokoll der CI.
-        String report = JarvisService.bargeInReport();
+        String report = prefs.openAiSelected() ? "" : JarvisService.bargeInReport();
         StringBuilder hint = new StringBuilder();
-        if (running) hint.append(live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
+        if (running) hint.append(prefs.openAiSelected()
+                ? "Tippen: pausieren oder neu starten · Lang drücken: Sitzung beenden"
+                : live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
         if (!report.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Dazwischenreden: ").append(report);
         // Tagessumme aller Claude-Anfragen (auch Phasen-Wächter und Meta) – Anthropic rechnet in US-Dollar.
-        double today = prefs.costToday(JarvisService.today());
+        double today = prefs.openAiSelected() ? 0 : prefs.costToday(JarvisService.today());
         if (today > 0) {
             String day = JarvisService.today();
             hint.append(hint.length() > 0 ? "\n" : "").append("Heute bisher: ").append(Costs.cents(today))
