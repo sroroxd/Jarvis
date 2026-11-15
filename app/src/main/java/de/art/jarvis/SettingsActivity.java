@@ -84,19 +84,26 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Gehirn (KI)
 
     private void setupBrain() {
-        b.providerDropdown.setSimpleItems(new String[]{"Claude", "OpenAI"});
         showBrain();
-        b.providerDropdown.setOnItemClickListener((parent, view, position, id) -> {
-            saveBrain();
-            prefs.setProvider(position == 1 ? "openai" : "claude");
-            showBrain();
-            refreshService();
-        });
+        // Explicit accessible selection dialog: a standalone AutoCompleteTextView
+        // with inputType=none was not reliably opening on the user's device.
+        b.providerDropdown.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("KI-Anbieter auswählen")
+                .setSingleChoiceItems(new String[]{"Claude", "OpenAI"}, prefs.isOpenAi() ? 1 : 0,
+                        (dialog, which) -> {
+                            saveBrain();
+                            prefs.setProvider(which == 1 ? "openai" : "claude");
+                            showBrain();
+                            refreshService();
+                            dialog.dismiss();
+                        })
+                .setNegativeButton("Abbrechen", null)
+                .show());
         b.testKey.setOnClickListener(v -> testKey());
     }
 
     private void showBrain() {
-        b.providerDropdown.setText(prefs.providerName(), false);
+        b.providerDropdown.setText("KI-Anbieter: " + prefs.providerName() + " – ändern");
         b.keyField.setText(prefs.apiKey());
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
         b.modelField.setText(prefs.rawModel());
