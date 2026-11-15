@@ -2076,7 +2076,9 @@ public class JarvisService extends Service {
     static String testReport(Prefs p) {
         String header = "Gerät: " + Build.MANUFACTURER + " " + Build.MODEL + " · Android " + Build.VERSION.RELEASE
                 + " · App " + BuildConfig.VERSION_NAME + "\n"
-                + "KI: " + p.brain().label() + " · Immer zuhören: " + (p.alwaysListen() ? "an" : "aus")
+                + "KI: " + (p.openAiSelected() ? "OpenAI Realtime (Schlüssel " + (p.openAiKey().isEmpty() ? "FEHLT" : "eingetragen") + ")"
+                        : p.brain().label() + (BuildConfig.OPENAI_TEST ? " · OpenAI-Schalter: aus" : ""))
+                + " · Immer zuhören: " + (p.alwaysListen() ? "an" : "aus")
                 + " · Dazwischenreden: " + (p.bargeIn() ? "an" : "aus") + " (Stufe " + p.bargeInSensitivity() + ")"
                 + " · Telefonmodus: " + (p.echoCallMode() ? "an" : "aus") + " · Sprechpause " + p.pauseMs() + " ms\n"
                 + "Läuft: " + (isRunning() ? "ja" : "nein") + " · Dauergespräch: " + (isContinuous() ? "an" : "aus");
@@ -2166,6 +2168,7 @@ public class JarvisService extends Service {
         if (openAi != null) openAi.close();
         if (prefs.openAiKey().isEmpty()) {
             openAiReport = "OpenAI-Schlüssel fehlt. Bitte nur auf dem Handy in den Einstellungen eintragen.";
+            testLog("openai: Schlüssel fehlt");
             setState(State.IDLE); notifyUi(); return;
         }
         stopSpeaking();
@@ -2179,9 +2182,11 @@ public class JarvisService extends Service {
             @Override public void state(State state, String message) {
                 if (!running || !prefs.openAiSelected()) return;
                 if (state == State.IDLE) subtitles.hide();
+                testLog("openai " + state + ": " + message);
                 openAiReport = message; setState(state); notifyUi();
             }
             @Override public void answer(String text) {
+                testLog("openai antwort: " + text);
                 if (running && prefs.openAiSelected()) { publishExchange(null, text); caption(text); }
             }
         });
