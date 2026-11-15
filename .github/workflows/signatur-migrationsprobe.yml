@@ -1,0 +1,106 @@
+name: Signaturmigration – isolierter Emulatornachweis
+
+# Nur synthetische Wegwerf-Schluessel; niemals echte Produktionsschluessel in CI.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - audit/signing-migration-proof-2026-11-15
+    paths:
+      - app/build.gradle
+      - scripts/signierung/**
+      - .github/workflows/signatur-migrationsprobe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - name: Code holen
+        uses: actions/checkout@v5
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Gradle 8.9
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '8.9'
+      - name: Syntax und zwei unsignierte Debug-Versionen bauen
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n scripts/signierung/rotation-sign.sh
+          GITHUB_RUN_NUMBER=81001 gradle --no-daemon -PmigrationUnsigned :app:assembleDebug
+          cp "$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' | head -1)" "$RUNNER_TEMP/alt-unsigned.apk"
+          GITHUB_RUN_NUMBER=81002 gradle --no-daemon -PmigrationUnsigned :app:assembleDebug
+          cp "$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' | head -1)" "$RUNNER_TEMP/neu-unsigned.apk"
+      - name: Synthetische Schluessel erzeugen und Rotation pruefen
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          sdk="$ANDROID_HOME"
+          apksigner_bin="$(find "$sdk/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)"
+          test -n "$apksigner_bin"
+          export PATH="$(dirname "$apksigner_bin"):$PATH"
+          export JARVIS_OLD_KEYSTORE="$RUNNER_TEMP/old-synthetic.p12"
+          export JARVIS_NEW_KEYSTORE="$RUNNER_TEMP/new-synthetic.p12"
+          export JARVIS_OLD_ALIAS=oldsynthetic
+          export JARVIS_NEW_ALIAS=newsynthetic
+          export JARVIS_OLD_KS_PASS=synthetic-test-only-old-81001
+          export JARVIS_NEW_KS_PASS=synthetic-test-only-new-81002
+          export JARVIS_OLD_KEY_PASS="$JARVIS_OLD_KS_PASS"
+          export JARVIS_NEW_KEY_PASS="$JARVIS_NEW_KS_PASS"
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$JARVIS_OLD_KEYSTORE" -alias "$JARVIS_OLD_ALIAS" -storepass "$JARVIS_OLD_KS_PASS" -keypass "$JARVIS_OLD_KEY_PASS" -keyalg RSA -keysize 2048 -validity 30 -dname 'CN=Jarvis-Synthetic-Old'
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$JARVIS_NEW_KEYSTORE" -alias "$JARVIS_NEW_ALIAS" -storepass "$JARVIS_NEW_KS_PASS" -keypass "$JARVIS_NEW_KEY_PASS" -keyalg RSA -keysize 2048 -validity 30 -dname 'CN=Jarvis-Synthetic-New'
+          apksigner sign --ks "$JARVIS_OLD_KEYSTORE" --ks-key-alias "$JARVIS_OLD_ALIAS" --ks-pass env:JARVIS_OLD_KS_PASS --key-pass env:JARVIS_OLD_KEY_PASS --out "$RUNNER_TEMP/alt-signiert.apk" "$RUNNER_TEMP/alt-unsigned.apk"
+          export JARVIS_UNSIGNED_APK="$RUNNER_TEMP/neu-unsigned.apk"
+          export JARVIS_OUTPUT_APK="$RUNNER_TEMP/neu-signiert.apk"
+          export JARVIS_LINEAGE="$RUNNER_TEMP/lineage.bin"
+          bash scripts/signierung/rotation-sign.sh
+          apksigner verify --print-certs --verbose "$RUNNER_TEMP/alt-signiert.apk"
+          apksigner verify --print-certs --verbose "$RUNNER_TEMP/neu-signiert.apk"
+      - name: KVM freischalten
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android 12L (API 32) – Paketupdate und Dateierhalt
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 32
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -Eeuo pipefail
+            adb install -r "$RUNNER_TEMP/alt-signiert.apk"
+            adb shell run-as de.art.jarvis mkdir -p files
+            adb shell run-as de.art.jarvis touch files/signing-migration-marker
+            adb install -r "$RUNNER_TEMP/neu-signiert.apk"
+            adb shell run-as de.art.jarvis ls files/signing-migration-marker
+            adb shell dumpsys package de.art.jarvis | grep -F 'versionCode=81002'
+      - name: Android 14 (API 34) – Paketupdate und Dateierhalt
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -Eeuo pipefail
+            adb install -r "$RUNNER_TEMP/alt-signiert.apk"
+            adb shell run-as de.art.jarvis mkdir -p files
+            adb shell run-as de.art.jarvis touch files/signing-migration-marker
+            adb install -r "$RUNNER_TEMP/neu-signiert.apk"
+            adb shell run-as de.art.jarvis ls files/signing-migration-marker
+            adb shell dumpsys package de.art.jarvis | grep -F 'versionCode=81002'
