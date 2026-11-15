@@ -68,7 +68,8 @@ android {
 
     buildTypes {
         debug {
-            signingConfig signingConfigs.jarvis
+            // Nur fuer isolierte Emulator-Tests mit synthetischen Signaturschluesseln.
+            signingConfig = migrationUnsigned ? null : signingConfigs.jarvis
             // Handy und CI-Emulator (x86_64) reichen. Mit allen vier Architekturen war die Debug-APK durch
             // sherpa-onnx 200 MB groß, und das Installieren legte den Emulator lahm (Build 100: Launcher hing).
             ndk {
