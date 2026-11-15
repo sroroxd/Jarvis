@@ -43,7 +43,7 @@ final class Text {
 
     /** Nur echte Modellnamen zählen („claude-…“) – Tippfehler wie „2“ werden ignoriert. */
     static boolean isValidModel(String m) {
-        return m != null && m.matches("(?i)claude-[a-z0-9.\\-]+");
+        return m != null && m.matches("(?i)(claude|gpt)-[a-z0-9.\\-]+");
     }
 
     /** Gekürzte Anzeige, z. B. „sk-ant-api…x7Qa (108 Zeichen, Claude)“ – zum Abgleich mit der Konsole. */
@@ -52,6 +52,7 @@ final class Text {
         String head = k.substring(0, Math.min(10, k.length()));
         String tail = k.length() > 14 ? k.substring(k.length() - 4) : "";
         String kind = k.startsWith("sk-ant-") ? "Claude"
+                : k.startsWith("sk-") ? "OpenAI"
                 : k.startsWith("github_pat_") || k.startsWith("ghp_") ? "GitHub" : "unbekanntes Format";
         return "Gespeichert: " + head + "…" + tail + " (" + k.length() + " Zeichen, " + kind + ")";
     }

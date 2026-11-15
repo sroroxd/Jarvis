@@ -49,6 +49,14 @@
                         android:layout_height="wrap_content"
                         android:text="Gehirn (KI)" />
 
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/providerDropdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="KI-Anbieter: Claude / OpenAI"
+                        android:inputType="none" />
+
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/keyLayout"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -73,7 +81,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:hint="Modell (leer = automatisch)"
-                        app:helperText="Leer = Claude Sonnet 5.5 (schnell, denkt nur bei kniffligen Fragen kurz nach). Sparen: claude-haiku-5-5">
+                        app:helperText="Claude: Sonnet 5.5 / OpenAI: gpt-4.1-mini. API-Anfragen können Kosten verursachen.">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/modelField"

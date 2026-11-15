@@ -84,10 +84,39 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Gehirn (KI)
 
     private void setupBrain() {
+        b.providerDropdown.setSimpleItems(new String[]{"Claude", "OpenAI"});
+        showBrain();
+        b.providerDropdown.setOnItemClickListener((parent, view, position, id) -> {
+            saveBrain();
+            prefs.setProvider(position == 1 ? "openai" : "claude");
+            showBrain();
+            refreshService();
+        });
+        b.testKey.setOnClickListener(v -> testKey());
+    }
+
+    private void showBrain() {
+        b.providerDropdown.setText(prefs.providerName(), false);
         b.keyField.setText(prefs.apiKey());
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
         b.modelField.setText(prefs.rawModel());
-        b.testKey.setOnClickListener(v -> testKey());
+        b.modelLayout.setHelperText(prefs.isOpenAi()
+                ? "Leer = gpt-4.1-mini. OpenAI: keine automatischen TFT-Abfragen; API-Nutzung kostet möglicherweise Geld."
+                : "Leer = Claude Sonnet 5.5. Sparoption: claude-haiku-5-5.");
+        b.keyResult.setVisibility(View.GONE);
+    }
+
+    private void saveBrain() {
+        prefs.setApiKey(text(b.keyField));
+        b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        String model = text(b.modelField).trim();
+        if (!model.isEmpty() && (!Prefs.isValidModel(model)
+                || (prefs.isOpenAi() ? !model.startsWith("gpt-") : !model.startsWith("claude-")))) {
+            model = "";
+            b.modelField.setText("");
+            b.modelLayout.setError("Modell passt nicht zum KI-Anbieter.");
+        } else b.modelLayout.setError(null);
+        prefs.setModel(model);
     }
 
     /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
@@ -115,7 +144,8 @@ public class SettingsActivity extends AppCompatActivity {
                 showResult(b.keyResult, "✗ " + message);
             }
         };
-        new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+        if (prefs.isOpenAi()) new OpenAiClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
+        else new ClaudeClient().send(prefs.apiKey(), prefs.model(), "Test.", messages, cb);
     }
 
     // ---------------------------------------------------------------- Sprachsteuerung
@@ -610,8 +640,7 @@ public class SettingsActivity extends AppCompatActivity {
         showMemory();
         // Auch die Schlüssel neu anzeigen: Sonst schrieb das Verlassen der Einstellungen (saveTextFields) die
         // alten, meist leeren Felder zurück – und die eben wiederhergestellten Schlüssel waren wieder weg.
-        b.keyField.setText(prefs.apiKey());
-        b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        showBrain();
         b.elevenKeyField.setText(prefs.elevenKey());
         b.agentTokenField.setText(prefs.agentToken());
         b.githubTokenField.setText(prefs.githubToken());
@@ -671,17 +700,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void saveTextFields() {
-        prefs.setApiKey(text(b.keyField));
-        b.keyLayout.setHelperText(prefs.apiKeyPreview());
-        String model = text(b.modelField).trim();
-        if (!model.isEmpty() && !Prefs.isValidModel(model)) {
-            b.modelField.setText("");
-            model = "";
-            b.modelLayout.setError("Kein gültiger Modellname – Jarvis wählt automatisch.");
-        } else {
-            b.modelLayout.setError(null);
-        }
-        prefs.setModel(model);
+        saveBrain();
         String memory = text(b.memoryField);
         if (!memory.equals(shownMemory)) {
             prefs.setMemory(memory);
@@ -728,6 +747,10 @@ public class SettingsActivity extends AppCompatActivity {
     /** Recherche sofort starten (z. B. nach einem neuen Patch). */
     private void updateMetaNow() {
         saveTextFields();
+        if (prefs.isOpenAi()) {
+            b.metaInfo.setText("OpenAI-Modus: automatische Meta-Recherche zur Kostenkontrolle deaktiviert.");
+            return;
+        }
         if (prefs.apiKey().isEmpty()) {
             b.metaInfo.setText("Die Meta-Recherche braucht einen Claude-Schlüssel (sk-ant-…).");
             return;

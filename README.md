@@ -115,3 +115,10 @@ Layouts liegen in `app/src/main/res/layout`, Farben und Theme in `res/values`.
 - [x] „Immer zuhören“ statt Wachwort
 - [ ] **Stufe 2:** Nachrichten vorlesen und beantworten, Erinnerungen, Wecker
 - [ ] **Stufe 3:** Apps per Sprache steuern
+
+
+## OpenAI als alternativer Anbieter (Testzweig)
+
+Einstellungen → Gehirn (KI) → **OpenAI** auswählen, eigenen OpenAI-API-Schlüssel eintragen; für Claude zurück auf **Claude** wechseln. Schlüssel und Modell sind getrennt gespeichert. OpenAI verwendet die **Responses API**, Standardmodell `gpt-4.1-mini`; der Chat unterstützt auch das aktuelle Bildschirmfoto. OpenAI nutzt zunächst keine Claude-Werkzeuge (Kalender/Websuche), keine automatische TFT-Meta-Recherche und keinen Phasen-Wächter. Bei der ersten Ansprache nach einer Pause muss „Jarvis“ gesagt werden, damit der OpenAI-Filter keine kostenpflichtigen Hintergrundanfragen verursacht. Danach sind Folgefragen möglich.
+
+**Kosten:** „Schlüssel testen“ und echte Gespräche können kostenpflichtig sein. Im OpenAI-Modus berechnet die bisherige Tageskostenanzeige die OpenAI-Gebühren nicht; unbedingt eigene API-Projektlimits setzen. Keine automatische kostenpflichtige Umschaltung. Bis zur Geräteabnahme ausschließlich Testzweig.

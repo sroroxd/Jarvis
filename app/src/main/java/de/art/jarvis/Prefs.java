@@ -27,12 +27,16 @@ public final class Prefs {
         sp = context.getSharedPreferences("jarvis", Context.MODE_PRIVATE);
     }
 
-    public String apiKey() {
-        return sp.getString("api_key", "").trim();
-    }
+    /** Explicit selection, upgrades remain on Claude. */
+    public boolean isOpenAi() { return "openai".equals(sp.getString("ai_provider", "claude")); }
+    public void setProvider(String name) { sp.edit().putString("ai_provider", "openai".equals(name) ? "openai" : "claude").apply(); }
+    public String providerName() { return isOpenAi() ? "OpenAI" : "Claude"; }
+    public String openAiKey() { return sp.getString("openai_key", "").trim(); }
+    public void setOpenAiKey(String value) { sp.edit().putString("openai_key", Text.cleanKey(value)).apply(); }
+    public String apiKey() { return isOpenAi() ? openAiKey() : sp.getString("api_key", "").trim(); }
 
     public void setApiKey(String value) {
-        sp.edit().putString("api_key", Text.cleanKey(value)).apply();
+        sp.edit().putString(isOpenAi() ? "openai_key" : "api_key", Text.cleanKey(value)).apply();
     }
 
     public String apiKeyPreview() {
@@ -41,7 +45,7 @@ public final class Prefs {
 
     /** Eingetragenes Modell oder leer. */
     public String rawModel() {
-        return sp.getString("model", "").trim();
+        return sp.getString(isOpenAi() ? "openai_model" : "model", "").trim();
     }
 
     public static boolean isValidModel(String m) {
@@ -49,14 +53,14 @@ public final class Prefs {
     }
 
     public void setModel(String value) {
-        sp.edit().putString("model", value == null ? "" : value.trim()).apply();
+        sp.edit().putString(isOpenAi() ? "openai_model" : "model", value == null ? "" : value.trim()).apply();
     }
 
     /** Eingetragenes Modell oder der Standard. */
     public String model() {
         String m = rawModel();
-        if (isValidModel(m)) return m;
-        return tftMode() ? TFT_MODEL : DEFAULT_MODEL;
+        if (isValidModel(m) && (isOpenAi() ? m.startsWith("gpt-") : m.startsWith("claude-"))) return m;
+        return isOpenAi() ? "gpt-4.1-mini" : (tftMode() ? TFT_MODEL : DEFAULT_MODEL);
     }
 
     // ------------------------------------------------------------ Stimme

@@ -32,6 +32,7 @@ final class Backup {
         o.put("gespeichert", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.GERMANY).format(new Date()));
         o.put("memory", p.memory());
         o.put("model", p.rawModel());
+        o.put("provider", p.isOpenAi() ? "openai" : "claude");
         o.put("tft", p.tftMode());
         o.put("engine", p.engine());
         o.put("voice", p.voiceName());
@@ -40,7 +41,8 @@ final class Backup {
         o.put("pause", p.pauseMs());
         o.put("elevenVoice", p.rawElevenVoice());
         if (p.backupKeys()) { // nur auf ausdrücklichen Wunsch
-            o.put("apiKey", p.apiKey());
+            o.put("apiKey", p.isOpenAi() ? "" : p.apiKey());
+            o.put("openAiKey", p.openAiKey());
             o.put("elevenKey", p.elevenKey());
             o.put("agentToken", p.agentToken());
             o.put("githubToken", p.githubToken());
@@ -67,6 +69,7 @@ final class Backup {
     static int apply(Prefs p, String json) throws JSONException {
         JSONObject o = new JSONObject(json);
         p.setMemory(o.optString("memory", ""));
+        p.setProvider(o.optString("provider", "claude"));
         p.setModel(o.optString("model", ""));
         p.setTftMode(o.optBoolean("tft", false));
         p.setEngine(o.optString("engine", ""));
@@ -77,9 +80,14 @@ final class Backup {
         p.setElevenVoice(o.optString("elevenVoice", ""));
         String apiKey = o.optString("apiKey", "");
         if (!apiKey.isEmpty()) {
+            String selected = p.isOpenAi() ? "openai" : "claude";
+            p.setProvider("claude");
             p.setApiKey(apiKey);
+            p.setProvider(selected);
             p.setBackupKeys(true);
         }
+        String openAiKey = o.optString("openAiKey", "");
+        if (!openAiKey.isEmpty()) { p.setOpenAiKey(openAiKey); p.setBackupKeys(true); }
         String elevenKey = o.optString("elevenKey", "");
         if (!elevenKey.isEmpty()) p.setElevenKey(elevenKey);
         String agentToken = o.optString("agentToken", "");

@@ -532,7 +532,7 @@ public class JarvisService extends Service {
     private boolean proactiveBusy;
 
     private boolean proactiveWanted() {
-        return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
+        return running && !prefs.isOpenAi() && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
                 && !prefs.apiKey().isEmpty() && !prefs.overCostLimit(today());
     }
 
@@ -767,7 +767,7 @@ public class JarvisService extends Service {
      * Nach einem Fehlschlag frühestens nach 30 Minuten erneut.
      */
     private void maybeUpdateMeta() {
-        if (metaRunning || !prefs.tftMode() || prefs.apiKey().isEmpty()) return;
+        if (metaRunning || prefs.isOpenAi() || !prefs.tftMode() || prefs.apiKey().isEmpty()) return;
         final String today = today();
         if (Meta.isFresh(prefs.metaDate(), today)) return;
         long now = SystemClock.elapsedRealtime();
@@ -1038,7 +1038,7 @@ public class JarvisService extends Service {
                 if (current != recognizer) return;
                 heardSomething = true;
                 // Verbindung zu Anthropic aufbauen, während Art noch spricht (kostenlos, siehe ClaudeClient.warmUp).
-                if (!prefs.apiKey().isEmpty()) ClaudeClient.warmUp();
+                if (!prefs.isOpenAi() && !prefs.apiKey().isEmpty()) ClaudeClient.warmUp();
                 if (!finishRequested) main.removeCallbacks(pauseElapsed);
             }
 
@@ -1403,6 +1403,12 @@ public class JarvisService extends Service {
             return;
         }
         final long t0 = SystemClock.elapsedRealtime();
+        if (prefs.isOpenAi()) {
+            // Avoid billable background gate calls: only explicitly addressed first turns
+            // are sent; in-conversation followups remain unaffected by ListenRules.needsGate.
+            pending.gateReady(text.toLowerCase(java.util.Locale.ROOT).contains("jarvis"));
+            return;
+        }
         claude.sendGate(key, Prefs.BUDGET_MODEL, ListenRules.GATE_SYSTEM, messages, new ClaudeClient.Callback() {
             @Override
             public void onResult(String reply) {
@@ -1521,7 +1527,7 @@ public class JarvisService extends Service {
                     Backup.autoSave(JarvisService.this, prefs);
                 }
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
-                ClaudeClient.Usage used = ClaudeClient.lastUsage;
+                ClaudeClient.Usage used = prefs.isOpenAi() ? null : ClaudeClient.lastUsage;
                 testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + netSuffix() + "]: " + answer);
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", GameReadout.forHistory(stand, answer));
@@ -1551,8 +1557,14 @@ public class JarvisService extends Service {
         // Spielmodus standardmäßig „low“ wie im Alltag (Wunsch #23: Tempo zuerst) – das genaue Hinsehen übernimmt die
         // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
         // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
-        claude.send(key, prefs.model(), system, messages, effortFor(text),
-                withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
+        if (prefs.isOpenAi()) {
+            // The Responses API supports text/screenshots; Claude-specific tool schemas
+            // cannot be sent to OpenAI. No implicit provider fallback.
+            new OpenAiClient().send(key, prefs.model(), system, messages, callback);
+        } else {
+            claude.send(key, prefs.model(), system, messages, effortFor(text),
+                    withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
+        }
     }
 
     /**
@@ -1964,14 +1976,14 @@ public class JarvisService extends Service {
 
     /** „ · Senden 0,4 s (380 KB) · Claude 0,9 s“ – zerlegt die Wartezeit „KI“ (Wunsch #43). */
     private String netSuffix() {
-        ClaudeClient.Net net = ClaudeClient.lastNet;
+        ClaudeClient.Net net = prefs.isOpenAi() ? null : ClaudeClient.lastNet;
         String n = net == null ? null : net.summary();
         return n == null ? "" : " · " + n;
     }
 
     /** „ · 0,6 ct“ – Kosten der letzten Antwort in US-Cent; leer bei unbekanntem Modell. */
     private String costSuffix() {
-        double usd = ClaudeClient.lastCostUsd;
+        double usd = prefs.isOpenAi() ? -1 : ClaudeClient.lastCostUsd;
         return usd < 0 ? "" : " · " + Costs.cents(usd);
     }
 
