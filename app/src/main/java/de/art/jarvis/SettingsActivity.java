@@ -121,7 +121,6 @@ public class SettingsActivity extends AppCompatActivity {
         layout.addView(openAiKeyField);
         // Der dynamisch angehängte Material-Endknopf maskiert nicht auf allen Versionen von selbst.
         openAiKeyField.setTransformationMethod(android.text.method.PasswordTransformationMethod.getInstance());
-        layout.setEndIconChecked(false);
         parent.addView(layout, 2);
         android.widget.TextView note = new android.widget.TextView(this);
         openAiModeNote = note;
