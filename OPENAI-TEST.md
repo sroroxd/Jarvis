@@ -38,6 +38,13 @@ mit Echo-Unterdrückung, begrenzten Puffern und Abbruch bei Ausfall. Eine WebVie
 
 Der Schalter aktiviert OpenAI ausdrücklich. Der Claude-Pfad wird währenddessen nicht gestartet und
 erhält keine automatischen Meta-/Wächteranfragen. Die übrige Claude-Konfiguration bleibt separat erhalten.
+Im OpenAI-Modus werden die nicht angebundenen Claude-Sprachoptionen, Meta-Websuche,
+GitHub-Wünsche, Termux-Agent und das dauerhafte Gedächtnis ausgeblendet. Beim bewussten
+Zurückschalten stehen die bisherigen Einstellungen wieder bereit. OpenAI ist weiterhin eine Cloud-API.
+Die Hilfe erklärt den tatsächlichen Sprach-/Bildablauf und die Testpause. Nach sechs Antworten
+bleibt der gespeicherte Schlüssel gültig; zum Fortsetzen den Kern antippen. Verbindungsfehler
+zeigen einen bereinigten technischen Code statt fremder API-Fehlermeldungen oder Zugangsdaten.
+Beim Unterbrechen wartet der Client auf die Abbruchbestätigung, bevor er eine neue Antwort anfordert.
 
 ## Zugangsdaten und Signierung
 
@@ -62,7 +69,8 @@ keine neue Produktiv-APK. Die vorhandene Produktivsignatur wird hier nicht rotie
   echter lokaler HTTP-/WebSocket-Fluss mit simuliertem OpenAI-Server, getrennte Header,
   Unterbrechen und Verwerfen verspäteter Audiodaten; AES-GCM-Manipulationserkennung.
 - Android-Instrumentierung: echter Keystore, verlustfreie Migration, alte Backup-Importe,
-  schlüsselfreie Exporte und Schutz vor leerem Überschreiben beschädigter Werte.
+  schlüsselfreie Exporte, Anbieter-Wiederherstellung, Schutz vor leerem Überschreiben beschädigter Werte
+  und tatsächlicher Einstellungswechsel mit erhaltenem Schlüssel und Oberflächenfotos.
 - Node: echte lokale Agent-HTTP-Anfragen gegen fehlende/falsche Token, fehlenden Login,
   unerwünschte API-Abrechnung, Zeitüberschreitung und Prozessfehler.
 - CI: Android-Build, Unit-Tests, Instrumentierung, Emulator-Gerätetest, APK-Signaturprüfung.

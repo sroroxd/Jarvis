@@ -19,6 +19,7 @@
         app:titleTextColor="?attr/colorOnSurface" />
 
     <ScrollView
+        android:id="@+id/settingsScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -104,6 +105,7 @@
 
             <!-- ===================================================== Sprachsteuerung -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/speechControlCard"
                 style="@style/Jarvis.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -314,6 +316,7 @@
 
             <!-- ===================================================== Stimme -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/voiceCard"
                 style="@style/Jarvis.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -574,6 +577,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:id="@+id/floatingHint"
                         android:text="Aus = nichts schwebt über anderen Apps. An: antippen = sprechen, lange drücken = neues Gespräch, ziehen = verschieben. Im Spielmodus immer ausgeblendet." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -693,6 +697,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:id="@+id/gameModeHint"
                         android:text="Nichts verdeckt das Spielbild, Jarvis antwortet nur per Stimme und denkt als TFT-Coach mit (Claude Sonnet 5.5). Umschalten auch per Sprache: „Spielmodus an“ oder „Spielmodus aus“." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -707,6 +712,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:id="@+id/proactiveHint"
                         android:text="Zu Beginn jeder Planungsphase sagt Jarvis ungefragt den wichtigsten Befehl an, wenn nötig mit Aufstellung – sonst schweigt er. Braucht die Bildschirmfreigabe. Kosten (geschätzt): rund 0,8 Cent pro Ansage, etwa 15–20 Cent pro Partie." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -721,6 +727,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:id="@+id/deepThinkingHint"
                         android:text="Aus (Standard) = schnellste Befehle; Jarvis liest Gold, Stufe und Leben aber immer zuerst ab. An = denkt vor fast jeder Antwort nach – manchmal bessere Pläne, dafür spürbar langsamer." />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -735,6 +742,7 @@
                         style="@style/Jarvis.Hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:id="@+id/gameAutoHint"
                         android:text="Läuft TFT im Vordergrund, schaltet Jarvis den Spielmodus selbst ein und hört ohne „Jarvis“ zu. Bist du länger als 20 Sekunden aus dem Spiel, geht beides wieder aus. Braucht einmalig die Freigabe „Nutzungsdatenzugriff“ – damit sieht Jarvis nur, welche App gerade vorne ist." />
 
                     <Button
@@ -774,6 +782,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:id="@+id/metaHint"
                         android:text="Aktuelle Meta: Im Spielmodus recherchiert Jarvis einmal am Tag im Internet die aktuellen Comps, Augments und Patch-Änderungen (Claude-Websuche, ca. 3–5 Cent pro Tag)." />
 
                     <TextView
@@ -803,6 +812,7 @@
 
             <!-- ===================================================== Wünsche an die Entwicklung -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/wishesCard"
                 style="@style/Jarvis.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -888,6 +898,7 @@
 
             <!-- ===================================================== Agent-Rückgrat -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/agentCard"
                 style="@style/Jarvis.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -969,6 +980,7 @@
 
             <!-- ===================================================== Gedächtnis -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/memoryCard"
                 style="@style/Jarvis.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -1100,6 +1112,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:id="@+id/helpText"
                         android:text="• Immer zuhören (Standard): Einfach losreden, ohne „Jarvis“ und ohne Antippen – solange der Bildschirm an ist. Nach einer Gesprächspause antwortet er nur, wenn der Satz ihm galt; mit „Jarvis“ im Satz immer. Antippen pausiert das Zuhören, nochmal antippen schaltet es wieder an.\n• TFT: Bildschirm freigeben und spielen. Jarvis erkennt das Spiel und sagt in jeder Planungsphase von selbst den wichtigsten Befehl.\n• Ohne „Immer zuhören“: auf dem Startbildschirm den Kern antippen, in der Benachrichtigung auf „Sprechen“ tippen oder die Seitentaste nutzen.\n• Pausen beim Sprechen sind erlaubt. Sofort abschicken: nochmal antippen.\n• Während Jarvis spricht: Antippen unterbricht immer; im Dauergespräch auch „Jarvis“ oder einfach losreden.\n• Lange drücken auf den Kern = neues Gespräch.\n• „Merk dir …“ speichert dauerhaft, „Vergiss …“ löscht wieder.\n• Seitentaste: Einstellungen → Erweiterte Funktionen → Seitentaste → Zweimal drücken → App öffnen → „Jarvis sprechen“.\n• Bei der Bildschirmfreigabe „Gesamter Bildschirm“ wählen." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -54,6 +54,7 @@ public class CredentialsTest {
 
     @Test public void alterBackupImportExportiertNiemalsErneutSchluessel() throws Exception {
         Prefs p = new Prefs(context);
+        if (BuildConfig.OPENAI_TEST) p.setOpenAiSelected(true);
         Backup.apply(p, new JSONObject().put("apiKey", "test-claude").put("elevenKey", "test-eleven")
                 .put("githubToken", "test-github").put("agentToken", "test-agent")
                 .put("memory", "- Ein Testeintrag").toString());
@@ -65,6 +66,7 @@ public class CredentialsTest {
         p.setOpenAiKey("test-openai");
         output = Backup.toJson(p);
         JSONObject exported = new JSONObject(output);
+        assertEquals(p.openAiSelected(), exported.getBoolean("openaiSelected"));
         for (String name : new String[]{"apiKey", "elevenKey", "githubToken", "agentToken"}) assertFalse(exported.has(name));
         assertFalse(output.contains("test-claude"));
         assertFalse(output.contains("test-eleven"));
@@ -72,6 +74,11 @@ public class CredentialsTest {
         assertFalse(output.contains("test-agent"));
         assertFalse(output.contains("test-openai"));
         assertTrue(exported.getString("memory").contains("Testeintrag"));
+        if (BuildConfig.OPENAI_TEST) {
+            p.setOpenAiSelected(false);
+            Backup.apply(p, output);
+            assertTrue("Sicherung stellt den Anbieter wieder her", p.openAiSelected());
+        }
     }
 
     @Test public void beschaedigteSchluesselWerdenNichtAlsKlartextGelesenOderLeerUeberschrieben() {
@@ -128,5 +135,51 @@ public class CredentialsTest {
         });
         assertTrue(done.await(5, java.util.concurrent.TimeUnit.SECONDS));
         assertTrue("Abbruch vor jedem Netzwerkzugriff", result.get().contains("Providerwechsel"));
+    }
+
+    @Test public void openAiEinstellungenVerbergenNichtAngebundeneFunktionenUndBehaltenSchluessel() throws Exception {
+        if (!BuildConfig.OPENAI_TEST) return;
+        Prefs p = new Prefs(context);
+        p.setOpenAiSelected(true);
+        p.setOpenAiKey("local-ui-test-key");
+        android.app.Activity activity = InstrumentationRegistry.getInstrumentation().startActivitySync(
+                new android.content.Intent(context, SettingsActivity.class).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+        try {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                for (int id : new int[]{R.id.keyLayout, R.id.modelLayout, R.id.testKey, R.id.speechControlCard,
+                        R.id.voiceCard, R.id.wishesCard, R.id.agentCard, R.id.memoryCard, R.id.metaHint,
+                        R.id.metaInfo, R.id.metaUpdate, R.id.switchProactive, R.id.switchGameThink}) {
+                    assertEquals("Claude-Funktion im OpenAI-Modus verborgen: " + id,
+                            android.view.View.GONE, activity.findViewById(id).getVisibility());
+                }
+                assertEquals(android.view.View.VISIBLE, activity.findViewById(R.id.openAiKeyInput).getVisibility());
+                assertTrue(((android.widget.TextView) activity.findViewById(R.id.helpText)).getText().toString().contains("OpenAI-Modus"));
+                com.google.android.material.materialswitch.MaterialSwitch provider = activity.findViewById(R.id.openAiProvider);
+                provider.setChecked(false);
+                assertEquals(android.view.View.VISIBLE, activity.findViewById(R.id.keyLayout).getVisibility());
+                assertEquals(android.view.View.VISIBLE, activity.findViewById(R.id.wishesCard).getVisibility());
+                assertEquals(android.view.View.VISIBLE, activity.findViewById(R.id.metaUpdate).getVisibility());
+                assertEquals("local-ui-test-key", new Prefs(context).openAiKey());
+                provider.setChecked(true);
+                assertEquals(android.view.View.GONE, activity.findViewById(R.id.wishesCard).getVisibility());
+            });
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            settingsScreenshot("openai-einstellungen.png");
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
+                    ((android.widget.ScrollView) activity.findViewById(R.id.settingsScroll)).fullScroll(android.view.View.FOCUS_DOWN));
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            settingsScreenshot("openai-hilfe.png");
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(activity::finish);
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        }
+    }
+
+    private void settingsScreenshot(String name) throws Exception {
+        android.graphics.Bitmap shot = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+        assertNotNull("Einstellungsoberfläche sichtbar", shot);
+        try (java.io.FileOutputStream out = context.openFileOutput(name, Context.MODE_PRIVATE)) {
+            assertTrue(shot.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out));
+        } finally { shot.recycle(); }
     }
 }
