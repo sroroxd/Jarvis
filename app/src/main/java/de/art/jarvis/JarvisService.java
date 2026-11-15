@@ -916,6 +916,7 @@ public class JarvisService extends Service {
     /** Art redet dazwischen: Stimme sofort aus, zuhören. */
     private void onArtSpeaks() {
         if (!running || !continuous || state != State.SPEAKING) return;
+        testLog("unterbrochen: Art spricht dazwischen – Stimme aus, höre zu");
         stopSpeaking();
         startListening(true);
     }
@@ -1193,6 +1194,7 @@ public class JarvisService extends Service {
             continuousErrors = 0;
         }
         publishExchange(text, "");
+        testLog("gehört: " + text);
         handleUtterance(text);
     }
 
@@ -1759,6 +1761,7 @@ public class JarvisService extends Service {
      * lang nichts sagt. Ist der Bildschirm geteilt, bekommt jede Frage ein frisches Bild.
      */
     private void startContinuous() {
+        testLog("dauergespräch an");
         continuous = true;
         listenPaused = false;
         continuousLastSpeech = SystemClock.elapsedRealtime();
@@ -1771,6 +1774,7 @@ public class JarvisService extends Service {
     /** @param announce kurz ansagen, dass es vorbei ist (bei Antippen und Sprachbefehl). */
     private void stopContinuous(boolean announce) {
         if (!continuous) return;
+        testLog("dauergespräch aus");
         continuous = false;
         main.removeCallbacks(relisten);
         if (state == State.THINKING) requestId++; // Art hat beendet – die ausstehende Antwort nicht mehr vorlesen
@@ -1986,7 +1990,23 @@ public class JarvisService extends Service {
 
     /** Protokollzeile für den Gesprächstest in der CI; in der Handy-Version (Release) passiert nichts. */
     private void testLog(String line) {
-        if (debuggable()) android.util.Log.i(TEST_TAG, line);
+        if (!debuggable()) return;
+        android.util.Log.i(TEST_TAG, line);
+        REPORT.add(System.currentTimeMillis(), line);
+    }
+
+    /** Ereignisse für den Testbericht vom Handy (nur Debug-Builds, siehe {@link TestReport}). */
+    private static final TestReport REPORT = new TestReport();
+
+    /** Testbericht mit Kopfzeilen zu Gerät und Einstellungen, die fürs Freisprechen zählen. */
+    static String testReport(Prefs p) {
+        String header = "Gerät: " + Build.MANUFACTURER + " " + Build.MODEL + " · Android " + Build.VERSION.RELEASE
+                + " · App " + BuildConfig.VERSION_NAME + "\n"
+                + "KI: " + p.brain().label() + " · Immer zuhören: " + (p.alwaysListen() ? "an" : "aus")
+                + " · Dazwischenreden: " + (p.bargeIn() ? "an" : "aus") + " (Stufe " + p.bargeInSensitivity() + ")"
+                + " · Telefonmodus: " + (p.echoCallMode() ? "an" : "aus") + " · Sprechpause " + p.pauseMs() + " ms\n"
+                + "Läuft: " + (isRunning() ? "ja" : "nein") + " · Dauergespräch: " + (isContinuous() ? "an" : "aus");
+        return REPORT.text(header);
     }
 
     /** Spricht einen ganzen Text am Stück (Ansagen, Antworten ohne Streaming). */
@@ -2040,7 +2060,7 @@ public class JarvisService extends Service {
      *  (siehe testLog „antwort […]“); auf dem Startbildschirm werden sie nicht mehr gezeigt (Wunsch #71). */
     private void onVoiceStarted() {
         bargeIn.voiceStarted(); // ab jetzt lernt die Echo-Schranke Jarvis' eigene Stimme
-        timing.voiceStarted(SystemClock.elapsedRealtime());
+        if (timing.voiceStarted(SystemClock.elapsedRealtime())) testLog("zeit: " + timing.summary());
     }
 
     /** „ · Senden 0,4 s (380 KB) · Claude 0,9 s“ – zerlegt die Wartezeit „KI“ (Wunsch #43). */

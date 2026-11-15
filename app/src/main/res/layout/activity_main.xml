@@ -177,6 +177,16 @@
             android:orientation="vertical" />
     </ScrollView>
 
+    <!-- Nur Debug-Builds: Testbericht vom Handy an Claude (siehe TestReport) -->
+    <Button
+        android:id="@+id/reportButton"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="Testbericht teilen"
+        android:visibility="gone" />
+
     <Button
         android:id="@+id/stopButton"
         style="@style/Widget.Material3.Button.TextButton.Icon"

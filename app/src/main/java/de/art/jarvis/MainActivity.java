@@ -70,6 +70,10 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             return true;
         });
 
+        if (BuildConfig.DEBUG) {
+            b.reportButton.setVisibility(android.view.View.VISIBLE);
+            b.reportButton.setOnClickListener(v -> shareReport());
+        }
         b.stopButton.setOnClickListener(v -> {
             stopService(new Intent(this, JarvisService.class));
             b.getRoot().postDelayed(this::render, 150);
@@ -417,6 +421,19 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     }
 
     // ---------------------------------------------------------------- Starten
+
+    /**
+     * Debug: Testbericht über das Teilen-Menü (z. B. kopieren und in den Chat mit Claude einfügen). Enthält gehörte
+     * Sätze und Antworten – deshalb nur auf Arts Knopfdruck, nie automatisch und nie öffentlich.
+     */
+    private void shareReport() {
+        String text = JarvisService.testReport(prefs);
+        Intent send = new Intent(Intent.ACTION_SEND)
+                .setType("text/plain")
+                .putExtra(Intent.EXTRA_SUBJECT, "Jarvis-Testbericht")
+                .putExtra(Intent.EXTRA_TEXT, text);
+        startActivity(Intent.createChooser(send, "Testbericht teilen"));
+    }
 
     /** Geht Schritt für Schritt alle nötigen Freigaben durch und startet dann Jarvis. */
     private void proceed() {

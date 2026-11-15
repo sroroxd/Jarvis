@@ -167,6 +167,13 @@ else
 fi
 ask "Folgefrage nach Stopp" "Und was ist mit vier" "Folgefrage [0-9].*vorige Frage war: Und das Doppelte davon"
 adb exec-out screencap -p > shots/05_gespraech_kostenlos.png
+# Testbericht vom Handy (Debug): Knopf auf dem Startbildschirm vorhanden?
+adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
+if adb shell cat /sdcard/ui.xml 2>/dev/null | grep -q 'text="Testbericht teilen"'; then
+  say "  Testbericht-Knopf: vorhanden"
+else
+  say "  FEHLER Testbericht-Knopf fehlt auf dem Startbildschirm"; gfail=1
+fi
 freifail=$gfail
 gfail=0
 
