@@ -1484,7 +1484,7 @@ public class JarvisService extends Service {
         }
 
         // Werkzeuge (Websuche, Kalender) nur im Alltag mit Claude – der Spielmodus bleibt schnell und nutzt die Tages-Meta.
-        boolean withTools = !prefs.tftMode();
+        boolean withTools = !prefs.tftMode() && !prefs.isOpenAi();
         String system = Persona.system(prefs.tftMode(), prefs.memory(), prefs.metaText(), prefs.metaDate(),
                 withTools, prefs.agentReady());
         // Satzweise sprechen, während Claude noch schreibt (Handy-Stimme). ElevenLabs bekommt die Antwort weiter am
