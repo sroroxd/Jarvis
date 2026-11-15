@@ -53,6 +53,7 @@ public class JarvisService extends Service {
     public static final String ACTION_RESET = "de.art.jarvis.RESET";
     public static final String ACTION_REFRESH = "de.art.jarvis.REFRESH";
     public static final String ACTION_STOP = "de.art.jarvis.STOP";
+    public static final String ACTION_OPENAI_IMAGE = "de.art.jarvis.OPENAI_IMAGE";
     /** Nur Debug-Builds: eine Frage so behandeln, als hätte Art sie gesprochen (Gesprächstest in der CI). */
     public static final String ACTION_TEST_ASK = "de.art.jarvis.TEST_ASK";
     /** Nur Debug-Builds: den Phasen-Wächter einmal mit einem Testbild fragen (CI prüft Modell und Anfrageformat). */
@@ -98,6 +99,8 @@ public class JarvisService extends Service {
     /** Läuft gerade das Dauergespräch? Für die Anzeige auf dem Startbildschirm. */
     private static volatile boolean continuous;
     private static String lastModel = "";
+    private static String openAiReport = "OpenAI-Test bereit. Schlüssel in den Einstellungen eintragen und OpenAI auswählen.";
+    static String openAiStatus() { return openAiReport; }
     private final Timing timing = new Timing();
     private static boolean screenShared;
     private static boolean screenAwake = true;
@@ -190,6 +193,8 @@ public class JarvisService extends Service {
     private WindowManager wm;
     private MediaProjection projection;
     private ScreenGrabber grabber;
+    private OpenAiSession openAi;
+    private boolean appliedOpenAi;
     private SpeechRecognizer recognizer;
     private TextToSpeech tts;
     private boolean ttsReady;
@@ -226,6 +231,7 @@ public class JarvisService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             screenAwake = Intent.ACTION_SCREEN_ON.equals(intent.getAction());
+            if (!screenAwake && openAi != null) openAi.stop("OpenAI-Test bei ausgeschaltetem Bildschirm beendet.");
             updateGameWatch();
             updateProactive();
             updateAlwaysListen();
@@ -304,7 +310,7 @@ public class JarvisService extends Service {
             }
             if (projection == null && data != null) startProjection(code, data);
             applySettings();
-            if (!wasRunning) main.postDelayed(() -> say("Zu Diensten, Sir."), 500);
+            if (!wasRunning && !prefs.openAiSelected()) main.postDelayed(() -> say("Zu Diensten, Sir."), 500);
             return START_NOT_STICKY;
         }
         if (!running) {
@@ -313,6 +319,7 @@ public class JarvisService extends Service {
             return START_NOT_STICKY;
         }
         if (ACTION_LISTEN.equals(action)) onTap();
+        else if (ACTION_OPENAI_IMAGE.equals(action) && prefs.openAiSelected() && openAi != null) openAi.ask(true);
         else if (ACTION_RESET.equals(action)) resetConversation();
         else if (ACTION_REFRESH.equals(action)) applySettings();
         else if (ACTION_TEST_ASK.equals(action) && debuggable()) {
@@ -339,6 +346,8 @@ public class JarvisService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        if (openAi != null) openAi.close();
+        openAi = null;
         ClaudeClient.costListener = null;
         continuous = false;
         screenShared = false;
@@ -384,6 +393,31 @@ public class JarvisService extends Service {
 
     /** Übernimmt geänderte Einstellungen (J, Untertitel, Zuhören, Spielmodus) sofort. */
     private void applySettings() {
+        if (prefs.openAiSelected()) {
+            main.removeCallbacks(relisten);
+            main.removeCallbacks(listenWatchdog);
+            main.removeCallbacks(proactiveTick);
+            continuous = false;
+            proactiveScheduled = false;
+            releaseRecognizer();
+            bargeIn.stop(null);
+            if (!appliedOpenAi) {
+                appliedOpenAi = true;
+                requestId++;
+                stopSpeaking();
+                startOpenAi();
+            }
+            updateGameWatch(); updateTalkAudio(); updateNotification(); notifyUi();
+            return;
+        }
+        if (appliedOpenAi) {
+            appliedOpenAi = false;
+            if (openAi != null) openAi.close();
+            openAi = null;
+            setState(State.IDLE);
+            main.removeCallbacks(listenWatchdog);
+            if (running) main.postDelayed(listenWatchdog, ListenRules.WATCHDOG_MS);
+        }
         // Moduswechsel (per Sprache, Schalter auf dem Startbildschirm oder in den Einstellungen) = neues Gespräch:
         // Alltagsgespräche gehören nicht ins TFT-Coaching – und Pläne der letzten Partie nicht in die nächste.
         if (prefs.tftMode() != appliedGameMode) {
@@ -418,7 +452,7 @@ public class JarvisService extends Service {
 
     /** Soll Jarvis gerade von selbst durchgehend zuhören? Nur bei eingeschaltetem Bildschirm (Akku). */
     private boolean listenWanted() {
-        return running && prefs.alwaysListen() && micGranted() && screenAwake && !listenPaused;
+        return !prefs.openAiSelected() && running && prefs.alwaysListen() && micGranted() && screenAwake && !listenPaused;
     }
 
     /**
@@ -447,7 +481,7 @@ public class JarvisService extends Service {
      * taub bleiben, bis Art den Bildschirm aus- und wieder einschaltete.
      */
     private void listenWatchdog() {
-        if (!running) return;
+        if (!running || prefs.openAiSelected()) return;
         main.postDelayed(listenWatchdog, ListenRules.WATCHDOG_MS);
         boolean wanted = listenWanted();
         if (!ListenRules.kickNeeded(wanted || continuous, continuous, state == State.IDLE, main.hasCallbacks(relisten))) {
@@ -465,7 +499,8 @@ public class JarvisService extends Service {
      * filtert das Handy sein Echo heraus, und Art kommt mit normaler Stimme darüber. Sonst wie bisher.
      */
     private void updateTalkAudio() {
-        boolean want = running && continuous && prefs.bargeIn() && prefs.echoCallMode() && micGranted();
+        boolean want = running && micGranted() && (prefs.openAiSelected()
+                || (continuous && prefs.bargeIn() && prefs.echoCallMode()));
         boolean on;
         if (want) {
             on = talkAudio.enter();
@@ -493,6 +528,13 @@ public class JarvisService extends Service {
      */
     private void onGameChanged(boolean inGame) {
         if (!running) return;
+        if (prefs.openAiSelected()) {
+            // Keine zweite Sprachpipeline und kein unbeaufsichtigter Bild-Timer im OpenAI-Gerätetest.
+            if (inGame && !prefs.tftMode()) { prefs.setTftMode(true); autoGameMode = true; }
+            else if (!inGame && autoGameMode) { prefs.setTftMode(false); autoGameMode = false; }
+            notifyUi();
+            return;
+        }
         if (inGame) {
             if (!prefs.tftMode()) {
                 prefs.setTftMode(true);
@@ -532,7 +574,7 @@ public class JarvisService extends Service {
     private boolean proactiveBusy;
 
     private boolean proactiveWanted() {
-        return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
+        return !prefs.openAiSelected() && running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
                 && !prefs.apiKey().isEmpty() && !prefs.overCostLimit(today());
     }
 
@@ -767,7 +809,7 @@ public class JarvisService extends Service {
      * Nach einem Fehlschlag frühestens nach 30 Minuten erneut.
      */
     private void maybeUpdateMeta() {
-        if (metaRunning || !prefs.tftMode() || prefs.apiKey().isEmpty()) return;
+        if (prefs.openAiSelected() || metaRunning || !prefs.tftMode() || prefs.apiKey().isEmpty()) return;
         final String today = today();
         if (Meta.isFresh(prefs.metaDate(), today)) return;
         long now = SystemClock.elapsedRealtime();
@@ -827,6 +869,7 @@ public class JarvisService extends Service {
                     projection = null;
                     boolean was = screenShared;
                     screenShared = false;
+                    if (openAi != null) openAi.screenRevoked();
                     updateProactive();
                     notifyUi();
                     // Android beendet die Freigabe z. B., wenn eine Bildschirmaufnahme startet.
@@ -937,6 +980,11 @@ public class JarvisService extends Service {
 
     /** Antippen (Reaktor, J, Benachrichtigung, Seitentaste). */
     private void onTap() {
+        if (prefs.openAiSelected()) {
+            if (openAi == null || openAi.isClosed()) startOpenAi();
+            else { openAi.stop("OpenAI pausiert."); }
+            return;
+        }
         // Läuft das Dauergespräch, beendet Antippen es – egal in welchem Zustand.
         if (continuous) {
             stopContinuous(true);
@@ -967,6 +1015,11 @@ public class JarvisService extends Service {
     }
 
     private void resetConversation() {
+        if (prefs.openAiSelected()) {
+            if (openAi != null) openAi.stop("OpenAI-Gespräch beendet.");
+            publishExchange("", "");
+            return; // Ein neues kostenpflichtiges Gespräch beginnt erst beim nächsten Antippen.
+        }
         history.clear();
         requestId++;
         // Auch der Agent fängt neu an, sonst zieht er den alten Zusammenhang mit.
@@ -989,6 +1042,7 @@ public class JarvisService extends Service {
 
     /** @param quiet ohne Signalton – im Dauergespräch soll nicht nach jeder Antwort ein Ton kommen. */
     private void startListening(boolean quiet) {
+        if (prefs.openAiSelected()) return;
         if (!micGranted()) {
             say("Mir fehlt die Mikrofon-Berechtigung. Bitte öffnen Sie die Jarvis-App.");
             return;
@@ -1984,6 +2038,32 @@ public class JarvisService extends Service {
         if (tts != null) tts.stop();
         eleven.stop();
         if (pocket != null) pocket.stop();
+    }
+
+    private void startOpenAi() {
+        if (!running || !micGranted()) return;
+        if (openAi != null) openAi.close();
+        if (prefs.openAiKey().isEmpty()) {
+            openAiReport = "OpenAI-Schlüssel fehlt. Bitte nur auf dem Handy in den Einstellungen eintragen.";
+            setState(State.IDLE); notifyUi(); return;
+        }
+        stopSpeaking();
+        openAi = new OpenAiSession(new OpenAiSession.Frames() {
+            @Override public ScreenGrabber.FreshFrame capture(long requestedAt) {
+                ScreenGrabber current = grabber;
+                return current == null ? null : current.captureFresh(requestedAt);
+            }
+            @Override public boolean allowed() { return screenShared && projection != null; }
+        }, new OpenAiSession.Ui() {
+            @Override public void state(State state, String message) {
+                if (!running || !prefs.openAiSelected()) return;
+                openAiReport = message; setState(state); notifyUi();
+            }
+            @Override public void answer(String text) {
+                if (running && prefs.openAiSelected()) { publishExchange(null, text); caption(text); }
+            }
+        });
+        openAi.start(prefs.openAiKey());
     }
 
     /** flush: erster Satz eines Vorgangs (verdrängt Älteres); sonst hinten anstellen. */

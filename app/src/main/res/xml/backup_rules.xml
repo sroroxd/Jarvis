@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- jarvis.xml kann vor oder während der Migration noch alte Klartext-Schlüssel enthalten. -->
+    <exclude domain="sharedpref" path="jarvis.xml" />
+    <exclude domain="sharedpref" path="jarvis_secrets.xml" />
+</full-backup-content>

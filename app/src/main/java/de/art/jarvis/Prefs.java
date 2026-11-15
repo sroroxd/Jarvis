@@ -22,17 +22,31 @@ public final class Prefs {
     public static final int DEFAULT_PAUSE_MS = 1200;
 
     private final SharedPreferences sp;
+    private final SecretStore secrets;
 
     public Prefs(Context context) {
         sp = context.getSharedPreferences("jarvis", Context.MODE_PRIVATE);
+        secrets = new SecretStore(context, sp);
+        // Vorhandene Schlüssel sicher migrieren, bevor irgendein App-Pfad sie verwendet.
+        for (String name : new String[]{"api_key", "eleven_key", "github_token", "agent_token", "openai_key"}) secrets.read(name);
+        sp.edit().remove("backup_keys").apply();
     }
 
+    public String credentialsError() { return secrets.error(); }
+
+    /** Ausschließlich die getrennte OpenAI-Test-App darf diesen Provider aktivieren. */
+    public boolean openAiSelected() { return BuildConfig.OPENAI_TEST && sp.getBoolean("openai_selected", false); }
+    public void setOpenAiSelected(boolean selected) { sp.edit().putBoolean("openai_selected", BuildConfig.OPENAI_TEST && selected).apply(); }
+    public String openAiKey() { return secrets.read("openai_key"); }
+    public void setOpenAiKey(String value) { secrets.write("openai_key", Text.cleanKey(value)); }
+    public boolean selectedProviderReady() { return !(openAiSelected() ? openAiKey() : apiKey()).isEmpty(); }
+
     public String apiKey() {
-        return sp.getString("api_key", "").trim();
+        return secrets.read("api_key").trim();
     }
 
     public void setApiKey(String value) {
-        sp.edit().putString("api_key", Text.cleanKey(value)).apply();
+        secrets.write("api_key", Text.cleanKey(value));
     }
 
     public String apiKeyPreview() {
@@ -120,11 +134,11 @@ public final class Prefs {
     // ------------------------------------------------------------ Premium-Stimme (ElevenLabs, optional)
 
     public String elevenKey() {
-        return sp.getString("eleven_key", "");
+        return secrets.read("eleven_key");
     }
 
     public void setElevenKey(String value) {
-        sp.edit().putString("eleven_key", Text.cleanKey(value)).apply();
+        secrets.write("eleven_key", Text.cleanKey(value));
     }
 
     /** Stimmen-ID; leer = Standard („Daniel“, britisch, ruhig). */
@@ -148,16 +162,6 @@ public final class Prefs {
 
     public void setBackupUri(String value) {
         sp.edit().putString("backup_uri", value == null ? "" : value).apply();
-    }
-
-    /** Spielmodus (TFT): nur Sprache, nichts verdeckt das Spielbild, TFT-Coach-Anweisungen. */
-    /** Schlüssel mit in die Sicherungsdatei schreiben (Standard: aus). */
-    public boolean backupKeys() {
-        return sp.getBoolean("backup_keys", false);
-    }
-
-    public void setBackupKeys(boolean value) {
-        sp.edit().putBoolean("backup_keys", value).apply();
     }
 
     // ------------------------------------------------------------ Kosten (Tagessumme aller Claude-Anfragen)
@@ -406,11 +410,11 @@ public final class Prefs {
 
     /** GitHub-Schlüssel (fine-grained, nur sroroxd/Jarvis, „Issues: Read and write“). */
     public String githubToken() {
-        return sp.getString("github_token", "").trim();
+        return secrets.read("github_token").trim();
     }
 
     public void setGithubToken(String value) {
-        sp.edit().putString("github_token", Text.cleanKey(value)).apply();
+        secrets.write("github_token", Text.cleanKey(value));
     }
 
     public String githubTokenPreview() {
@@ -449,11 +453,11 @@ public final class Prefs {
 
     /** Token des Agenten – steht auf dem Handy in {@code ~/.jarvis-agent/token}. */
     public String agentToken() {
-        return sp.getString("agent_token", "").trim();
+        return secrets.read("agent_token").trim();
     }
 
     public void setAgentToken(String value) {
-        sp.edit().putString("agent_token", value == null ? "" : value.trim()).apply();
+        secrets.write("agent_token", value == null ? "" : value.trim());
     }
 
     /** Vorschau fürs Anzeigen, ohne das ganze Token zu zeigen. */

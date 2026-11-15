@@ -9,6 +9,7 @@ import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.util.Base64;
 
 import java.io.ByteArrayOutputStream;
@@ -30,6 +31,7 @@ final class ScreenGrabber {
     private VirtualDisplay display;
     private ImageReader reader;
     private Image latest;
+    private long latestAt;
     private int width;
     private int height;
     /**
@@ -96,6 +98,7 @@ final class ScreenGrabber {
             synchronized (lock) {
                 if (latest != null) latest.close();
                 latest = img;
+                latestAt = SystemClock.elapsedRealtime();
             }
         }, handler);
         return r;
@@ -108,6 +111,22 @@ final class ScreenGrabber {
     String captureJpegBase64(boolean game) {
         byte[] jpeg = captureJpeg(game);
         return jpeg == null ? null : Base64.encodeToString(jpeg, Base64.NO_WRAP);
+    }
+
+    static final class FreshFrame {
+        final String jpeg;
+        final long at;
+        FreshFrame(String jpeg, long at) { this.jpeg = jpeg; this.at = at; }
+    }
+
+    /** Verwendet denselben Mitschnitt wie Claude, verwirft aber alte Frames statt sie als aktuell auszugeben. */
+    FreshFrame captureFresh(long requestedAt) {
+        synchronized (lock) {
+            if (latest == null || !RealtimeProtocol.fresh(latestAt, requestedAt, SystemClock.elapsedRealtime())) return null;
+            long at = latestAt;
+            String jpeg = captureJpegBase64(true);
+            return jpeg == null ? null : new FreshFrame(jpeg, at);
+        }
     }
 
     /** Wie {@link #captureJpegBase64}, aber als rohe JPEG-Bytes. */

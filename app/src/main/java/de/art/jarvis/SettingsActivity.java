@@ -41,6 +41,7 @@ public class SettingsActivity extends AppCompatActivity {
     private ElevenTts elevenPreview;
     private TextToSpeech previewTts;
     private boolean previewReady;
+    private android.widget.EditText openAiKeyField;
     private String previewEngine;
     private List<Voices.Engine> engines = new ArrayList<>();
     private List<Voice> voices = new ArrayList<>();
@@ -71,6 +72,8 @@ public class SettingsActivity extends AppCompatActivity {
         setupWishes();
         setupAgent();
         setupBackup();
+        setupOpenAi();
+        showCredentialsError();
         b.versionText.setText("Jarvis " + versionName());
         hideTicks(b.sliderSensitivity, b.sliderBargeIn, b.sliderPause, b.sliderCostLimit, b.sliderRate, b.sliderPitch);
     }
@@ -88,6 +91,36 @@ public class SettingsActivity extends AppCompatActivity {
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
         b.modelField.setText(prefs.rawModel());
         b.testKey.setOnClickListener(v -> testKey());
+    }
+
+    private void setupOpenAi() {
+        if (!BuildConfig.OPENAI_TEST) return;
+        android.widget.LinearLayout parent = (android.widget.LinearLayout) b.keyLayout.getParent();
+        com.google.android.material.materialswitch.MaterialSwitch provider =
+                new com.google.android.material.materialswitch.MaterialSwitch(this);
+        provider.setText("OpenAI Realtime verwenden (Test)");
+        provider.setChecked(prefs.openAiSelected());
+        parent.addView(provider, 1);
+        com.google.android.material.textfield.TextInputLayout layout =
+                new com.google.android.material.textfield.TextInputLayout(this);
+        layout.setHint("OpenAI-API-Schlüssel (nur auf diesem Handy)");
+        layout.setEndIconMode(com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+        openAiKeyField = new com.google.android.material.textfield.TextInputEditText(this);
+        openAiKeyField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        openAiKeyField.setSingleLine(true);
+        openAiKeyField.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO);
+        openAiKeyField.setText(prefs.openAiKey());
+        layout.addView(openAiKeyField);
+        parent.addView(layout, 2);
+        android.widget.TextView note = new android.widget.TextView(this);
+        note.setText("Kostenpflichtiger OpenAI-Test: " + RealtimeProtocol.MODEL
+                + ". Höchstens 10 Minuten und 6 Antworten pro Start, kein festes Geldlimit. Kein Modellwechsel. "
+                + "Schlüssel wird mit Android Keystore geschützt und nie exportiert. Starten über den Kern; Bild über „TFT-Bild jetzt prüfen“. "
+                + "Claude bleibt bei ausgeschaltetem OpenAI-Schalter verfügbar und wird nicht als Ausweichmodell verwendet.");
+        parent.addView(note, 3);
+        provider.setOnCheckedChangeListener((button, on) -> {
+            saveTextFields(); prefs.setOpenAiSelected(on); refreshService();
+        });
     }
 
     /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
@@ -535,7 +568,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    /** Fragt den Agenten, ob er läuft. Antwort steht direkt unter dem Knopf. */
+    /** Prüft Erreichbarkeit, Token und Claude-Code-Anmeldung ohne Modellanfrage. */
     private void testAgent() {
         prefs.setAgentToken(text(b.agentTokenField));
         updateAgentInfo();
@@ -548,11 +581,6 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void setupBackup() {
         showMemory();
-        b.switchBackupKeys.setChecked(prefs.backupKeys());
-        b.switchBackupKeys.setOnCheckedChangeListener((v, on) -> {
-            prefs.setBackupKeys(on);
-            Backup.autoSave(this, prefs);
-        });
         updateBackupInfo();
         b.backupCreate.setOnClickListener(v -> {
             saveTextFields();
@@ -606,7 +634,6 @@ public class SettingsActivity extends AppCompatActivity {
     private void refreshFromPrefs() {
         updateAgentInfo();
         showWishes();
-        b.switchBackupKeys.setChecked(prefs.backupKeys());
         showMemory();
         // Auch die Schlüssel neu anzeigen: Sonst schrieb das Verlassen der Einstellungen (saveTextFields) die
         // alten, meist leeren Felder zurück – und die eben wiederhergestellten Schlüssel waren wieder weg.
@@ -692,7 +719,13 @@ public class SettingsActivity extends AppCompatActivity {
         b.githubTokenLayout.setHelperText(prefs.githubTokenPreview());
         prefs.setElevenKey(text(b.elevenKeyField));
         prefs.setElevenVoice(text(b.elevenVoiceField));
+        if (openAiKeyField != null) prefs.setOpenAiKey(openAiKeyField.getText().toString());
+        showCredentialsError();
         Backup.autoSave(this, prefs);
+    }
+
+    private void showCredentialsError() {
+        if (!prefs.credentialsError().isEmpty()) showResult(b.keyResult, prefs.credentialsError());
     }
 
     private void showMemory() {

@@ -9,3 +9,15 @@ __pycache__/
 
 # sherpa-onnx (Offline-Stimme), lädt app/build.gradle mit Prüfsumme
 .sherpa/
+
+# Private APK-Signierschlüssel gehören ausschließlich in einen geschützten Schlüsselspeicher.
+*.keystore
+*.jks
+*.p12
+*.pk8
+signing-private/
+
+# Lokale API-Zugangsdaten
+.env
+.env.local
+.env.*.local

@@ -17,8 +17,8 @@ import java.util.Locale;
 /**
  * Sicherungsdatei für Gedächtnis und Einstellungen. Liegt an einem Ort, den Art selbst wählt
  * (z. B. „Downloads“), und übersteht damit auch eine Deinstallation.
- * API-Schlüssel (Claude, ElevenLabs, GitHub, Agent) stehen nur darin, wenn Art „API-Schlüssel mitsichern“ einschaltet
- * (Prefs.backupKeys) – sonst kann die Datei gefahrlos herumliegen.
+ * Zugangsdaten werden nie exportiert. Alte Sicherungen mit Schlüsseln können weiterhin importiert werden;
+ * ihre Schlüssel werden dabei geschützt gespeichert. Gedächtnis und Wünsche können private Inhalte enthalten.
  */
 final class Backup {
     /** Die Test-App sichert in eine eigene Datei, damit sie die Sicherung der normalen App nie überschreibt. */
@@ -39,12 +39,6 @@ final class Backup {
         o.put("pitch", (double) p.pitch());
         o.put("pause", p.pauseMs());
         o.put("elevenVoice", p.rawElevenVoice());
-        if (p.backupKeys()) { // nur auf ausdrücklichen Wunsch
-            o.put("apiKey", p.apiKey());
-            o.put("elevenKey", p.elevenKey());
-            o.put("agentToken", p.agentToken());
-            o.put("githubToken", p.githubToken());
-        }
         o.put("agent", p.agentEnabled());
         o.put("wishes", p.wishes());
         o.put("alwaysListen", p.alwaysListen());
@@ -78,7 +72,6 @@ final class Backup {
         String apiKey = o.optString("apiKey", "");
         if (!apiKey.isEmpty()) {
             p.setApiKey(apiKey);
-            p.setBackupKeys(true);
         }
         String elevenKey = o.optString("elevenKey", "");
         if (!elevenKey.isEmpty()) p.setElevenKey(elevenKey);

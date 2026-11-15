@@ -33,6 +33,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private boolean askedCalendar;
     private boolean askedOverlay;
     private boolean rendering;
+    private android.widget.TextView openAiInfo;
+    private android.widget.Button openAiImage;
     /** Nur in der Debug-Variante: fester Zustand für die automatischen Vorschaubilder. */
     private JarvisService.State demo;
 
@@ -57,6 +59,16 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
                 + BuildConfig.VERSION_CODE);
 
         b.settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        if (BuildConfig.OPENAI_TEST) {
+            android.widget.LinearLayout root = (android.widget.LinearLayout) b.getRoot();
+            openAiInfo = new android.widget.TextView(this);
+            openAiInfo.setPadding(24, 8, 24, 8);
+            root.addView(openAiInfo, 2);
+            openAiImage = new com.google.android.material.button.MaterialButton(this);
+            openAiImage.setText("TFT-Bild jetzt prüfen");
+            openAiImage.setOnClickListener(v -> sendToService(JarvisService.ACTION_OPENAI_IMAGE));
+            root.addView(openAiImage, 3);
+        }
 
         b.reactor.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
@@ -263,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             mode = ReactorView.Mode.OFF;
             label = "STARTEN";
             status = "Inaktiv";
-            detail = prefs.apiKey().isEmpty()
+            detail = !prefs.selectedProviderReady()
                     ? "Trag zuerst in den Einstellungen deinen API-Schlüssel ein."
                     : "Tippe auf den Kern, um Jarvis zu starten.";
         } else {
@@ -305,6 +317,13 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         b.reactor.setMode(mode, label);
         b.statusText.setText(status);
         b.statusDetail.setText(detail);
+        if (openAiInfo != null) {
+            openAiInfo.setText(prefs.openAiSelected() ? JarvisService.openAiStatus()
+                    : "OpenAI-Test verfügbar: In den Einstellungen OpenAI Realtime auswählen. Kein automatischer Providerwechsel.");
+            openAiImage.setEnabled(prefs.openAiSelected() && running);
+            b.chipListen.setEnabled(!prefs.openAiSelected());
+            if (prefs.openAiSelected()) b.statusDetail.setText("OpenAI Realtime · Antippen pausiert oder startet. „Beenden“ schließt Mikrofon und Sitzung.");
+        }
         b.statusDot.setBackgroundTintList(ColorStateList.valueOf(
                 running ? Palette.color(this, s) : Palette.off(this)));
 
@@ -413,7 +432,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
     /** Geht Schritt für Schritt alle nötigen Freigaben durch und startet dann Jarvis. */
     private void proceed() {
-        if (prefs.apiKey().isEmpty()) {
+        if (!prefs.selectedProviderReady()) {
             Snackbar.make(b.getRoot(), "Bitte zuerst den API-Schlüssel eintragen.", Snackbar.LENGTH_LONG)
                     .setAction("Einstellungen", v -> startActivity(new Intent(this, SettingsActivity.class)))
                     .show();
@@ -458,7 +477,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         MediaProjectionManager mpm = getSystemService(MediaProjectionManager.class);
         if (Build.VERSION.SDK_INT >= 34) {
             return mpm.createScreenCaptureIntent(
-                    android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay());
+                    android.media.projection.MediaProjectionConfig.createConfigForUserChoice());
         }
         return mpm.createScreenCaptureIntent();
     }
