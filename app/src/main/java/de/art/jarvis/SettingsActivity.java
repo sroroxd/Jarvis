@@ -144,7 +144,7 @@ public class SettingsActivity extends AppCompatActivity {
         if (openAi && prefs.credentialsError().isEmpty()) b.keyResult.setVisibility(View.GONE);
         openAiModeNote.setText(openAi
                 ? "OpenAI Realtime: Sprache und aktuelle Bildschirmbilder. Kostenpflichtig · " + RealtimeProtocol.MODEL
-                    + ". Nach 6 Antworten oder 10 Minuten pausiert der Test. Zum Fortsetzen den Kern antippen; der Schlüssel bleibt gespeichert. "
+                    + ". Keine feste Antwortzahl. Nach 10 Minuten pausiert der Test. Zum Fortsetzen den Kern antippen; der Schlüssel bleibt gespeichert. "
                     + "Kein festes Geldlimit. Der Schlüssel bleibt verschlüsselt auf diesem Handy und wird nicht mitgesichert. "
                     + "Webrecherche, GitHub-Aufgaben, Agent und dauerhaftes Gedächtnis sind in diesem Modus noch nicht angebunden."
                 : "OpenAI ist ausgeschaltet. Darunter gelten die Einstellungen für Claude. Zum OpenAI-Test den Schalter einschalten; "
@@ -155,7 +155,7 @@ public class SettingsActivity extends AppCompatActivity {
                 + "• Mikrofon und Bildschirm freigeben, dann TFT öffnen und eine klare deutsche Frage stellen.\n"
                 + "• Bei unklar verstandenen Fragen soll Jarvis kurz nachfragen. Für den Test nur eine Sprach-App gleichzeitig laufen lassen.\n"
                 + "• Losreden unterbricht die Antwort. Antippen pausiert oder startet; lange drücken beendet die Sitzung.\n"
-                + "• Nach sechs Antworten oder zehn Minuten pausiert der Test. Der Schlüssel bleibt gespeichert.\n"
+                + "• Keine feste Antwortzahl. Nach zehn Minuten pausiert der Test. Der Schlüssel bleibt gespeichert.\n"
                 + "• Ohne frisches freigegebenes Bild gilt der Spielstand als „Nicht sicher erkennbar“.\n"
                 + "• Die Schaltfläche „Jarvis beenden“ schließt Mikrofon und Verbindung. Der OpenAI-Modus braucht keinen GitHub- oder Claude-Schlüssel.");
         if (openAi) {

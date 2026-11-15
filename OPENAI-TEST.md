@@ -19,7 +19,7 @@ Die automatische Update-Suche über andere Testzweige ist für diese Variante au
 
 Modell ist ausschließlich `gpt-realtime-2.1-mini`. Kein Ausweichmodell, keine automatische Wiederverbindung,
 kein zusätzliches Transkriptionsmodell. Der Start ist kostenpflichtig. Eine Sitzung endet spätestens nach
-zehn Minuten oder sechs Antworten. Das ist **kein verbindliches Geldlimit**. Verbrauchte Ein-/Ausgabetokens
+zehn Minuten. Eine feste Begrenzung der Antwortzahl gibt es nicht mehr. Das ist **kein verbindliches Geldlimit**. Verbrauchte Ein-/Ausgabetokens
 werden aus den API-Antworten angezeigt. `429` wegen Guthaben und wegen Abfragerate werden unterschieden.
 
 ## Bild- und Sprachfluss
@@ -41,8 +41,8 @@ erhält keine automatischen Meta-/Wächteranfragen. Die übrige Claude-Konfigura
 Im OpenAI-Modus werden die nicht angebundenen Claude-Sprachoptionen, Meta-Websuche,
 GitHub-Wünsche, Termux-Agent und das dauerhafte Gedächtnis ausgeblendet. Beim bewussten
 Zurückschalten stehen die bisherigen Einstellungen wieder bereit. OpenAI ist weiterhin eine Cloud-API.
-Die Hilfe erklärt den tatsächlichen Sprach-/Bildablauf und die Testpause. Nach sechs Antworten
-bleibt der gespeicherte Schlüssel gültig; zum Fortsetzen den Kern antippen. Verbindungsfehler
+Die Hilfe erklärt den tatsächlichen Sprach-/Bildablauf und die Testpause nach zehn Minuten.
+Nach sechs Antworten läuft die Sitzung weiter; der gespeicherte Schlüssel bleibt gültig. Verbindungsfehler
 zeigen einen bereinigten technischen Code statt fremder API-Fehlermeldungen oder Zugangsdaten.
 Beim Unterbrechen wartet der Client auf die Abbruchbestätigung, bevor er eine neue Antwort anfordert.
 

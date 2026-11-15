@@ -157,7 +157,11 @@ public class CredentialsTest {
                 assertTrue("API-Schlüssel standardmäßig maskiert", key.getTransformationMethod()
                         instanceof android.text.method.PasswordTransformationMethod);
                 assertFalse(key.getTransformationMethod().getTransformation(key.getText(), key).toString().contains("local-ui-test-key"));
-                assertTrue(((android.widget.TextView) activity.findViewById(R.id.helpText)).getText().toString().contains("OpenAI-Modus"));
+                String help = ((android.widget.TextView) activity.findViewById(R.id.helpText)).getText().toString();
+                assertTrue(help.contains("OpenAI-Modus"));
+                assertTrue(help.contains("Keine feste Antwortzahl"));
+                assertTrue(help.contains("zehn Minuten"));
+                assertFalse(help.contains("sechs Antworten"));
                 com.google.android.material.materialswitch.MaterialSwitch provider = activity.findViewById(R.id.openAiProvider);
                 provider.setChecked(false);
                 assertEquals(android.view.View.VISIBLE, activity.findViewById(R.id.keyLayout).getVisibility());

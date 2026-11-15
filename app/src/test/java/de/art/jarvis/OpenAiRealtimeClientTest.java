@@ -109,6 +109,17 @@ public class OpenAiRealtimeClientTest {
                 ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"r4\"}}");
                 ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r4\",\"status\":\"completed\"}}");
                 assertEquals("done:0", listener.next());
+                // Mehr als sechs aufeinanderfolgende Antworten nutzen dieselbe Sitzung und dasselbe Token.
+                for (int turn = 5; turn <= 11; turn++) {
+                    assertTrue("Weitere Antwort " + turn + " ohne neuen Schlüssel", client.respond(null, false));
+                    assertEquals("conversation.item.delete", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                    assertEquals("conversation.item.create", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                    assertEquals("response.create", new JSONObject(sent.poll(5, TimeUnit.SECONDS)).getString("type"));
+                    ws.send("{\"type\":\"response.created\",\"response\":{\"id\":\"r" + turn + "\"}}");
+                    ws.send("{\"type\":\"response.done\",\"response\":{\"id\":\"r" + turn + "\",\"status\":\"completed\",\"usage\":{\"input_tokens\":10,\"output_tokens\":5}}}");
+                    assertEquals("done:15", listener.next());
+                }
+                assertEquals("Nur ein Token-Aufruf und ein WebSocket-Handshake", 2, server.getRequestCount());
                 ws.send("{\"type\":\"error\",\"error\":{\"code\":\"invalid_request_error\",\"message\":\"PRIVATE-DETAILS\"}}");
                 String diagnostic = listener.next();
                 assertTrue(diagnostic.contains("invalid_request_error"));

@@ -6,7 +6,7 @@ import android.os.SystemClock;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Ein bewusster Start, höchstens zehn Minuten/sechs Antworten, keine automatische Wiederverbindung. */
+/** Ein bewusster Start, höchstens zehn Minuten, keine feste Antwortzahl oder automatische Wiederverbindung. */
 final class OpenAiSession implements AutoCloseable {
     interface Frames {
         ScreenGrabber.FreshFrame capture(long requestedAt);
@@ -61,8 +61,7 @@ final class OpenAiSession implements AutoCloseable {
                 transcript.setLength(0);
                 audio.whenDrained(() -> main.post(() -> {
                     if (closed) return;
-                    if (turns >= RealtimeProtocol.MAX_TURNS) stop("Testpause nach sechs Antworten. Der gespeicherte OpenAI-Schlüssel bleibt erhalten. " + tokens + " Tokens verbraucht.");
-                    else ui.state(JarvisService.State.LISTENING, info("OpenAI hört zu."));
+                    ui.state(JarvisService.State.LISTENING, info("OpenAI hört zu."));
                 }));
             }); }
             @Override public void error(String message) { main.post(() -> stop(message)); }
@@ -80,7 +79,6 @@ final class OpenAiSession implements AutoCloseable {
     void ask(boolean manual) {
         if (closed) return;
         if (!ready) { ui.state(JarvisService.State.THINKING, "OpenAI wird noch verbunden."); return; }
-        if (turns >= RealtimeProtocol.MAX_TURNS) { stop("Testpause nach sechs Antworten. Der gespeicherte OpenAI-Schlüssel bleibt erhalten."); return; }
         if (manual) client.interrupt(audio.interrupt());
         int requestEpoch = ++epoch;
         transcript.setLength(0);
@@ -115,7 +113,7 @@ final class OpenAiSession implements AutoCloseable {
     }
 
     private String info(String message) {
-        return message + "\nKostenpflichtig · " + RealtimeProtocol.MODEL + " · Antworten " + turns + "/6 · Tokens " + tokens
+        return message + "\nKostenpflichtig · " + RealtimeProtocol.MODEL + " · Antworten " + turns + " · Tokens " + tokens
                 + "\nKein festes Geldlimit. Keine unbeaufsichtigte Bildübertragung oder Ausweichmodelle.";
     }
 

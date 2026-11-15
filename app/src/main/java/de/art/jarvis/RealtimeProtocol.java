@@ -9,7 +9,6 @@ final class RealtimeProtocol {
     static final String MODEL = "gpt-realtime-2.1-mini";
     static final int RATE = 24000;
     static final long MAX_FRAME_AGE_MS = 1500;
-    static final int MAX_TURNS = 6;
     static final long MAX_SESSION_MS = 10 * 60 * 1000L;
     static final String INSTRUCTIONS = "Du bist JARVIS, ein ruhiger deutschsprachiger Assistent und TFT-Coach. "
             + "Antworte immer auf Deutsch, mit höchstens zwei kurzen gesprochenen Sätzen. "
