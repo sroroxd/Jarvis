@@ -3,7 +3,10 @@
 # v3.1), damit sie sich als Update über eine Installation mit dem alten, kompromittierten Schlüssel legen lässt.
 #
 #  - Android 13+ (API 33+, also das Galaxy S24 Ultra): Es gilt der neue Schlüssel. Der alte darf danach kein
-#    Update mehr liefern (kein Rollback) und verliert Signatur-Rechte (gemeinsame UID, Berechtigungen, Auth).
+#    Update mehr liefern (kein Rollback) und verliert gemeinsame UID und Auth. Die Fähigkeit „permission“ behält er:
+#    Jarvis definiert eine eigene Signatur-Berechtigung (DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, von androidx
+#    erzeugt); ohne sie lehnt Android 14 das Update mit INSTALL_FAILED_DUPLICATE_PERMISSION ab (Rotationsprobe
+#    vom 15. Nov., Lauf 4).
 #  - Android 11–12L (API 30–32): Dort gilt weiter die alte Signatur – Rotation ist auf diesen Versionen laut
 #    apksigner-Doku nicht verlässlich. Restrisiko, siehe docs/SIGNATUR_MIGRATION.md.
 #
@@ -44,12 +47,12 @@ fi
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
 
-# Rotationsnachweis alt → neu. Der alte Schlüssel behält nur „installed data“ (ohne das ginge kein Update über die
-# bestehende Installation); Rollback, gemeinsame UID, Signatur-Berechtigungen und Auth werden ihm entzogen.
+# Rotationsnachweis alt → neu. Der alte Schlüssel behält „installed data“ (sonst kein Update über die bestehende
+# Installation) und „permission“ (siehe oben); Rollback, gemeinsame UID und Auth werden ihm entzogen.
 apksigner rotate --out "$work/lineage.bin" \
   --old-signer --ks "$JARVIS_OLD_KEYSTORE" --ks-key-alias "$JARVIS_OLD_ALIAS" \
   --ks-pass env:JARVIS_OLD_KS_PASS --key-pass env:JARVIS_OLD_KEY_PASS \
-  --set-installed-data true --set-shared-uid false --set-permission false --set-rollback false --set-auth false \
+  --set-installed-data true --set-shared-uid false --set-permission true --set-rollback false --set-auth false \
   --new-signer --ks "$JARVIS_NEW_KEYSTORE" --ks-key-alias "$JARVIS_NEW_ALIAS" \
   --ks-pass env:JARVIS_NEW_KS_PASS --key-pass env:JARVIS_NEW_KEY_PASS
 

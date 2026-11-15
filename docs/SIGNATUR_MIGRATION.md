@@ -94,7 +94,13 @@ Automatisch geprüft (Workflow „Signaturmigration – Rotationsprobe im Emulat
 
 Zusätzlich von Hand geprüft (15. Nov., lokal): Das Signierskript arbeitet mit dem **echten** alten Schlüssel aus dem
 Repo und einem Probe-Schlüssel; die echte unsignierte Release-APK wird gültig signiert, ab Android 13 gilt der
-Probe-Schlüssel, dem alten sind Rollback, gemeinsame UID, Berechtigungen und Auth entzogen. Gegenproben: Eine nur
+Probe-Schlüssel, dem alten sind Rollback, gemeinsame UID und Auth entzogen.
+
+Gefunden von der Probe (15. Nov., Lauf 4): Wird dem alten Schlüssel auch die Fähigkeit „permission“ entzogen,
+lehnt Android 14 das Update ab (`INSTALL_FAILED_DUPLICATE_PERMISSION`), weil Jarvis eine eigene
+Signatur-Berechtigung definiert (`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, von androidx erzeugt). Der alte
+Schlüssel behält sie deshalb. Restrisiko: Eine fremde App mit dem alten Schlüssel könnte diese Berechtigung
+erhalten und Nachrichten an Jarvis' interne Empfänger schicken – kein Zugriff auf Daten, Mikrofon oder Bildschirm. Gegenproben: Eine nur
 mit dem alten Schlüssel signierte APK fällt in `apk-pruefen.sh` durch; der alte Keystore als „neuer“ wird abgelehnt.
 
 Nicht bewiesen:
