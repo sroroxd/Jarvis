@@ -52,7 +52,8 @@ final class Text {
         String head = k.substring(0, Math.min(10, k.length()));
         String tail = k.length() > 14 ? k.substring(k.length() - 4) : "";
         String kind = k.startsWith("sk-ant-") ? "Claude"
-                : k.startsWith("github_pat_") || k.startsWith("ghp_") ? "GitHub" : "unbekanntes Format";
+                : k.startsWith("github_pat_") || k.startsWith("ghp_") ? "GitHub"
+                : k.startsWith("AIza") ? "Google/Gemini" : "unbekanntes Format";
         return "Gespeichert: " + head + "…" + tail + " (" + k.length() + " Zeichen, " + kind + ")";
     }
 

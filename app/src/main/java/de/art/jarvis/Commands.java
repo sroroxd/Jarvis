@@ -98,6 +98,28 @@ final class Commands {
         return on;
     }
 
+    /** „Stopp“, „Halt“, „Sei still“ … – nur als ganze, kurze Äußerung (höchstens vier Wörter). */
+    private static final Pattern STOP = Pattern.compile(
+            "^((ok(ay)?|jarvis|hey|bitte|jetzt|mal|danke|schon)\\s+)*"
+                    + "(stopp?|halt|ruhe|still|sei (jetzt |mal )?(still|ruhig)|aufh(ö|oe)ren|h(ö|oe)r auf|abbrechen|"
+                    + "genug|schluss|pause|warte|moment)"
+                    + "(\\s+(jetzt|mal|bitte|danke|jarvis|sofort))*$");
+
+    /**
+     * Hat Art die laufende Antwort nur abgebrochen („Stopp“)? Dann geht der Satz nicht an die KI – Jarvis bleibt
+     * still und hört im Dauergespräch weiter zu. Das Dauergespräch selbst läuft weiter (Folgefragen ohne Neustart);
+     * beendet wird es nur mit „Gespräch beenden“.
+     */
+    static boolean isStop(String utterance) {
+        if (utterance == null) return false;
+        String t = utterance.toLowerCase(Locale.GERMANY)
+                .replaceAll("[^a-zäöüß ]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (t.isEmpty() || t.split(" ").length > 4) return false;
+        return STOP.matcher(t).matches();
+    }
+
     /**
      * Für das laufende Dauergespräch: Endet das, was Art gerade gesagt hat, mit einem
      * Schlussbefehl? Geprüft werden die letzten zwei bis fünf Wörter, denn oft hängt

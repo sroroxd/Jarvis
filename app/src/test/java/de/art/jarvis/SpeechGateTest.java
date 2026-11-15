@@ -225,4 +225,33 @@ public class SpeechGateTest {
         assertTrue(g.armed());
         assertTrue(feed(g, -12, 3, 40, rnd) >= 0);
     }
+
+    /**
+     * Ein kurzes „Stopp“ (rund 220 ms laut: Zischlaut und Vokal, dann der Verschlusslaut) muss Jarvis unterbrechen.
+     * Mit der alten Forderung von 260 ms lauter Sprache kam es nie durch.
+     */
+    @Test
+    public void kurzesStoppUnterbricht() {
+        for (int seed = 0; seed < 50; seed++) {
+            Random rnd = new Random(300 + seed);
+            SpeechGate g = started();
+            feed(g, -30, 2, SpeechGate.WARMUP_FRAMES, rnd);   // Echo lernen
+            assertEquals(-1, feed(g, -30, 2, 20, rnd));
+            int hit = feed(g, -14, 2, 11, rnd);               // „Stopp“: 220 ms deutlich über dem Echo
+            if (hit < 0) hit = feed(g, -31, 2, 4, rnd);       // danach wieder nur Echo
+            assertTrue("Lauf " + seed + ": Stopp nicht erkannt", hit >= 0);
+        }
+    }
+
+    /** Gegenprobe zur kürzeren Forderung: ein Klick oder Klopfen von 140 ms ist weiterhin kein Sprechen. */
+    @Test
+    public void kurzerKlickBleibtKeinSprechen() {
+        for (int seed = 0; seed < 50; seed++) {
+            Random rnd = new Random(400 + seed);
+            SpeechGate g = started();
+            feed(g, -30, 2, SpeechGate.WARMUP_FRAMES, rnd);
+            assertEquals("Lauf " + seed, -1, feed(g, -10, 2, 7, rnd));   // 140 ms laut
+            assertEquals("Lauf " + seed, -1, feed(g, -31, 2, 30, rnd));  // dann Echo
+        }
+    }
 }

@@ -140,8 +140,17 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         String key = intent.getStringExtra("testkey");
         if (key != null && !key.trim().isEmpty()) {
             prefs.setApiKey(key.trim());
+            // Nur der von Hand gestartete Cloud-Test der CI übergibt einen Claude-Schlüssel – dann ist Claude gewollt.
+            prefs.setProvider(Brain.PROVIDER_CLAUDE);
             // Gesprächstest: Der Emulator hat kein Mikrofon – „Immer zuhören“ würde nur Fehler der Spracherkennung
             // zwischen die Testfragen streuen. Die Fragen kommen über „testfrage“.
+            prefs.setAlwaysListen(false);
+        }
+        // „testfrei“: Gesprächstest über den kostenlosen Weg (Offline-Test, ohne Schlüssel, ohne Kosten). Der Emulator
+        // hat kein Mikrofon – „Immer zuhören“ würde nur Fehler der Spracherkennung zwischen die Testfragen streuen.
+        if (intent.getBooleanExtra("testfrei", false)) {
+            prefs.setProvider(Brain.PROVIDER_FREE);
+            prefs.setGeminiKey("");
             prefs.setAlwaysListen(false);
         }
         // „testpocketstimme“: Jarvis spricht mit der Offline-Stimme (Modell muss schon im App-Ordner liegen).
@@ -263,9 +272,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             mode = ReactorView.Mode.OFF;
             label = "STARTEN";
             status = "Inaktiv";
-            detail = prefs.apiKey().isEmpty()
-                    ? "Trag zuerst in den Einstellungen deinen API-Schlüssel ein."
-                    : "Tippe auf den Kern, um Jarvis zu starten.";
+            detail = "Tippe auf den Kern, um Jarvis zu starten. KI: " + prefs.brain().label();
         } else {
             switch (s) {
                 case LISTENING:
@@ -413,12 +420,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
 
     /** Geht Schritt für Schritt alle nötigen Freigaben durch und startet dann Jarvis. */
     private void proceed() {
-        if (prefs.apiKey().isEmpty()) {
-            Snackbar.make(b.getRoot(), "Bitte zuerst den API-Schlüssel eintragen.", Snackbar.LENGTH_LONG)
-                    .setAction("Einstellungen", v -> startActivity(new Intent(this, SettingsActivity.class)))
-                    .show();
-            return;
-        }
+        // Kein Schlüssel nötig: Ohne Schlüssel antwortet die Offline-Testantwort, mit Gemini-Schlüssel Gemini
+        // (beides kostenlos). Claude nur nach ausdrücklicher Wahl in den Einstellungen.
         List<String> missing = new ArrayList<>();
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             missing.add(Manifest.permission.RECORD_AUDIO);

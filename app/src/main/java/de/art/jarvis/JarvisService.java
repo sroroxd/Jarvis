@@ -166,6 +166,7 @@ public class JarvisService extends Service {
             java.util.concurrent.Executors.newSingleThreadExecutor();
     /** Dazwischenreden: lauscht, während Jarvis im Dauergespräch spricht. */
     private BargeIn bargeIn;
+    private final GeminiClient gemini = new GeminiClient();
     /** Automatische Spielerkennung: TFT vorne → Spielmodus und Dauergespräch (Einstellung „TFT automatisch erkennen“). */
     private GameWatch gameWatch;
     /** Telefonmodus im Dauergespräch, damit die Echo-Unterdrückung Jarvis' eigene Stimme herausfiltert. */
@@ -533,7 +534,7 @@ public class JarvisService extends Service {
 
     private boolean proactiveWanted() {
         return running && screenAwake && prefs.tftMode() && prefs.proactiveCoach() && grabber != null
-                && !prefs.apiKey().isEmpty() && !prefs.overCostLimit(today());
+                && !paidKey().isEmpty() && !prefs.overCostLimit(today());
     }
 
     /** Wächter an, wenn Spielmodus, Bildschirmfreigabe und Einstellung passen; sonst aus. */
@@ -565,7 +566,7 @@ public class JarvisService extends Service {
         if (prefs.gameAuto() && GameWatch.permitted(this) && !gameWatch.inGame()) return;
         proactiveBusy = true;
         final ScreenGrabber g = grabber;
-        final String key = prefs.apiKey();
+        final String key = paidKey();
         // Bild umwandeln und verkleinern kostet auf dem S24 Ultra (3120 × 1440) spürbar Zeit – alle 6 s nicht auf
         // dem Haupt-Thread, sonst stocken Spracherkennung und Sprachausgabe.
         watchExecutor.execute(() -> {
@@ -670,7 +671,7 @@ public class JarvisService extends Service {
             testWatchFile(files, i + 1);
             return;
         }
-        sendWatch(prefs.apiKey(), image, new ClaudeClient.Callback() {
+        sendWatch(paidKey(), image, new ClaudeClient.Callback() {
             @Override
             public void onResult(String text) {
                 // Rohantwort und was Jarvis daraus macht – der Gerätetest prüft die Entscheidung („=> …“).
@@ -706,7 +707,7 @@ public class JarvisService extends Service {
         bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out);
         bmp.recycle();
         testLog("waechter-test gesendet");
-        sendWatch(prefs.apiKey(), android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
+        sendWatch(paidKey(), android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
     }
 
     private final ClaudeClient.Callback watchCallback = new ClaudeClient.Callback() {
@@ -735,7 +736,7 @@ public class JarvisService extends Service {
             releaseRecognizer();
             setState(State.IDLE);
         }
-        String key = prefs.apiKey();
+        String key = paidKey();
         if (key.isEmpty()) return false;
         long now = System.currentTimeMillis();
         if (now - lastInteraction > CONVERSATION_TIMEOUT_MS) history.clear();
@@ -767,14 +768,14 @@ public class JarvisService extends Service {
      * Nach einem Fehlschlag frühestens nach 30 Minuten erneut.
      */
     private void maybeUpdateMeta() {
-        if (metaRunning || !prefs.tftMode() || prefs.apiKey().isEmpty()) return;
+        if (metaRunning || !prefs.tftMode() || paidKey().isEmpty()) return;
         final String today = today();
         if (Meta.isFresh(prefs.metaDate(), today)) return;
         long now = SystemClock.elapsedRealtime();
         if (metaLastAttempt != 0 && now - metaLastAttempt < 30 * 60 * 1000L) return;
         metaLastAttempt = now;
         metaRunning = true;
-        claude.sendWithWebSearch(prefs.apiKey(), Meta.MODEL, Meta.system(), Meta.prompt(today), Meta.MAX_SEARCHES,
+        claude.sendWithWebSearch(paidKey(), Meta.MODEL, Meta.system(), Meta.prompt(today), Meta.MAX_SEARCHES,
                 new ClaudeClient.Callback() {
                     @Override
                     public void onResult(String text) {
@@ -1038,7 +1039,7 @@ public class JarvisService extends Service {
                 if (current != recognizer) return;
                 heardSomething = true;
                 // Verbindung zu Anthropic aufbauen, während Art noch spricht (kostenlos, siehe ClaudeClient.warmUp).
-                if (!prefs.apiKey().isEmpty()) ClaudeClient.warmUp();
+                if (!paidKey().isEmpty()) ClaudeClient.warmUp();
                 if (!finishRequested) main.removeCallbacks(pauseElapsed);
             }
 
@@ -1243,6 +1244,16 @@ public class JarvisService extends Service {
     private void handleUtterance(String text) {
         final boolean testOpen = testOpenMic;
         testOpenMic = false;
+        // „Stopp“ nach dem Dazwischenreden: nichts an die KI schicken, still bleiben und im Dauergespräch weiter
+        // zuhören. Das Gespräch (und sein Verlauf) läuft weiter – die nächste Frage ist eine Folgefrage.
+        if (Commands.isStop(text)) {
+            testLog("stopp: " + text);
+            requestId++; // eine noch laufende Antwort ist damit überholt
+            stopSpeaking();
+            setState(State.IDLE);
+            if (continuous) scheduleRelisten(RELISTEN_DELAY_MS);
+            return;
+        }
         maybeUpdateMeta();
         // „Spielmodus an/aus“ erledigt die App selbst.
         Boolean game = Commands.gameMode(text);
@@ -1317,12 +1328,13 @@ public class JarvisService extends Service {
                 return;
             }
         }
-        String key = prefs.apiKey();
-        if (key.isEmpty()) {
-            setState(State.IDLE);
-            say("Mir fehlt noch der API-Schlüssel. Bitte tragen Sie ihn in den Jarvis-Einstellungen ein.");
+        // Kostenlos ist der Standard (Gemini oder Offline-Test). Claude nur nach ausdrücklicher Wahl.
+        Brain brain = prefs.brain();
+        if (!brain.paid()) {
+            askFree(brain, text);
             return;
         }
+        String key = prefs.apiKey();
         final int id = ++requestId;
         setState(State.THINKING);
         status("„" + text + "“");
@@ -1347,6 +1359,50 @@ public class JarvisService extends Service {
             pending.gateDone = true;
         }
         captureThen(id, prefs.tftMode(), pending::imageReady);
+    }
+
+    /**
+     * Frage über den kostenlosen Weg: ohne Filter, ohne Werkzeuge, ohne jeden bezahlten Aufruf. Der Verlauf
+     * ({@link #history}) ist derselbe wie bei Claude – Folgefragen funktionieren ohne Neustart des Gesprächs.
+     */
+    private void askFree(Brain brain, String text) {
+        final int id = ++requestId;
+        setState(State.THINKING);
+        status("„" + text + "“");
+        long now = System.currentTimeMillis();
+        if (now - lastInteraction > CONVERSATION_TIMEOUT_MS) history.clear();
+        lastInteraction = now;
+        final StreamSpeech stream = new StreamSpeech(id);
+        if (brain == Brain.OFFLINE_TEST) {
+            String previous = null;
+            int turn = 1;
+            for (JSONObject m : history) {
+                if ("user".equals(m.optString("role"))) {
+                    previous = m.optString("content");
+                    turn++;
+                }
+            }
+            final String answer = LocalReply.answer(text, previous, turn);
+            final ClaudeClient.Callback callback = answerCallback(id, text, null, stream, brain);
+            timing.sent(SystemClock.elapsedRealtime());
+            // Wie ein Datenstrom: Satz für Satz an die Sprachausgabe, dann die ganze Antwort.
+            main.post(() -> {
+                if (id != requestId || !running) return;
+                onStreamText(stream, answer);
+                callback.onResult(answer);
+            });
+            return;
+        }
+        captureThen(id, prefs.tftMode(), image -> {
+            String system = Persona.system(prefs.tftMode(), prefs.memory(), prefs.metaText(), prefs.metaDate(),
+                    false, false);
+            String turnText = Persona.turnContext(prefs.tftMode(), image != null, continuous, new java.util.Date())
+                    + "\n" + text;
+            ClaudeClient.Callback callback = answerCallback(id, text, image, stream, brain);
+            timing.sent(SystemClock.elapsedRealtime());
+            gemini.send(prefs.geminiKey(), prefs.geminiModel(), system, new ArrayList<>(history), turnText, image,
+                    delta -> onStreamText(stream, delta), callback);
+        });
     }
 
     /** Wartet auf Bildschirmfoto und (falls nötig) Filter; dann geht die Frage an Claude – oder Jarvis schweigt. */
@@ -1483,8 +1539,25 @@ public class JarvisService extends Service {
                 withTools, prefs.agentReady());
         // Satzweise sprechen, während Claude noch schreibt (Handy-Stimme). ElevenLabs bekommt die Antwort weiter am
         // Stück – dort wäre jeder Satz eine eigene Anfrage.
-        final StreamSpeech stream = !prefs.elevenKey().isEmpty() && !pocketWanted() ? null : new StreamSpeech(id);
-        ClaudeClient.Callback callback = new ClaudeClient.Callback() {
+        final StreamSpeech stream = !paidElevenKey().isEmpty() && !pocketWanted() ? null : new StreamSpeech(id);
+        ClaudeClient.Callback callback = answerCallback(id, text, image, stream, Brain.CLAUDE);
+        timing.sent(SystemClock.elapsedRealtime());
+        lastModel = prefs.model();
+        // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
+        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
+        // Spielmodus standardmäßig „low“ wie im Alltag (Wunsch #23: Tempo zuerst) – das genaue Hinsehen übernimmt die
+        // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
+        // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
+        claude.send(key, prefs.model(), system, messages, effortFor(text),
+                withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
+    }
+
+    /**
+     * Verarbeitet eine fertige Antwort – gleich für Claude, Gemini und die Offline-Testantwort: Steuerzeilen
+     * entfernen, Verlauf für Folgefragen merken, den Rest sprechen.
+     */
+    private ClaudeClient.Callback answerCallback(int id, String text, String image, StreamSpeech stream, Brain brain) {
+        return new ClaudeClient.Callback() {
             @Override
             public void onResult(String answer) {
                 timing.firstAnswer(SystemClock.elapsedRealtime());
@@ -1521,8 +1594,12 @@ public class JarvisService extends Service {
                     Backup.autoSave(JarvisService.this, prefs);
                 }
                 answer = Text.replyOrFallback(answer, Text.cleanForSpeech(tagged.reply));
-                ClaudeClient.Usage used = ClaudeClient.lastUsage;
-                testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + netSuffix() + "]: " + answer);
+                if (brain == Brain.CLAUDE) {
+                    ClaudeClient.Usage used = ClaudeClient.lastUsage;
+                    testLog("antwort [" + (used == null ? "?" : used.summary()) + costSuffix() + netSuffix() + "]: " + answer);
+                } else {
+                    testLog("antwort [" + brain.label() + ", 0 ct]: " + answer);
+                }
                 remember("user", image != null ? "[Bildschirmfoto war angehängt] " + text : text);
                 remember("assistant", GameReadout.forHistory(stand, answer));
                 finishStream(stream, answer);
@@ -1544,15 +1621,6 @@ public class JarvisService extends Service {
                 say(message);
             }
         };
-        timing.sent(SystemClock.elapsedRealtime());
-        lastModel = prefs.model();
-        // Nachdenken nach Bedarf: Bei einfachen Fragen antwortet Claude sofort, bei kniffligen denkt er kurz nach
-        // (so wie der allererste Jarvis). Im Spielmodus etwas gründlicher und ohne Werkzeuge; im Alltag mit Werkzeugen.
-        // Spielmodus standardmäßig „low“ wie im Alltag (Wunsch #23: Tempo zuerst) – das genaue Hinsehen übernimmt die
-        // Ablese-Zeile. „Gründlicher nachdenken“ in den Einstellungen holt „medium“ zurück: laut Claude-Doku denkt das
-        // Modell ab „medium“ vor fast jeder Antwort nach, bei „low“ nur bei kniffligen Fragen.
-        claude.send(key, prefs.model(), system, messages, effortFor(text),
-                withTools ? tools : null, stream == null ? null : delta -> onStreamText(stream, delta), callback);
     }
 
     /**
@@ -1903,6 +1971,19 @@ public class JarvisService extends Service {
         return BuildConfig.DEBUG;
     }
 
+    /**
+     * Claude-Schlüssel nur, wenn Art Claude (kostenpflichtig) ausdrücklich gewählt hat – sonst "". Alle bezahlten
+     * Nebenwege (Filter, Phasen-Wächter, proaktive Ansagen, Meta-Recherche) prüfen auf leer und bleiben dann aus.
+     */
+    private String paidKey() {
+        return prefs.brain().paid() ? prefs.apiKey() : "";
+    }
+
+    /** ElevenLabs kostet ebenfalls – nur zusammen mit dem bezahlten Weg. Sonst spricht die Handy-Stimme. */
+    private String paidElevenKey() {
+        return prefs.brain().paid() ? prefs.elevenKey() : "";
+    }
+
     /** Protokollzeile für den Gesprächstest in der CI; in der Handy-Version (Release) passiert nichts. */
     private void testLog(String line) {
         if (debuggable()) android.util.Log.i(TEST_TAG, line);
@@ -1925,7 +2006,7 @@ public class JarvisService extends Service {
             speakPocket(clean, gen, true);
             return;
         }
-        if (!prefs.elevenKey().isEmpty()) {
+        if (!paidElevenKey().isEmpty()) {
             speakPremium(clean, gen);
             return;
         }
@@ -1934,7 +2015,7 @@ public class JarvisService extends Service {
 
     private void speakPremium(String clean, int gen) {
         setState(State.SPEAKING);
-        eleven.speak(prefs.elevenKey(), prefs.elevenVoice(), clean, prefs.rate(), new ElevenTts.Listener() {
+        eleven.speak(paidElevenKey(), prefs.elevenVoice(), clean, prefs.rate(), new ElevenTts.Listener() {
             @Override public void onStart() { onVoiceStarted(); }
 
             @Override

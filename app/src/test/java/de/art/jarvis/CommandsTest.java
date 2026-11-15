@@ -173,4 +173,24 @@ public class CommandsTest {
                 Commands.stripControlTags("Verstanden, Sir, ich höre ab jetzt durchgehend zu.\n[DAUERGESPRÄCH: AN]"));
         assertEquals("Ohne Zeile.", Commands.stripControlTags("Ohne Zeile."));
     }
+
+    /** „Stopp“ bricht nur ab: geht nicht an die KI und beendet das Dauergespräch nicht (Folgefragen ohne Neustart). */
+    @Test
+    public void stoppIstAbbruch() {
+        for (String t : new String[]{"Stopp", "stop", "Stopp!", "Jarvis stopp", "Stopp bitte", "halt", "Sei still",
+                "sei mal ruhig", "hör auf", "Aufhören", "okay stopp", "Abbrechen", "Moment", "Warte"}) {
+            assertTrue(t, Commands.isStop(t));
+            assertNull(t, Commands.conversationMode(t));
+            assertFalse(t, Commands.endsConversation(t));
+        }
+    }
+
+    @Test
+    public void fragenMitStoppSindKeinAbbruch() {
+        for (String t : new String[]{"Wie stoppe ich die Uhr", "Was heißt Stopp auf Englisch",
+                "Halt mal kurz fest was ich gesagt habe", "Moment mal wie war das mit dem Wetter", "", "Gespräch beenden"}) {
+            assertFalse(t, Commands.isStop(t));
+        }
+        assertFalse(Commands.isStop(null));
+    }
 }

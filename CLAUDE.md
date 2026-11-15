@@ -12,19 +12,37 @@ Fragen nur bei wirklich wichtigen Dingen: Geld und Konten (Guthaben, Schlüssel 
 etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Löschen, Zusammenführen nach
 `main`, und Sicherheitsrisiken für Arts Konten oder Handy. Dann mit klarer Empfehlung, nicht als Auswahl.
 
-## Projektsteuerung (Arts Vorgabe vom 15. Nov. 2026)
+## Projektsteuerung (Arts Vorgabe vom 15. Nov. 2026, Kurskorrektur „Funktion vor Infrastruktur“)
+
+**Maßstab ist, was Jarvis auf Arts Galaxy S24 Ultra tatsächlich kann** – nicht wie viele Änderungen entstehen.
+Audits, Agenten, Skills und Sicherheitsarbeit sind unterstützende Maßnahmen, nicht das Ziel.
 
 Prioritäten – bei Zielkonflikten gewinnt die kleinere Nummer:
 
-1. **Natürliches, unterbrechbares Live-Freisprechen** (ohne Wakeword, Dazwischenreden, geringe Latenz).
-2. **Stabile Android-App und installierbare APK.**
-3. **Möglichst vollständig kostenlose KI** (lokal oder kostenlose Anbieter vor bezahlten).
-4. **Zuverlässiges TFT-Live-Coaching mit aktuellem Patch.**
+1. Zwingend nötige Sicherheits- und Build-Reparaturen abschließen; **nie den kompromittierten
+   Signaturschlüssel für neue Releases verwenden**.
+2. Installierbare Debug-APK.
+3. Dauerhaftes Freisprechen ohne Wakeword.
+4. Zuverlässige Sprachunterbrechung („Stopp“ während der Antwort).
+5. Natürliche Folgefragen mit Gesprächskontext.
+6. Antwortlatenz möglichst unter 3–5 Sekunden.
+7. Danach: TFT-Live-Coaching in die funktionierende Sprachpipeline; weitere KI-Funktionen.
+
+**Erster Meilenstein:** Debug-APK, mit der Art auf dem S24 Ultra prüft: (1) Mikrofon an, dauerhaft zuhören,
+(2) freisprechen und mündliche Antwort bekommen, (3) während der Antwort „Stopp“ sagen und die Ausgabe bricht ab,
+(4) Folgefrage ohne Neustart des Gesprächsmodus. Erst wenn dieser Gerätetest bestanden ist, kommen komplexeres
+TFT-Coaching und zusätzliche KI-Funktionen. Eine gebaute APK beweist noch keinen bestandenen Gerätetest.
+
+Arbeitsweise bis dahin: **keine weiteren Agenten oder Skills einrichten**, bis die Sprachfunktion auf dem Gerät
+bestätigt ist (vorhandene dürfen gezielt eingesetzt werden); keine unnötigen Audits, Architekturumbauten oder
+Planungsdokumente – konkrete Lösungen.
 
 Feste Grenzen:
 
 - **Keine kostenpflichtigen API-Aufrufe ohne Arts ausdrückliche Zustimmung** – auch nicht in
-  Tests oder der CI (`cloud_tests` nur von Hand und nur mit Zustimmung).
+  Tests oder der CI (`cloud_tests` nur von Hand und nur mit Zustimmung). In der App ist „kostenlos“
+  Standard (`Brain`: Offline-Test ohne Schlüssel, Gemini mit kostenlosem Schlüssel); Claude und ElevenLabs
+  nur mit dem Schalter „Claude benutzen (kostenpflichtig)“.
 - **Keine Änderungen direkt an `main`.**
 - **Keine automatischen Merges oder Releases** – zusammenführen und veröffentlichen entscheidet Art.
 - **Keine Veröffentlichung von Zugangsdaten** (Repo, Issues, PRs, Logs, externe Dienste).

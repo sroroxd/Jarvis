@@ -39,6 +39,47 @@ public final class Prefs {
         return Text.keyPreview(apiKey());
     }
 
+    /**
+     * KI-Anbieter: {@link Brain#PROVIDER_FREE} (Standard) oder {@link Brain#PROVIDER_CLAUDE}. Claude kostet Geld und
+     * wird nur nach ausdrücklicher Wahl benutzt (Arts Vorgabe vom 15. Nov. 2026).
+     */
+    public String provider() {
+        return sp.getString("provider", Brain.PROVIDER_FREE);
+    }
+
+    public void setProvider(String value) {
+        sp.edit().putString("provider", Brain.PROVIDER_CLAUDE.equals(value) ? Brain.PROVIDER_CLAUDE : Brain.PROVIDER_FREE)
+                .apply();
+    }
+
+    /** Gemini-API-Schlüssel aus Google AI Studio (kostenloses Kontingent). */
+    public String geminiKey() {
+        return sp.getString("gemini_key", "").trim();
+    }
+
+    public void setGeminiKey(String value) {
+        sp.edit().putString("gemini_key", Text.cleanKey(value)).apply();
+    }
+
+    /** Gemini-Modell; leer = {@link GeminiClient#DEFAULT_MODEL}. */
+    public String geminiModel() {
+        String m = sp.getString("gemini_model", "").trim();
+        return m.matches("[a-z0-9.\\-]{3,60}") ? m : GeminiClient.DEFAULT_MODEL;
+    }
+
+    public String rawGeminiModel() {
+        return sp.getString("gemini_model", "").trim();
+    }
+
+    public void setGeminiModel(String value) {
+        sp.edit().putString("gemini_model", value == null ? "" : value.trim()).apply();
+    }
+
+    /** Wer gerade antwortet – siehe {@link Brain#choose}. */
+    public Brain brain() {
+        return Brain.choose(provider(), apiKey(), geminiKey());
+    }
+
     /** Eingetragenes Modell oder leer. */
     public String rawModel() {
         return sp.getString("model", "").trim();

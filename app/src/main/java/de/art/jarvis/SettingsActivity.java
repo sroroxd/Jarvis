@@ -84,20 +84,59 @@ public class SettingsActivity extends AppCompatActivity {
     // ---------------------------------------------------------------- Gehirn (KI)
 
     private void setupBrain() {
+        b.geminiKeyField.setText(prefs.geminiKey());
+        b.geminiKeyLayout.setHelperText(geminiHelper());
+        b.geminiModelField.setText(prefs.rawGeminiModel());
+        b.switchPaid.setChecked(Brain.PROVIDER_CLAUDE.equals(prefs.provider()));
+        b.switchPaid.setOnCheckedChangeListener((v, on) -> {
+            prefs.setProvider(on ? Brain.PROVIDER_CLAUDE : Brain.PROVIDER_FREE);
+            showBrain();
+        });
+        showBrain();
         b.keyField.setText(prefs.apiKey());
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
         b.modelField.setText(prefs.rawModel());
         b.testKey.setOnClickListener(v -> testKey());
     }
 
+    private String geminiHelper() {
+        return prefs.geminiKey().isEmpty()
+                ? "Aus Google AI Studio. Kostenlos nur in einem Projekt OHNE eingerichtete Abrechnung."
+                : Text.keyPreview(prefs.geminiKey());
+    }
+
+    /** Zeigt, wer gerade antwortet. */
+    private void showBrain() {
+        b.brainInfo.setText("Jetzt antwortet: " + prefs.brain().label()
+                + ". Kostenlos ist Standard; Claude nur mit Schalter UND Schlüssel.");
+    }
+
     /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
     private void testKey() {
         saveTextFields();
-        if (prefs.apiKey().isEmpty()) {
-            showResult(b.keyResult, "Bitte zuerst einen Schlüssel einfügen.");
+        Brain brain = prefs.brain();
+        if (brain == Brain.OFFLINE_TEST) {
+            showResult(b.keyResult, "Kein Schlüssel aktiv – Jarvis antwortet mit dem Offline-Test (kostenlos).");
             return;
         }
-        showResult(b.keyResult, "Teste Schlüssel …");
+        if (brain == Brain.GEMINI) {
+            // Kostenlos: eine kurze Frage an Gemini.
+            showResult(b.keyResult, "Teste Gemini-Schlüssel …");
+            new GeminiClient().send(prefs.geminiKey(), prefs.geminiModel(), "Antworte knapp.",
+                    new java.util.ArrayList<>(), "Antworte nur mit: OK", null, null, new ClaudeClient.Callback() {
+                        @Override
+                        public void onResult(String text) {
+                            showResult(b.keyResult, "✓ Gemini-Schlüssel funktioniert (Modell " + prefs.geminiModel() + ").");
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            showResult(b.keyResult, "✗ " + message);
+                        }
+                    });
+            return;
+        }
+        showResult(b.keyResult, "Teste Claude-Schlüssel (kostet Bruchteile eines Cents) …");
         JSONArray messages = new JSONArray();
         try {
             messages.put(new JSONObject().put("role", "user").put("content", "Antworte nur mit: OK"));
@@ -612,6 +651,10 @@ public class SettingsActivity extends AppCompatActivity {
         // alten, meist leeren Felder zurück – und die eben wiederhergestellten Schlüssel waren wieder weg.
         b.keyField.setText(prefs.apiKey());
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        b.geminiKeyField.setText(prefs.geminiKey());
+        b.geminiKeyLayout.setHelperText(geminiHelper());
+        b.geminiModelField.setText(prefs.rawGeminiModel());
+        b.switchPaid.setChecked(Brain.PROVIDER_CLAUDE.equals(prefs.provider()));
         b.elevenKeyField.setText(prefs.elevenKey());
         b.agentTokenField.setText(prefs.agentToken());
         b.githubTokenField.setText(prefs.githubToken());
@@ -671,6 +714,9 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void saveTextFields() {
+        prefs.setGeminiKey(text(b.geminiKeyField));
+        b.geminiKeyLayout.setHelperText(geminiHelper());
+        prefs.setGeminiModel(text(b.geminiModelField));
         prefs.setApiKey(text(b.keyField));
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
         String model = text(b.modelField).trim();

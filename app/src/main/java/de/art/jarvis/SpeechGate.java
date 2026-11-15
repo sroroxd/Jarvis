@@ -33,8 +33,12 @@ final class SpeechGate {
     static final int MAX_WAIT_FRAMES = 250;
     /** Betrachtetes Fenster: 300 ms … */
     static final int WINDOW = 15;
-    /** … davon müssen mindestens 260 ms laut sein. */
-    static final int NEEDED = 13;
+    /**
+     * … davon müssen mindestens 200 ms laut sein. Vorher 260 ms: Ein kurzes „Stopp“ hat nur rund 200–300 ms lauten
+     * Anteil (Vokal und Zischlaut) und kam damit oft nicht durch – passend zu Build 86 (lautester Moment über der
+     * Schwelle, trotzdem nicht unterbrochen). Klopfen und Klicks (unter 100 ms) bleiben weit darunter.
+     */
+    static final int NEEDED = 10;
     /**
      * So viel lauter als das gelernte Echo muss Art sein. Die 14 dB der Vorversion waren eine Reaktion auf
      * Selbstabbrüche, deren eigentliche Ursache die sinkende Echo-Schätzung war. Mit festgehaltener

@@ -139,6 +139,37 @@ ask() {  # ask <Name> <Frage> <Muster für die richtige Antwort> [Muster, das ni
   if [ -n "${4:-}" ] && echo "$line" | grep -qiE "$4"; then say "  FEHLER $1: Antwort enthält /$4/"; gfail=1; fi
   LAST_LINE="$line"
 }
+# ---------------------------------------------------------------- Gesprächstest kostenlos (immer, ohne Schlüssel)
+# Die vier Funktionen des ersten Meilensteins, soweit sie ohne Mikrofon prüfbar sind – über den kostenlosen
+# Offline-Test (keine KI, kein Netz, keine Kosten): Frage → gesprochene Antwort (satzweise) → Folgefrage mit
+# Gesprächsverlauf → „Stopp“ geht nicht an die KI und beendet das Gespräch nicht → nächste Folgefrage.
+# Nicht prüfbar im Emulator: echtes Mikrofon, Dazwischenreden per Stimme, Echo, Klang (nur auf dem S24 Ultra).
+say "Gesprächstest kostenlos (Offline-Test, ohne KI und ohne Kosten):"
+adb shell "am start -n $ACT --ez testfrei true --ez teststart true" > /dev/null 2>&1
+sleep 8
+ask "Frage" "Wie viel ist siebzehn mal drei" "Offline-Test, Frage [0-9].*verstanden: Wie viel ist siebzehn mal drei"
+saetze_vorher=$(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "satz:" || true)
+ask "Folgefrage" "Und das Doppelte davon" "Folgefrage [0-9].*vorige Frage war: Wie viel ist siebzehn mal drei"
+saetze=$(( $(adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "satz:" || true) - saetze_vorher ))
+if [ "$saetze" -ge 3 ]; then
+  say "  Streaming: $saetze Saetze einzeln an die Sprachausgabe"
+else
+  say "  FEHLER Streaming: nur $saetze Satz/Saetze einzeln gesprochen (erwartet mindestens 3)"; gfail=1
+fi
+stopps() { adb logcat -d -s JarvisTest:I 2>/dev/null | grep -c "stopp:" || true; }
+s_vor=$(stopps); a_vor=$(answers | wc -l)
+adb shell "am start -n $ACT --es testfrage 'Stopp'" > /dev/null 2>&1
+sleep 5
+if [ "$(stopps)" -gt "$s_vor" ] && [ "$(answers | wc -l)" -eq "$a_vor" ]; then
+  say "  Stopp: als Abbruch erkannt, keine Anfrage an die KI"
+else
+  say "  FEHLER Stopp: nicht als Abbruch erkannt oder trotzdem beantwortet"; gfail=1
+fi
+ask "Folgefrage nach Stopp" "Und was ist mit vier" "Folgefrage [0-9].*vorige Frage war: Und das Doppelte davon"
+adb exec-out screencap -p > shots/05_gespraech_kostenlos.png
+freifail=$gfail
+gfail=0
+
 if [ -n "${JARVIS_TESTKEY:-}" ]; then
   say "Gesprächstest mit Claude:"
   adb shell "am start -n $ACT --es testkey '$JARVIS_TESTKEY' --ez teststart true" > /dev/null 2>&1
@@ -340,6 +371,7 @@ fi
 
 # ---------------------------------------------------------------- Auswertung
 fail=$gfail
+[ "$freifail" = 1 ] && fail=1
 [ "$uifail" = 1 ] && fail=1
 crashes=$(adb logcat -d -b crash 2>/dev/null | grep -A25 "Process: $PKG" || true)
 if [ -n "$crashes" ]; then
@@ -367,6 +399,7 @@ fi
 
 if [ "$fail" -eq 0 ]; then
   say "BESTANDEN: installiert, gestartet, $einstellungen, 30 s gelaufen – kein Absturz, kein Hänger."
+  say "BESTANDEN: Gespräch kostenlos (Frage, Folgefrage mit Verlauf, Stopp ohne KI-Aufruf, Folgefrage nach Stopp)."
   [ -n "${JARVIS_TESTKEY:-}" ] && say "BESTANDEN: Gespräch mit Claude (Rechnen, Verlauf, Streaming)."
 fi
 exit "$fail"

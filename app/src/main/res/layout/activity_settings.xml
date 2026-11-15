@@ -49,13 +49,70 @@
                         android:layout_height="wrap_content"
                         android:text="Gehirn (KI)" />
 
+                    <TextView
+                        android:id="@+id/brainInfo"
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Kostenlos ist Standard: ohne Schlüssel antwortet der Offline-Test, mit Gemini-Schlüssel Gemini." />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/geminiKeyLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Gemini-API-Schlüssel (kostenlos)"
+                        app:helperText="Aus Google AI Studio. Kostenlos nur in einem Projekt OHNE eingerichtete Abrechnung."
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/geminiKeyField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/geminiModelLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:hint="Gemini-Modell (leer = automatisch)"
+                        app:helperText="Leer = gemini-3.5-flash-lite (schnell, im kostenlosen Kontingent)">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/geminiModelField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text|textNoSuggestions"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchPaid"
+                        style="@style/Jarvis.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Claude benutzen (kostenpflichtig)" />
+
+                    <TextView
+                        style="@style/Jarvis.Hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Aus = kein einziger bezahlter Aufruf (auch kein ElevenLabs, kein Filter, keine Meta-Recherche), selbst wenn unten ein Schlüssel steht." />
+
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/keyLayout"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:hint="API-Schlüssel"
+                        android:hint="Claude-API-Schlüssel (kostenpflichtig)"
                         app:endIconMode="password_toggle">
 
                         <com.google.android.material.textfield.TextInputEditText
