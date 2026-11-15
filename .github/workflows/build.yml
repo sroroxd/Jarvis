@@ -109,11 +109,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -euo pipefail
-            if [ "$GITHUB_REF" = "refs/heads/main" ]; then pkg=de.art.jarvis; else pkg=de.art.jarvis.test; fi
-            if [ "$GITHUB_REF" = "refs/heads/feature/openai-realtime-tft-vision" ]; then pkg=de.art.jarvis.openaitest; fi
-            bash .github/scripts/sicherheitstest.sh "$pkg" "$(find apks -name app-debug.apk | head -1)" "$(find apks -name app-debug-androidTest.apk | head -1)"
-            bash .github/scripts/geraetetest.sh "$pkg" "$(find apks -name app-debug.apk | head -1)"
+            bash .github/scripts/emulator-pruefen.sh
 
       - name: Ergebnis im Protokoll zeigen
         if: always()

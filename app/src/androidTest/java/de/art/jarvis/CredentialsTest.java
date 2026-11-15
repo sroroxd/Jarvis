@@ -84,4 +84,36 @@ public class CredentialsTest {
         p.setApiKey("test-neuer-schluessel");
         assertEquals("test-neuer-schluessel", new Prefs(context).apiKey());
     }
+
+    @Test public void openAiDienstBleibtOhneActivityImVordergrundOhneSchluesselLokal() throws Exception {
+        if (!BuildConfig.OPENAI_TEST) return;
+        Prefs p = new Prefs(context);
+        p.setOpenAiSelected(true);
+        p.setOpenAiKey(""); // Kein API-Aufruf und keine echten Zugangsdaten in diesem Test.
+        android.content.Intent activity = new android.content.Intent(context, MainActivity.class)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(activity);
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        android.content.Intent service = new android.content.Intent(context, JarvisService.class)
+                .setAction(JarvisService.ACTION_START);
+        try {
+            context.startForegroundService(service);
+            long end = android.os.SystemClock.elapsedRealtime() + 10000;
+            while (!JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < end) Thread.sleep(50);
+            assertTrue("Foreground-Service gestartet", JarvisService.isRunning());
+            try (android.os.ParcelFileDescriptor fd = InstrumentationRegistry.getInstrumentation()
+                    .getUiAutomation().executeShellCommand("input keyevent KEYCODE_HOME")) {
+                try (java.io.InputStream in = new android.os.ParcelFileDescriptor.AutoCloseInputStream(fd)) {
+                    byte[] b = new byte[512]; while (in.read(b) != -1) { /* Befehl abwarten */ }
+                }
+            }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            assertTrue("Activity im Hintergrund beendet den Dienst nicht", JarvisService.isRunning());
+            assertFalse("Ohne MediaProjection-Freigabe kein Bildschirm", JarvisService.isScreenShared());
+        } finally {
+            context.stopService(new android.content.Intent(context, JarvisService.class));
+            long end = android.os.SystemClock.elapsedRealtime() + 5000;
+            while (JarvisService.isRunning() && android.os.SystemClock.elapsedRealtime() < end) Thread.sleep(50);
+        }
+    }
 }
