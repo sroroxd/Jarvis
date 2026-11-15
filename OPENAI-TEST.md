@@ -3,6 +3,7 @@
 Nur der Zweig `feature/openai-realtime-tft-vision` baut diese Variante mit
 `-PtestApp -PopenAiTest`. Paket: `de.art.jarvis.openaitest`, Name: **Jarvis OpenAI Test**.
 Die installierte Produktiv-App `de.art.jarvis`, ihre Daten und ihre Signatur werden nicht verändert.
+Die automatische Update-Suche über andere Testzweige ist für diese Variante ausgeschaltet.
 
 ## Auf dem Handy
 

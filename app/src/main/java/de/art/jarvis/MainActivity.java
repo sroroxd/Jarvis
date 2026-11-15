@@ -196,6 +196,8 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
      * Nummerierung und würden sonst immer einen Hinweis zeigen.
      */
     private void checkForUpdate() {
+        // Eigene Paket-ID und temporäre Testsignatur: keine APK anderer Testzweige als Update anbieten.
+        if (BuildConfig.OPENAI_TEST) return;
         boolean debuggable = BuildConfig.DEBUG;
         if (debuggable || demo != null) return;
         long now = android.os.SystemClock.elapsedRealtime();

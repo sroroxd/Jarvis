@@ -48,7 +48,7 @@ android {
         versionCode runNumber
         versionName testApp ? "1.0.${runNumber}-test" : "1.0.${runNumber}"
         resValue 'string', 'app_name', openAiTest ? 'Jarvis OpenAI Test' : testApp ? 'Jarvis Test' : 'Jarvis'
-        resValue 'string', 'listen_name', testApp ? 'Jarvis Test sprechen' : 'Jarvis sprechen'
+        resValue 'string', 'listen_name', openAiTest ? 'Jarvis OpenAI sprechen' : testApp ? 'Jarvis Test sprechen' : 'Jarvis sprechen'
         buildConfigField 'boolean', 'TEST_APP', testApp ? 'true' : 'false'
         buildConfigField 'boolean', 'OPENAI_TEST', openAiTest ? 'true' : 'false'
         buildConfigField 'String', 'BRANCH', "\"${branchName}\""
