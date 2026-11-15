@@ -22,6 +22,10 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.GeneralSecurityException;
 
 import de.art.jarvis.databinding.ActivitySettingsBinding;
 
@@ -31,6 +35,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private ActivitySettingsBinding b;
     private Prefs prefs;
+    private OpenAiCredentials openAiCredentials;
     /**
      * Gedächtnis, wie es zuletzt im Feld angezeigt wurde. Gespeichert wird das Feld nur, wenn Art es geändert
      * hat – sonst überschrieb das Verlassen der Einstellungen, was Jarvis sich inzwischen gemerkt hatte
@@ -61,6 +66,7 @@ public class SettingsActivity extends AppCompatActivity {
         b = ActivitySettingsBinding.inflate(getLayoutInflater());
         setContentView(b.getRoot());
         prefs = new Prefs(this);
+        openAiCredentials = new OpenAiCredentials(this);
         b.toolbar.setNavigationOnClickListener(v -> finish());
 
         setupBrain();
@@ -88,6 +94,59 @@ public class SettingsActivity extends AppCompatActivity {
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
         b.modelField.setText(prefs.rawModel());
         b.testKey.setOnClickListener(v -> testKey());
+        updateOpenAiKeyStatus();
+        b.testOpenAiKey.setOnClickListener(v -> testOpenAiKey());
+    }
+
+    private void updateOpenAiKeyStatus() {
+        try {
+            b.openAiKeyLayout.setHelperText(openAiCredentials.load().isEmpty()
+                    ? "Noch kein OpenAI-Schlüssel gespeichert"
+                    : "Schlüssel verschlüsselt auf diesem Gerät gespeichert");
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
+            b.openAiKeyLayout.setHelperText("Gespeicherter Schlüssel nicht lesbar – bitte erneut eintragen");
+        }
+    }
+
+    /** Prüft ohne kostenpflichtige Audio-Anfrage, ob das Realtime-Modell erreichbar ist. */
+    private void testOpenAiKey() {
+        saveTextFields();
+        final String key;
+        try {
+            key = openAiCredentials.load();
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
+            showResult(b.openAiKeyResult, "Der gespeicherte Schlüssel ist nicht lesbar. Bitte erneut eingeben.");
+            return;
+        }
+        if (key.isEmpty()) {
+            showResult(b.openAiKeyResult, "Bitte zuerst deinen vorhandenen OpenAI-Schlüssel eintragen.");
+            return;
+        }
+        showResult(b.openAiKeyResult, "Prüfe OpenAI-Modellzugriff …");
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            String result;
+            try {
+                connection = (HttpURLConnection) new URL(
+                        "https://api.openai.com/v1/models/gpt-realtime-2.1-mini").openConnection();
+                connection.setRequestProperty("Authorization", "Bearer " + key);
+                connection.setConnectTimeout(7000);
+                connection.setReadTimeout(7000);
+                int code = connection.getResponseCode();
+                if (code == 200) result = "✓ Zugang zum Realtime-Modell bestätigt. Sprachmodus noch nicht aktiviert.";
+                else if (code == 401) result = "✗ Schlüssel ungültig oder widerrufen (401).";
+                else if (code == 403 || code == 404) result = "✗ Modell für dieses Projekt nicht verfügbar (" + code + ").";
+                else result = "OpenAI antwortet mit HTTP " + code + ". Bitte Projekt und Modellzugriff prüfen.";
+            } catch (IOException e) {
+                result = "Verbindung fehlgeschlagen. Bitte Internetverbindung prüfen.";
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+            final String message = result;
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) showResult(b.openAiKeyResult, message);
+            });
+        }, "OpenAI-Key-Check").start();
     }
 
     /** Kleine Testanfrage (kostet Bruchteile eines Cents) und zeigt das genaue Ergebnis. */
@@ -673,6 +732,16 @@ public class SettingsActivity extends AppCompatActivity {
     private void saveTextFields() {
         prefs.setApiKey(text(b.keyField));
         b.keyLayout.setHelperText(prefs.apiKeyPreview());
+        String openAiInput = text(b.openAiKeyField).trim();
+        if (!openAiInput.isEmpty()) {
+            try {
+                openAiCredentials.save(openAiInput);
+                b.openAiKeyField.setText(""); // Gespeicherte Schlüssel nicht erneut im Eingabefeld anzeigen.
+                updateOpenAiKeyStatus();
+            } catch (GeneralSecurityException e) {
+                showResult(b.openAiKeyResult, "Sicheres Speichern fehlgeschlagen. Schlüssel nicht übernommen.");
+            }
+        }
         String model = text(b.modelField).trim();
         if (!model.isEmpty() && !Prefs.isValidModel(model)) {
             b.modelField.setText("");

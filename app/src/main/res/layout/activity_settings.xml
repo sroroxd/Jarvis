@@ -92,6 +92,47 @@
                         android:text="Schlüssel testen" />
 
                     <TextView
+                        style="@style/Jarvis.SectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="OpenAI Realtime (Testvorbereitung)" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/openAiKeyLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:hint="Vorhandenen OpenAI-API-Schlüssel eingeben"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/openAiKeyField"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <Button
+                        android:id="@+id/testOpenAiKey"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="OpenAI-Zugang prüfen" />
+
+                    <TextView
+                        android:id="@+id/openAiKeyResult"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:text="OpenAI ist noch nicht als Sprachmodus aktiviert."
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
                         android:id="@+id/keyResult"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
