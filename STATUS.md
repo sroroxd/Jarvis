@@ -9,6 +9,23 @@ aktuellen Stand – egal, in welchem Fenster.
 Wer etwas fertigstellt oder entscheidet, trägt es hier ein. Letzte Änderung:
 8. November 2026 (14 Uhr).
 
+## Phase 1 – Sicherheit und Build-Reparatur (15. Nov., Zweig `sicherheit-phase1-build`)
+
+Auslöser: Audit vom 15. Nov. Der Gerätetest scheiterte auf jedem Zweig am ungültigen Anthropic-Schlüssel in
+GitHub („invalid x-api-key“), es wurde keine APK mehr veröffentlicht; dazu der öffentliche Signaturschlüssel
+(Issue #85) und das eingeschaltete Android-Backup. Übernommen aus PR #84 (ganz) und PR #89 (Skripte, Probe).
+
+- **Build ohne API-Schlüssel:** Normale Builds bekommen keinen Schlüssel mehr und stellen keine kostenpflichtigen
+  Anfragen; Live-Tests nur von Hand („cloud_tests“). `latenz.yml` läuft nicht mehr bei Push.
+- **Signatur:** Kein Passwort mehr in `app/build.gradle`. Debug mit Androids Debug-Schlüssel und eigener
+  Paket-ID `….debug`; Release unsigniert aus Gradle, signiert erst in der CI mit dem neuen Schlüssel samt
+  Rotationsnachweis. Ohne die Secrets wird nichts veröffentlicht. `apk-pruefen.sh` bricht ab, wenn eine APK
+  den kompromittierten Schlüssel trägt.
+- **Datenabfluss:** Android-Sicherung aus (Cloud und Gerätewechsel). Weiter geprüft: Protokoll nur im
+  Debug-Build, Netz nur HTTPS (Ausnahme 127.0.0.1 für den Agenten), nur zwei exportierte Activities.
+  Offen: Arts eigene Sicherungsdatei enthält die Schlüssel im Klartext, wenn „API-Schlüssel mitsichern“ an ist.
+- **Art muss einmalig** den neuen Schlüssel erzeugen und drei Secrets anlegen – `docs/SIGNATUR_MIGRATION.md`.
+
 ## Wo der aktuelle Stand liegt
 
 **`main` ist auf dem Stand von Build 87** (8. Nov.):

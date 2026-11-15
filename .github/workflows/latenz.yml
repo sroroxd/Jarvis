@@ -1,13 +1,12 @@
 name: Latenz messen
 
-# Misst mit der echten Claude-API, wie schnell Jarvis antwortet (Wunsch #43). Läuft nur, wenn sich die
-# Messung selbst ändert, oder von Hand. Kostet pro Lauf einige Cent (rund 20 Anfragen).
+# Misst mit der echten Claude-API, wie schnell Jarvis antwortet (Wunsch #43). Kostet pro Lauf einige Cent
+# (rund 20 Anfragen) – deshalb NUR von Hand („Run workflow“), nie automatisch bei einem Push (Sicherheit, 15. Nov.).
 on:
-  push:
-    paths:
-      - '.github/bench/**'
-      - '.github/workflows/latenz.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   messen:

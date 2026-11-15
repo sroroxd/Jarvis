@@ -1,0 +1,100 @@
+name: Signaturmigration – Rotationsprobe im Emulator
+
+# Beweist mit Wegwerf-Schlüsseln, dass der Schlüsselwechsel funktioniert, bevor er mit dem echten Schlüssel
+# passiert: Update über eine Installation mit dem alten Schlüssel gelingt, Daten bleiben erhalten, und ab
+# Android 13 kann der alte Schlüssel danach kein Update mehr unterschieben. Braucht keine Secrets, kostet nichts,
+# veröffentlicht nichts. Läuft, wenn sich Signierung oder Build ändern, oder von Hand. Ursprung: PR #89.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - app/build.gradle
+      - scripts/signierung/**
+      - .github/workflows/signatur-migrationsprobe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - name: Code holen
+        uses: actions/checkout@v5
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Gradle 8.9
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '8.9'
+      # Drei Versionen unter der echten Paket-ID de.art.jarvis, ohne Signatur: alt (81001), Update (81002) und
+      # der Angriffsversuch (81003).
+      - name: Syntax prüfen und drei unsignierte Debug-Versionen bauen
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for f in scripts/signierung/*.sh; do bash -n "$f"; done
+          for v in 81001:alt 81002:neu 81003:angriff; do
+            GITHUB_RUN_NUMBER="${v%%:*}" gradle --no-daemon -q -PmigrationUnsigned :app:assembleDebug
+            cp "$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' | head -1)" "$RUNNER_TEMP/${v##*:}-unsigned.apk"
+          done
+      - name: Synthetische Schluessel erzeugen und Rotation pruefen
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          sdk="$ANDROID_HOME"
+          apksigner_bin="$(find "$sdk/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)"
+          test -n "$apksigner_bin"
+          export PATH="$(dirname "$apksigner_bin"):$PATH"
+          export JARVIS_OLD_KEYSTORE="$RUNNER_TEMP/old-synthetic.p12"
+          export JARVIS_NEW_KEYSTORE="$RUNNER_TEMP/new-synthetic.p12"
+          export JARVIS_OLD_ALIAS=oldsynthetic
+          export JARVIS_NEW_ALIAS=newsynthetic
+          export JARVIS_OLD_KS_PASS=synthetic-test-only-old-81001
+          export JARVIS_NEW_KS_PASS=synthetic-test-only-new-81002
+          export JARVIS_OLD_KEY_PASS="$JARVIS_OLD_KS_PASS"
+          export JARVIS_NEW_KEY_PASS="$JARVIS_NEW_KS_PASS"
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$JARVIS_OLD_KEYSTORE" -alias "$JARVIS_OLD_ALIAS" -storepass "$JARVIS_OLD_KS_PASS" -keypass "$JARVIS_OLD_KEY_PASS" -keyalg RSA -keysize 2048 -validity 30 -dname 'CN=Jarvis-Synthetic-Old'
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$JARVIS_NEW_KEYSTORE" -alias "$JARVIS_NEW_ALIAS" -storepass "$JARVIS_NEW_KS_PASS" -keypass "$JARVIS_NEW_KEY_PASS" -keyalg RSA -keysize 2048 -validity 30 -dname 'CN=Jarvis-Synthetic-New'
+          apksigner sign --ks "$JARVIS_OLD_KEYSTORE" --ks-key-alias "$JARVIS_OLD_ALIAS" --ks-pass env:JARVIS_OLD_KS_PASS --key-pass env:JARVIS_OLD_KEY_PASS --out "$RUNNER_TEMP/alt-signiert.apk" "$RUNNER_TEMP/alt-unsigned.apk"
+          export JARVIS_UNSIGNED_APK="$RUNNER_TEMP/neu-unsigned.apk"
+          export JARVIS_OUTPUT_APK="$RUNNER_TEMP/neu-signiert.apk"
+          export JARVIS_LINEAGE="$RUNNER_TEMP/lineage.bin"
+          bash scripts/signierung/rotation-sign.sh
+          # Angriff: höhere Version, nur mit dem alten Schlüssel signiert.
+          apksigner sign --ks "$JARVIS_OLD_KEYSTORE" --ks-key-alias "$JARVIS_OLD_ALIAS" --ks-pass env:JARVIS_OLD_KS_PASS --key-pass env:JARVIS_OLD_KEY_PASS --out "$RUNNER_TEMP/angriff-alt-signiert.apk" "$RUNNER_TEMP/angriff-unsigned.apk"
+          apksigner verify --print-certs "$RUNNER_TEMP/alt-signiert.apk" | grep -E 'DN|SHA-256'
+          apksigner verify --min-sdk-version 33 --print-certs "$RUNNER_TEMP/neu-signiert.apk" | grep -E 'DN|SHA-256'
+          apksigner lineage --in "$JARVIS_LINEAGE" --print-certs | grep -E 'DN|capability'
+      - name: KVM freischalten
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android 12L (API 32) – Paketupdate und Dateierhalt (alte Signatur gilt weiter)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 32
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            bash -euo pipefail scripts/signierung/emulator-upgrade-check.sh
+      - name: Android 14 (API 34) – Paketupdate, Dateierhalt, alter Schlüssel abgelehnt
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            ERWARTE_ALTSCHLUESSEL=abgelehnt bash -euo pipefail scripts/signierung/emulator-upgrade-check.sh

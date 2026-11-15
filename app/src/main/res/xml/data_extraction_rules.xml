@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Jarvis speichert API-Schlüssel (Claude, ElevenLabs), das GitHub-Token, das Agent-Token und das Gedächtnis in
+  seinen Einstellungen. Nichts davon darf das Handy über Androids Sicherung verlassen:
+   - cloud-backup: Sicherung ins Google-Konto.
+   - device-transfer: Übertragung auf ein neues Handy (ab Android 12 gilt dafür allowBackup="false" NICHT mehr –
+     ohne diese Datei würden die Schlüssel beim Gerätewechsel trotzdem kopiert).
+  Arts eigene Sicherungsdatei (Einstellungen → Sicherung) bleibt davon unberührt.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>
