@@ -129,6 +129,16 @@ public class MainActivityWindowTest {
         assertNotNull("Statusdialog im Vordergrund", window);
         assertFalse("Vollständige Bereitschaftsmeldung im Dialog lesbar",
                 window.findAccessibilityNodeInfosByText("OpenAI Realtime bereit").isEmpty());
+        java.util.List<android.view.accessibility.AccessibilityNodeInfo> close =
+                window.findAccessibilityNodeInfosByText("Schließen");
+        assertFalse("Schließen-Knopf im Statusdialog sichtbar", close.isEmpty());
+        assertTrue("Sichtbarer Schließen-Knopf schließt den Dialog", close.get(0).performAction(
+                android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK));
+        instrumentation.waitForIdleSync();
+        android.view.accessibility.AccessibilityNodeInfo remaining = instrumentation.getUiAutomation().getRootInActiveWindow();
+        assertNotNull("Activity nach Schließen wieder sichtbar", remaining);
+        assertTrue("Kein offener Statusdialog zurückgeblieben",
+                remaining.findAccessibilityNodeInfosByText("Schließen").isEmpty());
     }
 
     private void launch(boolean activePreview) {

@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     private int compactReactorHeight;
     private ViewGroup normalChipParent;
     private String openAiDetail = "";
+    private AlertDialog openAiStatusDialog;
     /** Nur in der Debug-Variante: fester Zustand für die automatischen Vorschaubilder. */
     private JarvisService.State demo;
 
@@ -70,9 +71,12 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
             b.mainOpenAiImage.setOnClickListener(v -> sendToService(JarvisService.ACTION_OPENAI_IMAGE));
             normalChipParent = (ViewGroup) b.mainStatusChips.getParent();
             b.statusDetail.setOnClickListener(v -> {
-                if (compactWindow) new AlertDialog.Builder(this)
-                        .setTitle(b.statusText.getText()).setMessage(openAiDetail)
-                        .setPositiveButton("Schließen", null).show();
+                if (compactWindow) {
+                    if (openAiStatusDialog != null) openAiStatusDialog.dismiss();
+                    openAiStatusDialog = new AlertDialog.Builder(this)
+                            .setTitle(b.statusText.getText()).setMessage(openAiDetail)
+                            .setPositiveButton("Schließen", null).show();
+                }
             });
             b.statusDetail.setClickable(false);
             // Die tatsächlich verfügbare Höhe zählt, auch nach dem Verschieben des Split-Screen-Trenners.
@@ -265,6 +269,15 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
     protected void onStop() {
         JarvisService.setUiListener(null);
         super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (openAiStatusDialog != null) {
+            openAiStatusDialog.dismiss();
+            openAiStatusDialog = null;
+        }
+        super.onDestroy();
     }
 
     private void sendToService(String action) {
