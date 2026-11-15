@@ -80,13 +80,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -Eeuo pipefail
-            adb install -r "$RUNNER_TEMP/alt-signiert.apk"
-            adb shell run-as de.art.jarvis mkdir -p files
-            adb shell run-as de.art.jarvis touch files/signing-migration-marker
-            adb install -r "$RUNNER_TEMP/neu-signiert.apk"
-            adb shell run-as de.art.jarvis ls files/signing-migration-marker
-            adb shell dumpsys package de.art.jarvis | grep -F 'versionCode=81002'
+            bash -euo pipefail scripts/signierung/emulator-upgrade-check.sh
       - name: Android 14 (API 34) – Paketupdate und Dateierhalt
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -97,10 +91,4 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -Eeuo pipefail
-            adb install -r "$RUNNER_TEMP/alt-signiert.apk"
-            adb shell run-as de.art.jarvis mkdir -p files
-            adb shell run-as de.art.jarvis touch files/signing-migration-marker
-            adb install -r "$RUNNER_TEMP/neu-signiert.apk"
-            adb shell run-as de.art.jarvis ls files/signing-migration-marker
-            adb shell dumpsys package de.art.jarvis | grep -F 'versionCode=81002'
+            bash -euo pipefail scripts/signierung/emulator-upgrade-check.sh
