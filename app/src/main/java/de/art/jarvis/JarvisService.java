@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -1243,6 +1244,23 @@ public class JarvisService extends Service {
     private void handleUtterance(String text) {
         final boolean testOpen = testOpenMic;
         testOpenMic = false;
+        // Erster sicherer Gerätetest: nur Spotify starten, keine KI-Anfrage und keine Bedienungshilfen.
+        if (Commands.openSpotify(text)) {
+            setState(State.IDLE);
+            Intent spotify = getPackageManager().getLaunchIntentForPackage("com.spotify.music");
+            if (spotify == null) {
+                speak("Spotify ist nicht installiert oder lässt sich nicht öffnen.");
+            } else {
+                spotify.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try {
+                    startActivity(spotify);
+                    speak("Spotify wird geöffnet.");
+                } catch (ActivityNotFoundException | SecurityException e) {
+                    speak("Spotify konnte nicht geöffnet werden.");
+                }
+            }
+            return;
+        }
         maybeUpdateMeta();
         // „Spielmodus an/aus“ erledigt die App selbst.
         Boolean game = Commands.gameMode(text);

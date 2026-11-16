@@ -62,6 +62,15 @@ final class Commands {
         return on;
     }
 
+    /** Nur dieser ausdrücklich erlaubte App-Start ist ohne KI und ohne allgemeine Gerätesteuerung möglich. */
+    private static final Pattern SPOTIFY_OPEN = Pattern.compile(
+            "^(?:(?:öffne|oeffne|starte) spotify|mach spotify auf|spotify (?:öffnen|oeffnen|starten))"
+                    + "(?: bitte)?$");
+
+    static boolean openSpotify(String utterance) {
+        return SPOTIFY_OPEN.matcher(normalize(utterance)).matches();
+    }
+
     private static final Pattern TALK = Pattern.compile(
             "\\b(gespr(ä|ae)chs?[- ]?modus|unterhaltungs?[- ]?modus|live[- ]?modus|dauer[- ]?gespr(ä|ae)ch"
                     + "|dauer[- ]?modus|dauer[- ]?zuh(ö|oe)ren)\\b");
