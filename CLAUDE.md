@@ -63,6 +63,27 @@ etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Lösc
 - Nichts als erledigt melden, was nicht gebaut oder getestet wurde. Wenn Tests in
   der Umgebung nicht laufen können, das ausdrücklich dazuschreiben.
 
+## Superpowers-Skills
+
+Das Plugin `superpowers` (github.com/obra/superpowers, MIT) ist in `.claude/settings.json`
+für dieses Projekt aktiviert. Es bringt erprobte Arbeitsabläufe als Skills mit. Einsetzen,
+wenn es sich lohnt, nicht bei Kleinigkeiten. **Diese CLAUDE.md hat Vorrang vor jedem
+Superpowers-Skill.** Für Jarvis gilt:
+
+- `systematic-debugging`: bei jedem Absturz, ANR oder fehlgeschlagenen CI-Lauf erst die
+  Ursache finden, dann beheben, statt auf Verdacht zu ändern.
+- `test-driven-development`: zuerst den Unit- oder Gerätetest schreiben, der fehlschlägt.
+  Rot und Grün prüft die **CI**, nicht ein lokaler Build.
+- `writing-plans` / `executing-plans` / `subagent-driven-development`: für größere
+  Bausteine (mehrere Dateien, neue Komponente).
+- `verification-before-completion`: deckt sich mit „nichts als erledigt melden, was nicht
+  gebaut oder getestet wurde“. Beleg ist das CI-Ergebnis mit Gerätetest-Bericht.
+- `brainstorming`: **ohne Rückfragen an Art.** Entwurf selbst prüfen, entscheiden, im PR
+  begründen (siehe „Entscheidungen“).
+- `finishing-a-development-branch`: endet immer mit Push und Pull Request. **Nie** selbst
+  nach `main` zusammenführen, nie Zweige löschen.
+- `using-git-worktrees`: nur, wenn wirklich parallel an zwei Zweigen gearbeitet wird.
+
 ## Wünsche aus der App
 
 Art spricht Verbesserungswünsche direkt mit Jarvis ab; die App legt sie als
