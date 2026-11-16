@@ -20,7 +20,7 @@ final class OpenAiSession implements AutoCloseable {
     private final ExecutorService captures = Executors.newSingleThreadExecutor();
     private final Frames frames;
     private final Ui ui;
-    private final RealtimeAudio audio = new RealtimeAudio();
+    private final RealtimeAudio audio;
     private final OpenAiRealtimeClient client;
     private boolean closed;
     private boolean ready;
@@ -31,8 +31,9 @@ final class OpenAiSession implements AutoCloseable {
     private final Runnable timeout = () -> stop("OpenAI-Test nach zehn Minuten beendet.");
     private final Runnable answerTimeout = () -> stop("OpenAI hat nicht rechtzeitig geantwortet. Sitzung beendet.");
 
-    OpenAiSession(Frames frames, Ui ui) {
+    OpenAiSession(Frames frames, Ui ui, double echoMarginDb) {
         this.frames = frames; this.ui = ui;
+        audio = new RealtimeAudio(echoMarginDb);
         client = new OpenAiRealtimeClient(new OpenAiRealtimeClient.Listener() {
             @Override public void ready() { main.post(() -> {
                 if (closed) return;

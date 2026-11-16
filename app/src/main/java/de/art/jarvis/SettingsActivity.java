@@ -175,7 +175,7 @@ public class SettingsActivity extends AppCompatActivity {
         providerText(b.helpText, openAi, "• OpenAI-Schlüssel oben eintragen, OpenAI einschalten und den Kern auf dem Startbildschirm antippen.\n"
                 + "• Mikrofon und Bildschirm freigeben, dann TFT öffnen und eine klare deutsche Frage stellen.\n"
                 + "• Bei unklar verstandenen Fragen soll Jarvis kurz nachfragen. Für den Test nur eine Sprach-App gleichzeitig laufen lassen.\n"
-                + "• Losreden unterbricht die Antwort. Antippen pausiert oder startet; lange drücken beendet die Sitzung.\n"
+                + "• Losreden unterbricht die Antwort – deutlich lauter sprechen als Jarvis' Stimme (Empfindlichkeit: Regler „Dazwischenreden“).\n• Antippen pausiert oder startet; lange drücken beendet die Sitzung.\n"
                 + "• Keine feste Antwortzahl. Nach zehn Minuten pausiert der Test. Der Schlüssel bleibt gespeichert.\n"
                 + "• Ohne frisches freigegebenes Bild gilt der Spielstand als „Nicht sicher erkennbar“.\n"
                 + "• Die Schaltfläche „Jarvis beenden“ schließt Mikrofon und Verbindung. Der OpenAI-Modus braucht keinen GitHub- oder Claude-Schlüssel.");

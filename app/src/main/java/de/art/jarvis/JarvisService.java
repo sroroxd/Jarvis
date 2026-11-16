@@ -2189,7 +2189,7 @@ public class JarvisService extends Service {
                 testLog("openai antwort: " + text);
                 if (running && prefs.openAiSelected()) { publishExchange(null, text); caption(text); }
             }
-        });
+        }, SpeechGate.marginFor(prefs.bargeInSensitivity()));
         openAi.start(prefs.openAiKey());
     }
 

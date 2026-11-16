@@ -11,8 +11,15 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-/** Ein einziges Voll-Duplex-Mikrofon, PCM16/24kHz; begrenzte Puffer und sofortiges lokales Stoppen. */
+/**
+ * Ein einziges Voll-Duplex-Mikrofon, PCM16/24kHz; begrenzte Puffer und sofortiges lokales Stoppen.
+ * Während der Wiedergabe hält {@link EchoGate} das eigene Echo vom Server fern (Gerätetest 16. Nov.: Jarvis
+ * antwortete sonst auf seine eigene Stimme, bis in einen token-fressenden Schnellfeuer-Loop).
+ */
 final class RealtimeAudio implements AutoCloseable {
+    private final EchoGate gate;
+
+    RealtimeAudio(double echoMarginDb) { gate = new EchoGate(echoMarginDb); }
     private final Object lock = new Object();
     private static final class Chunk {
         final byte[] data;
@@ -61,7 +68,9 @@ final class RealtimeAudio implements AutoCloseable {
             while (!closed) {
                 int n = record.read(buffer, 0, buffer.length);
                 if (n <= 0) { if (!closed) error.accept("Das OpenAI-Mikrofon wurde unterbrochen."); return; }
-                if (!closed) input.accept(Base64.encodeToString(buffer, 0, n, Base64.NO_WRAP));
+                for (byte[] chunk : gate.feed(buffer, n, android.os.SystemClock.elapsedRealtime())) {
+                    if (!closed) input.accept(Base64.encodeToString(chunk, 0, chunk.length, Base64.NO_WRAP));
+                }
             }
         } catch (Exception e) { if (!closed) error.accept("Das OpenAI-Mikrofon ist nicht mehr verfügbar."); }
     }
@@ -69,6 +78,7 @@ final class RealtimeAudio implements AutoCloseable {
     void add(String base64) {
         if (closed) return;
         byte[] data = Base64.decode(base64, Base64.DEFAULT);
+        gate.audible(android.os.SystemClock.elapsedRealtime());
         synchronized (lock) {
             if (closed) return;
             if ((data.length & 1) != 0 || !queue.offer(new Chunk(data, epoch))) throw new IllegalStateException("Audiopuffer voll");
@@ -91,6 +101,7 @@ final class RealtimeAudio implements AutoCloseable {
                         writtenSamples += n / 2;
                     }
                     offset += n;
+                    gate.audible(android.os.SystemClock.elapsedRealtime());
                     if (n == 0) Thread.sleep(5);
                 }
                 Runnable callback = null;
@@ -110,6 +121,7 @@ final class RealtimeAudio implements AutoCloseable {
         synchronized (lock) {
             int playedMs = (int) (Math.min(writtenSamples, playedSamples()) * 1000 / RealtimeProtocol.RATE);
             epoch++; queue.clear(); drained = null;
+            gate.flushed(android.os.SystemClock.elapsedRealtime());
             if (track != null && !closed) {
                 track.pause(); track.flush();
                 headBase = Integer.toUnsignedLong(track.getPlaybackHeadPosition());
