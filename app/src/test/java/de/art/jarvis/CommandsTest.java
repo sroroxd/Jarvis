@@ -11,6 +11,19 @@ import org.junit.Test;
 public class CommandsTest {
 
     @Test
+    public void spotifyNurAufAusdruecklichenBefehlOeffnen() {
+        assertTrue(Commands.openSpotify("Jarvis, öffne Spotify"));
+        assertTrue(Commands.openSpotify("Hey Jarvis, mach Spotify auf!"));
+        assertTrue(Commands.openSpotify("Bitte starte Spotify"));
+        assertTrue(Commands.openSpotify("Spotify öffnen"));
+        assertFalse(Commands.openSpotify("Wie öffne ich Spotify?"));
+        assertFalse(Commands.openSpotify("Öffne Spotify nicht"));
+        assertFalse(Commands.openSpotify("Öffne Spotify und bezahle etwas"));
+        assertFalse(Commands.openSpotify("Öffne meine Banking-App"));
+        assertFalse(Commands.openSpotify(null));
+    }
+
+    @Test
     public void spielmodusEinschalten() {
         assertEquals(Boolean.TRUE, Commands.gameMode("Spielmodus an"));
         assertEquals(Boolean.TRUE, Commands.gameMode("Schalte den Spielmodus ein"));
