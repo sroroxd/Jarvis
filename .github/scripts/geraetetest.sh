@@ -240,7 +240,7 @@ if [ -n "${JARVIS_TESTKEY:-}" ]; then
     say "  Hinweis: Arts TFT-Testbilder ließen sich nicht in die App kopieren"
   fi
 else
-  say "Gesprächstest übersprungen: kein API-Schlüssel (GitHub-Secret ANTHROPIC_API_KEY fehlt)"
+  say "Gesprächstest übersprungen: Cloud-Livetests nicht freigegeben (kostenpflichtig, nur von Hand) oder Secret fehlt"
 fi
 
 # ---------------------------------------------------------------- Offline-Stimme (Pocket TTS, Machbarkeit)

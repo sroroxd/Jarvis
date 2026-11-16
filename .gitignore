@@ -9,3 +9,9 @@ __pycache__/
 
 # sherpa-onnx (Offline-Stimme), lädt app/build.gradle mit Prüfsumme
 .sherpa/
+# Neue Signaturschlüssel dürfen nicht ins Git-Repository.
+# Der bereits versionierte app/jarvis.keystore bleibt bis zur geplanten Migration ein separates Sicherheitsproblem.
+*.keystore
+*.jks
+*.p12
+keystore.properties

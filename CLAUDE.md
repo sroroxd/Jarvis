@@ -37,6 +37,13 @@ etwas, das Daten auf Arts Handy kostet oder eine Neuinstallation verlangt, Lösc
 - Jeder Arbeitszweig baut automatisch die Test-App „Jarvis Test“ (eigene Paket-ID
   `de.art.jarvis.test`, eigene Einstellungen). Art testet dort, bevor etwas nach
   `main` kommt.
+- **Signatur und Veröffentlichung (seit 15. Nov. 2026, `docs/SIGNATUR_MIGRATION.md`):**
+  Gradle signiert nichts Geheimes mehr. Die Debug-APK (Paket-ID mit `.debug`) liegt als
+  Artefakt „Jarvis-Debug-APK“ am CI-Lauf, Bericht und Bilder als „geraetetest-bericht“.
+  Release, Test-App und die Vorab-Version `vorschau` gibt es nur, wenn der neue
+  Signaturschlüssel als GitHub-Secret hinterlegt ist. Normale Builds stellen keine
+  kostenpflichtigen Anfragen; die Live-Tests gegen Claude laufen nur bei von Hand
+  gestartetem Lauf mit „cloud_tests“.
 - Jeder Push durchläuft den Gerätetest im Emulator (`.github/scripts/geraetetest.sh`):
   installieren, starten, „Starten“ tippen, Einstellungen öffnen, 30 s laufen lassen.
   Bei Absturz, ANR oder beendetem Prozess wird keine APK veröffentlicht. Bericht und
@@ -110,6 +117,10 @@ Antwortet eine ID nicht, mit `resolve-library-id` neu suchen.
 - In Context7-Abfragen keine API-Schlüssel (Anthropic, Gemini, ElevenLabs),
   Zugangsdaten oder private Inhalte schreiben. Die Abfrage geht an einen
   externen Dienst.
-- Schlüssel nie ins Repo committen. Der Signaturschlüssel der App liegt bereits
-  im öffentlichen Repo; das ist als offener Punkt bekannt und wird separat
-  behandelt.
+- Schlüssel nie ins Repo committen. Der alte Signaturschlüssel `app/jarvis.keystore`
+  liegt im öffentlichen Repo und ist kompromittiert: nie wieder allein zum Signieren
+  benutzen, kein Passwort in Build-Dateien. Er bleibt nur für den Rotationsnachweis
+  liegen (`docs/SIGNATUR_MIGRATION.md`). `scripts/signierung/apk-pruefen.sh` bricht den
+  Build ab, wenn eine APK ihn trägt.
+- Androids Sicherung ist aus (`allowBackup="false"`, `data_extraction_rules.xml`), weil
+  API-Schlüssel und Tokens in den Einstellungen liegen. Nicht wieder einschalten.

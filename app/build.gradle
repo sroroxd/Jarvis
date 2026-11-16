@@ -10,6 +10,9 @@ def branchName = (System.getenv('GITHUB_REF_NAME') ?: '').replaceAll('[^A-Za-z0-
 // Paket-ID, installiert sich NEBEN die normale Jarvis-App und hat eigene Einstellungen und eigenes
 // Gedächtnis – die normale App wird dabei weder überschrieben noch verändert.
 def testApp = project.hasProperty('testApp')
+// Nur für die Rotationsprobe (.github/workflows/signatur-migrationsprobe.yml): Debug-APK ganz ohne Signatur und
+// ohne „.debug“-Anhang bauen, damit sie mit Wegwerf-Schlüsseln unter der echten Paket-ID signiert werden kann.
+def migrationUnsigned = project.hasProperty('migrationUnsigned')
 
 // Offline-Stimme (Pocket TTS) über sherpa-onnx, Fassung mit FEST EINGEBAUTER ONNX Runtime. Die normale Fassung
 // teilt sich libonnxruntime.so mit onnxruntime-android (Wachwort) – die Symbole sind aber versioniert
@@ -52,20 +55,23 @@ android {
         buildConfigField 'String', 'BRANCH', "\"${branchName}\""
     }
 
-    // Fester Schlüssel, damit jede neue APK sich über die alte installieren lässt.
-    signingConfigs {
-        jarvis {
-            storeFile file('jarvis.keystore')
-            storePassword 'jarvis-sideload'
-            keyAlias 'jarvis'
-            keyPassword 'jarvis-sideload'
-            storeType 'pkcs12'
-        }
-    }
-
+    // SIGNATUR (Sicherheit, 15. Nov. 2026): In dieser Datei steht KEIN Schlüssel und KEIN Passwort mehr.
+    // Der frühere Schlüssel app/jarvis.keystore lag samt Passwort im öffentlichen Repo und gilt als kompromittiert:
+    // Jeder konnte damit eine APK bauen, die sich als Update über Jarvis installieren lässt.
+    //  - Debug: Androids Standard-Debug-Schlüssel (je Rechner ein eigener, nichts Geheimes im Repo). Eigene
+    //    Paket-ID mit „.debug“, damit eine Debug-APK nie eine echte Jarvis-Installation ersetzt oder aktualisiert.
+    //  - Release: Gradle baut sie UNSIGNIERT. Signiert wird erst in der CI mit dem neuen, geheimen Schlüssel aus
+    //    den GitHub-Secrets (scripts/signierung/rotation-sign.sh, mit Rotationsnachweis für bestehende
+    //    Installationen). Ohne diese Secrets entsteht keine signierte Release-APK und wird nichts veröffentlicht.
+    // Einzelheiten und Auswirkungen: docs/SIGNATUR_MIGRATION.md.
     buildTypes {
         debug {
-            signingConfig signingConfigs.jarvis
+            signingConfig = migrationUnsigned ? null : signingConfigs.debug
+            if (!migrationUnsigned) {
+                applicationIdSuffix '.debug'
+                resValue 'string', 'app_name', testApp ? 'Jarvis Test Debug' : 'Jarvis Debug'
+                resValue 'string', 'listen_name', testApp ? 'Jarvis Test Debug sprechen' : 'Jarvis Debug sprechen'
+            }
             // Handy und CI-Emulator (x86_64) reichen. Mit allen vier Architekturen war die Debug-APK durch
             // sherpa-onnx 200 MB groß, und das Installieren legte den Emulator lahm (Build 100: Launcher hing).
             ndk {
@@ -73,7 +79,7 @@ android {
             }
         }
         release {
-            signingConfig signingConfigs.jarvis
+            signingConfig = null // unsigniert – siehe oben
             minifyEnabled false
             // Nur 64-Bit-ARM (Galaxy S24 Ultra) – hält die APK trotz Wachwort-Engine klein.
             // Die Debug-Variante hat zusätzlich x86_64, damit sie im Emulator für die Vorschaubilder läuft.
