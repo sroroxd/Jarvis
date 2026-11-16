@@ -319,6 +319,9 @@ public class MainActivity extends AppCompatActivity implements JarvisService.UiL
         StringBuilder hint = new StringBuilder();
         if (running) hint.append(live ? "Dauergespräch · Tippen: beenden" : "Tippen: Dauergespräch · Lang drücken: neues Gespräch");
         if (!report.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append("Dazwischenreden: ").append(report);
+        // Offline-Stimme: Rechenzeit und Aussetzer des letzten Satzes (Knacken und Stocken zuordnen, #68).
+        String pocketStats = PocketSpeaker.lastStats;
+        if (prefs.pocketVoice() && !pocketStats.isEmpty()) hint.append(hint.length() > 0 ? "\n" : "").append(pocketStats);
         // Tagessumme aller Claude-Anfragen (auch Phasen-Wächter und Meta) – Anthropic rechnet in US-Dollar.
         double today = prefs.costToday(JarvisService.today());
         if (today > 0) {

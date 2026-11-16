@@ -6,6 +6,7 @@ import android.media.AudioFormat;
 import android.media.AudioTrack;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Process;
 import android.os.SystemClock;
 
 import com.k2fsa.sherpa.onnx.GeneratedAudio;
@@ -56,6 +57,12 @@ final class PocketSpeaker {
     private volatile boolean trackStale;
     private long framesWritten;
 
+    /**
+     * Messwerte des letzten Satzes für den Startbildschirm („Offline-Stimme: … Aussetzer 0“): Rechenzeit gegen
+     * Sprechdauer und wie oft der Ton ausgesetzt hat. So lässt sich Knacken und Stocken ohne USB-Kabel zuordnen.
+     */
+    static volatile String lastStats = "";
+
     PocketSpeaker(Context context, Listener listener) {
         this.context = context.getApplicationContext();
         this.listener = listener;
@@ -92,6 +99,10 @@ final class PocketSpeaker {
         final int e = epoch.get();
         synth.execute(() -> {
             if (e != epoch.get() || released) return;
+            // Etwas niedriger als Standard (nicht „Hintergrund“: das schränkt die Rechenzeit stark ein). Die
+            // Rechen-Threads der ONNX Runtime erben das beim Anlegen.
+            Process.setThreadPriority(5);
+            final long t0 = SystemClock.elapsedRealtime();
             PocketVoice v = ensureVoice();
             if (v == null) {
                 post(e, () -> listener.onError(gen, text, "Offline-Stimme lässt sich nicht laden."));
@@ -105,12 +116,14 @@ final class PocketSpeaker {
                 return;
             }
             if (e != epoch.get() || released) return;
+            final long synthMs = SystemClock.elapsedRealtime() - t0;
             queuedPlays.incrementAndGet();
             player.execute(() -> {
                 try {
-                    play(audio.getSamples(), audio.getSampleRate(), e, gen, text);
+                    play(audio.getSamples(), audio.getSampleRate(), e, gen, text, synthMs);
                 } finally {
-                    if (queuedPlays.decrementAndGet() == 0) closeTrack();
+                    // Kanal offen lassen und nur anhalten – Schließen und neu Öffnen knackt zwischen den Sätzen.
+                    if (queuedPlays.decrementAndGet() == 0) idleTrack();
                 }
             });
         });
@@ -131,6 +144,7 @@ final class PocketSpeaker {
             }
         });
         synth.shutdown();
+        player.execute(this::closeTrack);
         player.shutdown();
     }
 
@@ -153,7 +167,9 @@ final class PocketSpeaker {
         if (loadFailed) return null;
         try {
             File dir = PocketTrial.dir(context);
-            int threads = Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
+            // Drei Threads statt vier (Messung auf dem S24 Ultra: vier = 0,3-fache Echtzeit, Luft genug): Mikrofon,
+            // Spracherkennung und Wiedergabe brauchen daneben ebenfalls Rechenzeit.
+            int threads = Math.max(2, Math.min(3, Runtime.getRuntime().availableProcessors() / 2));
             voice = new PocketVoice(dir, new File(dir, "stimme.wav"), threads);
         } catch (Throwable t) { // auch UnsatisfiedLinkError
             loadFailed = true;
@@ -169,7 +185,9 @@ final class PocketSpeaker {
     }
 
     /** Spielt einen Satz; kehrt zurück, wenn er ausgesprochen ist oder abgebrochen wurde. */
-    private void play(float[] samples, int rate, int e, int gen, String text) {
+    private void play(float[] floats, int rate, int e, int gen, String text, long synthMs) {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
+        final short[] samples = PcmConvert.toPcm16(floats, rate);
         if (e != epoch.get() || samples.length == 0) {
             if (e == epoch.get()) post(e, () -> listener.onDone(gen));
             return;
@@ -183,15 +201,15 @@ final class PocketSpeaker {
                 track = new AudioTrack.Builder()
                         .setAudioAttributes(TalkAudio.speech(voiceCall))
                         .setAudioFormat(new AudioFormat.Builder()
-                                .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                                 .setSampleRate(rate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                         .setTransferMode(AudioTrack.MODE_STREAM)
                         .setBufferSizeInBytes(Math.max(AudioTrack.getMinBufferSize(rate,
-                                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT), rate / 2 * 4))
+                                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT), rate / 2 * 2))
                         .build();
                 framesWritten = 0;
-                track.play();
             }
+            if (track.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) track.play();
             post(e, () -> listener.onStart(gen));
             int off = 0;
             while (off < samples.length) {
@@ -209,10 +227,26 @@ final class PocketSpeaker {
                     && SystemClock.elapsedRealtime() < deadline) {
                 SystemClock.sleep(10);
             }
+            final String stats = String.format(java.util.Locale.GERMANY,
+                    "Offline-Stimme: %.1f s Rechenzeit für %.1f s Sprache · Aussetzer %d",
+                    synthMs / 1000f, samples.length / (float) rate, track.getUnderrunCount());
+            lastStats = stats;
             post(e, () -> listener.onDone(gen));
         } catch (RuntimeException ex) {
             closeTrack();
             post(e, () -> listener.onError(gen, text, "Wiedergabe: " + ex.getMessage()));
+        }
+    }
+
+    /** Nach dem letzten Satz: Kanal anhalten (nicht schließen), damit nichts im Leerlauf läuft und nichts knackt. */
+    private void idleTrack() {
+        AudioTrack t = track;
+        if (t != null && !trackStale) {
+            try {
+                if (t.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) t.pause();
+            } catch (RuntimeException ignored) {
+                // schon freigegeben
+            }
         }
     }
 
