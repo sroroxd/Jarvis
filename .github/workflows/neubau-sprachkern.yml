@@ -35,3 +35,35 @@ jobs:
           retention-days: 14
           if-no-files-found: error
           path: neubau/app/build/outputs/apk/debug/app-debug.apk
+
+  starttest:
+    needs: neubau
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v5
+      - name: Debug-APK holen
+        uses: actions/download-artifact@v4
+        with:
+          name: JARVIS-Neubau-Audio-Test-APK
+          path: apk
+      - name: Emulatorbeschleunigung
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: App installieren und Startbild prüfen
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb install apk/app-debug.apk
+            adb shell input keyevent 82
+            adb shell am start -W -n de.art.jarvis.neubau/.MainActivity
+            sleep 3
+            adb shell pidof de.art.jarvis.neubau
+            adb shell uiautomator dump /sdcard/window.xml
+            adb shell cat /sdcard/window.xml | grep -q 'JARVIS'
